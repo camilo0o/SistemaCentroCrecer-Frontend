@@ -1,1 +1,203 @@
-<p>registro works!</p>
+<div class="registro-wrapper">
+
+  <!-- Panel izquierdo decorativo -->
+  <aside class="registro-brand">
+    <div class="brand-content">
+      <div class="brand-logo">
+        <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+          <circle cx="28" cy="28" r="28" fill="white" fill-opacity="0.15"/>
+          <path d="M14 28C14 20.268 20.268 14 28 14s14 6.268 14 14-6.268 14-14 14S14 35.732 14 28z" fill="white" fill-opacity="0.3"/>
+          <path d="M20 28a8 8 0 1 1 16 0 8 8 0 0 1-16 0z" fill="white"/>
+        </svg>
+      </div>
+      <h1 class="brand-title">Centro Crecer</h1>
+      <p class="brand-subtitle">Creá tu cuenta para comenzar</p>
+      <div class="pasos-indicator" *ngIf="paso < 3">
+        <div class="paso-dot" [class.activo]="paso >= 1">1</div>
+        <div class="paso-linea"></div>
+        <div class="paso-dot" [class.activo]="paso >= 2">2</div>
+      </div>
+      <div class="brand-decoration">
+        <div class="deco-circle deco-1"></div>
+        <div class="deco-circle deco-2"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Panel derecho -->
+  <main class="registro-form-panel">
+
+    <!-- PASO 1: Seleccionar tipo -->
+    <div class="registro-card" *ngIf="paso === 1">
+      <div class="card-header">
+        <h2>Crear cuenta</h2>
+        <p>¿Cómo vas a registrarte?</p>
+      </div>
+
+      <div class="tipo-cards">
+        <button
+          class="tipo-card"
+          [class.activo]="tipoUsuario === 'funcionario'"
+          (click)="seleccionarTipo('funcionario')"
+          type="button"
+        >
+          <span class="tipo-big-icon">🏛️</span>
+          <strong>Funcionario</strong>
+          <span class="tipo-desc">Coordinadores, educadores y auxiliares del centro</span>
+        </button>
+
+        <button
+          class="tipo-card"
+          [class.activo]="tipoUsuario === 'responsable'"
+          (click)="seleccionarTipo('responsable')"
+          type="button"
+        >
+          <span class="tipo-big-icon">👨‍👩‍👧</span>
+          <strong>Responsable</strong>
+          <span class="tipo-desc">Padres o tutores de niños del centro</span>
+        </button>
+      </div>
+
+      <button class="btn-continuar" (click)="irAlFormulario()" type="button">
+        Continuar como {{ tipoUsuario === 'funcionario' ? 'Funcionario' : 'Responsable' }}
+      </button>
+
+      <p class="login-link">
+        ¿Ya tenés cuenta? <a routerLink="/Iniciar-Sesion">Iniciar sesión</a>
+      </p>
+    </div>
+
+    <!-- PASO 2: Formulario -->
+    <div class="registro-card scroll-card" *ngIf="paso === 2">
+      <div class="card-header">
+        <button class="btn-volver" (click)="paso = 1" type="button">← Volver</button>
+        <h2>Datos personales</h2>
+        <p>
+          Registrarse como
+          <span class="badge" [class.badge-func]="tipoUsuario === 'funcionario'" [class.badge-resp]="tipoUsuario === 'responsable'">
+            {{ tipoUsuario === 'funcionario' ? '🏛️ Funcionario' : '👨‍👩‍👧 Responsable' }}
+          </span>
+        </p>
+      </div>
+
+      <div class="error-msg" *ngIf="error">
+        <span>⚠️</span> {{ error }}
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nombre <span class="req">*</span></label>
+          <input type="text" [(ngModel)]="nombre" placeholder="Ej: Juan" />
+        </div>
+        <div class="form-group">
+          <label>Apellido <span class="req">*</span></label>
+          <input type="text" [(ngModel)]="apellido" placeholder="Ej: García" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Cédula de identidad <span class="req">*</span></label>
+        <input type="text" [(ngModel)]="cedula" placeholder="Solo números (máx. 8 dígitos)" maxlength="8" />
+      </div>
+
+      <div class="form-group">
+        <label>Correo electrónico <span class="req">*</span></label>
+        <div class="input-wrapper">
+          <span class="input-icon">✉️</span>
+          <input type="email" [(ngModel)]="email" placeholder="tucorreo@ejemplo.com" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Teléfono</label>
+          <input type="tel" [(ngModel)]="telefono" placeholder="+598 99 123 456" />
+        </div>
+        <div class="form-group">
+          <label>Fecha de nacimiento</label>
+          <input type="date" [(ngModel)]="fechaNacimiento" />
+        </div>
+      </div>
+
+      <!-- Rol: solo funcionario -->
+      <div class="form-group" *ngIf="tipoUsuario === 'funcionario'">
+        <label>Rol <span class="req">*</span></label>
+        <select [(ngModel)]="rolId">
+          <option [ngValue]="null" disabled selected>Seleccioná un rol</option>
+          <option *ngFor="let r of roles" [ngValue]="r.id">{{ r.nombre }}</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Contraseña <span class="req">*</span></label>
+          <div class="input-wrapper">
+            <span class="input-icon">🔒</span>
+            <input
+              [type]="mostrarPassword ? 'text' : 'password'"
+              [(ngModel)]="contrasenia"
+              placeholder="Mín. 10 caracteres"
+            />
+            <button class="toggle-pass" (click)="togglePassword()" type="button">
+              {{ mostrarPassword ? '🙈' : '👁️' }}
+            </button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Confirmar contraseña <span class="req">*</span></label>
+          <div class="input-wrapper">
+            <span class="input-icon">🔐</span>
+            <input
+              [type]="mostrarConfirmar ? 'text' : 'password'"
+              [(ngModel)]="confirmarContrasenia"
+              placeholder="Repetí la contraseña"
+            />
+            <button class="toggle-pass" (click)="toggleConfirmar()" type="button">
+              {{ mostrarConfirmar ? '🙈' : '👁️' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="pass-hint" *ngIf="contrasenia">
+        <div class="hint-bar">
+          <div
+            class="hint-fill"
+            [class.debil]="contrasenia.length < 10"
+            [class.media]="contrasenia.length >= 10 && contrasenia.length < 14"
+            [class.fuerte]="contrasenia.length >= 14"
+            [style.width.%]="Math.min(contrasenia.length * 6, 100)"
+          ></div>
+        </div>
+        <span *ngIf="contrasenia.length < 10" class="hint-label debil-txt">Muy corta</span>
+        <span *ngIf="contrasenia.length >= 10 && contrasenia.length < 14" class="hint-label media-txt">Aceptable</span>
+        <span *ngIf="contrasenia.length >= 14" class="hint-label fuerte-txt">Fuerte ✓</span>
+      </div>
+
+      <button
+        class="btn-registrar"
+        (click)="registrar()"
+        [disabled]="cargando"
+        type="button"
+      >
+        <span *ngIf="!cargando">Crear cuenta</span>
+        <span *ngIf="cargando">⏳ Registrando...</span>
+      </button>
+    </div>
+
+    <!-- PASO 3: Éxito -->
+    <div class="registro-card exito-card" *ngIf="paso === 3">
+      <div class="exito-icon">✅</div>
+      <h2>¡Cuenta creada!</h2>
+      <p>
+        Tu cuenta como
+        <strong>{{ tipoUsuario === 'funcionario' ? 'funcionario' : 'responsable' }}</strong>
+        fue registrada correctamente.
+      </p>
+      <button class="btn-continuar" (click)="irALogin()" type="button">
+        Ir a Iniciar Sesión
+      </button>
+    </div>
+
+  </main>
+</div>

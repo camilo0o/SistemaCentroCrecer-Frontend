@@ -1,16 +1,22 @@
 import { Routes } from '@angular/router';
 import { authGuard, rolGuard } from './guards/auth-guard';
+import { Home } from './pages/home/home';
 
 
 export const routes: Routes = [
-  { path: '', redirectTo: '/Iniciar-Sesion', pathMatch: 'full' },
+  { path: '', redirectTo: '/home', pathMatch: 'full' },
  
   {
-    path: 'Iniciar-Sesion',
+    path: 'iniciarSesion',
     loadComponent: () =>
       import('./pages/login/login.component').then(m => m.LoginComponent)
   },
  
+ {
+    path: 'home', 
+    component: Home
+  },
+
   {
     path: 'registro',
     loadComponent: () =>
@@ -41,6 +47,5 @@ export const routes: Routes = [
     canActivate: [authGuard, rolGuard(['RESPONSABLE'])]
   },
  
-  { path: '**', redirectTo: '/Iniciar-Sesion' }
 ];
  

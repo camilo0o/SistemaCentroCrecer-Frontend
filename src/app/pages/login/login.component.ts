@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { AuthService } from '../../services/auth.service';
+import { AuthService, LoginRequest } from '../../services/auth.service';
 
 
 @Component({
@@ -40,7 +40,7 @@ export class LoginComponent {
     this.cargando = true;
     this.error = '';
  
-    const datos = { correo: this.correo, password: this.password };
+    const datos: LoginRequest = { email: this.correo, contrasenia: this.password };
  
     const peticion =
       this.tipoUsuario === 'funcionario'

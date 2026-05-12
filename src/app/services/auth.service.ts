@@ -5,18 +5,18 @@ import { Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
 
 export interface LoginResponse {
-  token: string;
+  token?: string | null;
   tipoToken: string;
   rol: string;
   id: number;
   nombreCompleto: string;
-  correo: string;
+  email: string;
   expiracion: number;
 }
  
 export interface LoginRequest {
-  correo: string;
-  password: string;
+  email: string;
+  contrasenia: string;
 }
 
 
@@ -41,15 +41,18 @@ export class AuthService {
   }
  
   private saveSession(res: LoginResponse) {
-    localStorage.setItem('token', res.token);
-    localStorage.setItem('rol', res.rol);
-    localStorage.setItem('nombre', res.nombreCompleto);
-    localStorage.setItem('correo', res.correo);
-    localStorage.setItem('userId', res.id.toString());
+    sessionStorage.setItem('datos', JSON.stringify(res));
+    // localStorage.setItem('token', res.token);
+    // localStorage.setItem('rol', res.rol);
+    // localStorage.setItem('nombre', res.nombreCompleto);
+    // localStorage.setItem('email', res.email);
+    // localStorage.setItem('userId', res.id.toString());
   }
- 
+   
+  // Descomprimir JSON desde sessionStorage.
+
   getToken(): string | null {
-    return localStorage.getItem('token');
+    return localStorage.getItem('token'); 
   }
  
   getRol(): string | null {
@@ -66,6 +69,6 @@ export class AuthService {
  
   logout() {
     localStorage.clear();
-    this.router.navigate(['/Iniciar-Sesion']);
+    this.router.navigate(['/iniciarSesion']);
   }
 }

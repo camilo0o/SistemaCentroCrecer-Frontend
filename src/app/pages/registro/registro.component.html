@@ -1,86 +1,138 @@
 <div class="registro-root">
-  <div class="registro-card">
-    <div class="registro-header">
-      <div class="header-icon">
-        <mat-icon>spa</mat-icon>
-      </div>
-      <h1>Centro Crecer</h1>
-      <p>Crear cuenta de responsable (familiar)</p>
-    </div>
+  <mat-card appearance="outlined" class="registro-card">
 
-    @if (exito) {
-      <div class="exito-block">
-        <div class="exito-icon">
-          <mat-icon>check_circle</mat-icon>
-        </div>
-        <h2>¡Registro exitoso!</h2>
-        <p>Tu cuenta fue creada. Ya podés iniciar sesión.</p>
-        <button mat-flat-button class="btn-primary" (click)="irLogin()">
-          <mat-icon>login</mat-icon> Ir al Login
-        </button>
-      </div>
-    } @else {
-      <form [formGroup]="form" (ngSubmit)="registrar()" class="reg-form">
-        <div class="form-grid">
-          <mat-form-field appearance="outline">
-            <mat-label>Nombre</mat-label>
-            <input matInput formControlName="nombre" placeholder="Juan">
-            <mat-icon matPrefix>person</mat-icon>
-            @if (form.get('nombre')?.invalid && form.get('nombre')?.touched) {
-              <mat-error>Nombre requerido (mín. 2 caracteres)</mat-error>
-            }
-          </mat-form-field>
+    <mat-card-header class="registro-header">
+      <mat-icon class="header-icon">spa</mat-icon>
+      <mat-card-title>Centro Crecer</mat-card-title>
+      <mat-card-subtitle>
+        {{ tipoRegistro === 'responsable' ? 'Crear cuenta de responsable (familiar)' : 'Registrar funcionario' }}
+      </mat-card-subtitle>
+    </mat-card-header>
 
-          <mat-form-field appearance="outline">
-            <mat-label>Apellido</mat-label>
-            <input matInput formControlName="apellido" placeholder="Pérez">
-            <mat-icon matPrefix>person</mat-icon>
-            @if (form.get('apellido')?.invalid && form.get('apellido')?.touched) {
-              <mat-error>Apellido requerido (mín. 2 caracteres)</mat-error>
-            }
-          </mat-form-field>
-        </div>
+    <mat-card-content>
 
-        <mat-form-field appearance="outline" class="full">
-          <mat-label>Email</mat-label>
-          <input matInput type="email" formControlName="email" placeholder="correo@ejemplo.com">
-          <mat-icon matPrefix>email</mat-icon>
-          @if (form.get('email')?.invalid && form.get('email')?.touched) {
-            <mat-error>Email inválido</mat-error>
-          }
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full">
-          <mat-label>Teléfono (opcional)</mat-label>
-          <input matInput formControlName="telefono" placeholder="+598 99 000 000">
-          <mat-icon matPrefix>phone</mat-icon>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full">
-          <mat-label>Contraseña</mat-label>
-          <input matInput [type]="mostrarPass ? 'text' : 'password'" formControlName="contrasenia">
-          <mat-icon matPrefix>lock</mat-icon>
-          <button mat-icon-button matSuffix type="button" (click)="mostrarPass = !mostrarPass">
-            <mat-icon>{{ mostrarPass ? 'visibility_off' : 'visibility' }}</mat-icon>
+      @if(exito) {
+        <div class="exito-block">
+          <mat-icon class="exito-icon" color="primary">check_circle</mat-icon>
+          <h2>¡Registro exitoso!</h2>
+          <p>Tu cuenta fue creada. Ya podés iniciar sesión.</p>
+          <button mat-flat-button color="primary" class="btn-full" (click)="irLogin()">
+            <mat-icon>login</mat-icon> Ir al Login
           </button>
-          @if (form.get('contrasenia')?.invalid && form.get('contrasenia')?.touched) {
-            <mat-error>Contraseña requerida (mín. 8 caracteres)</mat-error>
-          }
-        </mat-form-field>
+        </div>
+      } @else {
 
-        <button mat-flat-button class="btn-primary full-btn" type="submit" [disabled]="cargando">
-          @if (cargando) {
-            <mat-spinner diameter="20"></mat-spinner>
-          } @else {
-            <mat-icon>how_to_reg</mat-icon>
-            Crear Cuenta
-          }
-        </button>
-      </form>
+        <!-- Selector tipo -->
+        <div class="tipo-tabs">
+          <button class="tipo-tab" [class.active]="tipoRegistro==='responsable'"
+            (click)="seleccionarTipo('responsable')" type="button">
+            <mat-icon>family_restroom</mat-icon> Responsable
+          </button>
+          <button class="tipo-tab" [class.active]="tipoRegistro==='funcionario'"
+            (click)="seleccionarTipo('funcionario')" type="button">
+            <mat-icon>badge</mat-icon> Funcionario
+          </button>
+        </div>
 
-      <p class="login-link">
-        ¿Ya tenés cuenta? <a routerLink="/iniciarSesion">Iniciar Sesión</a>
-      </p>
-    }
-  </div>
+        <mat-divider class="divider"></mat-divider>
+
+        <form [formGroup]="form" (ngSubmit)="registrar()" class="form-col">
+
+          <div class="form-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre</mat-label>
+              <mat-icon matPrefix>person</mat-icon>
+              <input matInput formControlName="nombre">
+              @if(form.get('nombre')?.invalid && form.get('nombre')?.touched){
+                <mat-error>Mínimo 2 caracteres</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Apellido</mat-label>
+              <mat-icon matPrefix>person</mat-icon>
+              <input matInput formControlName="apellido">
+              @if(form.get('apellido')?.invalid && form.get('apellido')?.touched){
+                <mat-error>Mínimo 2 caracteres</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Cédula</mat-label>
+            <mat-icon matPrefix>badge</mat-icon>
+            <input matInput formControlName="cedula" placeholder="12345678">
+            @if(form.get('cedula')?.invalid && form.get('cedula')?.touched){
+              <mat-error>Solo números, requerida</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Email</mat-label>
+            <mat-icon matPrefix>email</mat-icon>
+            <input matInput type="email" formControlName="email">
+            @if(form.get('email')?.invalid && form.get('email')?.touched){
+              <mat-error>Email inválido</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Teléfono (opcional)</mat-label>
+            <mat-icon matPrefix>phone</mat-icon>
+            <input matInput formControlName="telefono" placeholder="+598 99 000 000">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha de nacimiento (opcional)</mat-label>
+            <mat-icon matPrefix>cake</mat-icon>
+            <input matInput [matDatepicker]="picker" formControlName="fechaNacimiento">
+            <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+          </mat-form-field>
+
+          @if(tipoRegistro === 'funcionario') {
+            <mat-form-field appearance="outline">
+              <mat-label>Rol</mat-label>
+              <mat-icon matPrefix>admin_panel_settings</mat-icon>
+              <mat-select formControlName="rolId">
+                @for(rol of roles; track rol.id){
+                  <mat-option [value]="rol.id">{{ getRolDisplay(rol.nombre) }}</mat-option>
+                }
+              </mat-select>
+              @if(form.get('rolId')?.invalid && form.get('rolId')?.touched){
+                <mat-error>Seleccioná un rol</mat-error>
+              }
+            </mat-form-field>
+          }
+
+          <mat-form-field appearance="outline">
+            <mat-label>Contraseña</mat-label>
+            <mat-icon matPrefix>lock</mat-icon>
+            <input matInput [type]="mostrarPass ? 'text' : 'password'" formControlName="contrasenia">
+            <button mat-icon-button matSuffix type="button" (click)="mostrarPass=!mostrarPass">
+              <mat-icon>{{ mostrarPass ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            @if(form.get('contrasenia')?.invalid && form.get('contrasenia')?.touched){
+              <mat-error>Mínimo 8 caracteres</mat-error>
+            }
+          </mat-form-field>
+
+          <button mat-flat-button color="primary" type="submit" [disabled]="cargando" class="btn-full">
+            @if(cargando){
+              <mat-spinner diameter="20"></mat-spinner>
+            } @else {
+              <mat-icon>how_to_reg</mat-icon> Crear Cuenta
+            }
+          </button>
+
+        </form>
+
+        <p class="login-link">
+          ¿Ya tenés cuenta?
+          <a routerLink="/iniciarSesion">Iniciar Sesión</a>
+        </p>
+      }
+
+    </mat-card-content>
+  </mat-card>
 </div>

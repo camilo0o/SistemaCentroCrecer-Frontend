@@ -3,21 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
+import { LoginRequest, LoginResponse } from '../models/models';
 
-export interface LoginResponse {
-  token?: string | null;
-  tipoToken: string;
-  rol: string;
-  id: number;
-  nombreCompleto: string;
-  email: string;
-  expiracion: number;
-}
- 
-export interface LoginRequest {
-  email: string;
-  contrasenia: string;
-}
 
 
 
@@ -62,10 +49,34 @@ export class AuthService {
   getNombre(): string | null {
     return localStorage.getItem('nombre');
   }
+
+  getEmail(): string | null { 
+    return localStorage.getItem('email'); 
+  }
+
+    getUserId(): number | null {
+    const v = localStorage.getItem('userId');
+    return v ? Number(v) : null;
+  }
+
  
   isLoggedIn(): boolean {
     return !!this.getToken();
   }
+  
+    isAdmin(): boolean {
+    return this.getRol() === 'ADMINISTRADOR_SISTEMA';
+  }
+ 
+  isCoordinadora(): boolean {
+    return this.getRol() === 'COORDINADORA';
+  }
+ 
+  canManageNinos(): boolean {
+    const rol = this.getRol();
+    return ['COORDINADORA', 'PSICOLOGO', 'MAESTRA', 'ASISTENTE_SOCIAL'].includes(rol ?? '');
+  }
+
  
   logout() {
     localStorage.clear();

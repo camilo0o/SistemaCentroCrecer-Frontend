@@ -1,106 +1,171 @@
-<div class="login-wrapper">
-  <!-- Panel izquierdo decorativo -->
-  <aside class="login-brand">
-    <div class="brand-content">
-      <div class="brand-logo">
-        <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
-          <circle cx="28" cy="28" r="28" fill="white" fill-opacity="0.15"/>
-          <path d="M14 28C14 20.268 20.268 14 28 14s14 6.268 14 14-6.268 14-14 14S14 35.732 14 28z" fill="white" fill-opacity="0.3"/>
-          <path d="M20 28a8 8 0 1 1 16 0 8 8 0 0 1-16 0z" fill="white"/>
-        </svg>
+<div class="login-root">
+  <!-- Left panel -->
+  <aside class="login-aside">
+    <div class="aside-content">
+
+      <div class="aside-logo">
+        <mat-icon class="logo-icon">spa</mat-icon>
       </div>
-      <h1 class="brand-title">Centro Crecer</h1>
-      <p class="brand-subtitle">Sistema de Gestión Institucional</p>
-      <div class="brand-decoration">
-        <div class="deco-circle deco-1"></div>
-        <div class="deco-circle deco-2"></div>
-        <div class="deco-circle deco-3"></div>
+
+      <h1 class="aside-title">
+        <mat-icon>account_balance</mat-icon>
+        Centro Crecer
+      </h1>
+
+      <p class="aside-subtitle">
+        <mat-icon>dashboard</mat-icon>
+        Sistema de Gestión Institucional
+      </p>
+
+      <div class="aside-stats">
+        <div class="aside-stat">
+          <mat-icon>admin_panel_settings</mat-icon>
+          <span class="stat-num">12</span>
+          <span class="stat-lbl">Roles</span>
+        </div>
+
+        <div class="aside-stat">
+          <mat-icon>groups</mat-icon>
+          <span class="stat-num">5</span>
+          <span class="stat-lbl">Grupos</span>
+        </div>
+
+        <div class="aside-stat">
+          <mat-icon>monitoring</mat-icon>
+          <span class="stat-num">360°</span>
+          <span class="stat-lbl">Gestión</span>
+        </div>
+      </div>
+
+      <div class="aside-deco">
+        <div class="deco-circle c1"></div>
+        <div class="deco-circle c2"></div>
+        <div class="deco-circle c3"></div>
       </div>
     </div>
   </aside>
- 
-  <!-- Panel derecho: formulario -->
-  <main class="login-form-panel">
+
+  <!-- Right panel -->
+  <main class="login-panel">
     <div class="login-card">
-      <div class="card-header">
-        <h2>Iniciar Sesión</h2>
-        <p>Seleccioná tu tipo de acceso para continuar</p>
+
+      <div class="login-card-header">
+        <h2 class="login-card-title">
+          <mat-icon>login</mat-icon>
+          Iniciar Sesión
+        </h2>
+
+        <p class="login-card-sub">
+          <mat-icon>verified_user</mat-icon>
+          Seleccioná tu tipo de acceso para continuar
+        </p>
       </div>
- 
-      <!-- Selector de tipo de usuario -->
-      <div class="tipo-selector">
+
+      <!-- Tipo selector -->
+      <div class="tipo-tabs">
         <button
-          class="tipo-btn"
-          [class.activo]="tipoUsuario === 'funcionario'"
+          class="tipo-tab"
+          [class.active]="tipoUsuario === 'funcionario'"
           (click)="seleccionarTipo('funcionario')"
-          type="button"
-        >
-          <span class="tipo-icon">🏛️</span>
-          <span>Funcionario</span>
+          type="button">
+
+          <mat-icon>badge</mat-icon>
+          Funcionario
         </button>
+
         <button
-          class="tipo-btn"
-          [class.activo]="tipoUsuario === 'responsable'"
+          class="tipo-tab"
+          [class.active]="tipoUsuario === 'responsable'"
           (click)="seleccionarTipo('responsable')"
-          type="button"
-        >
-          <span class="tipo-icon">👨‍👩‍👧</span>
-          <span>Responsable</span>
+          type="button">
+
+          <mat-icon>family_restroom</mat-icon>
+          Responsable
         </button>
       </div>
- 
+
       <!-- Error -->
-      <div class="error-msg" *ngIf="error">
-        <span>⚠️</span> {{ error }}
-      </div>
- 
-      <!-- Formulario -->
-      <div class="form-group">
-        <label for="correo">Correo electrónico</label>
-        <div class="input-wrapper">
-          <span class="input-icon">✉️</span>
+      @if (error) {
+        <div class="error-alert">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ error }}</span>
+        </div>
+      }
+
+      <!-- Form -->
+      <form [formGroup]="form" (ngSubmit)="iniciarSesion()" class="login-form">
+
+        <mat-form-field appearance="outline" class="full-field">
+          <mat-label>Correo electrónico</mat-label>
+
           <input
-            id="correo"
+            matInput
             type="email"
-            [(ngModel)]="correo"
+            formControlName="email"
             placeholder="tucorreo@ejemplo.com"
-            autocomplete="email"
-          />
-        </div>
-      </div>
- 
-      <div class="form-group">
-        <label for="password">Contraseña</label>
-        <div class="input-wrapper">
-          <span class="input-icon">🔒</span>
+            autocomplete="email">
+
+          <mat-icon matPrefix>email</mat-icon>
+
+          @if (form.get('email')?.invalid && form.get('email')?.touched) {
+            <mat-error>{{ emailError }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-field">
+          <mat-label>Contraseña</mat-label>
+
           <input
-            id="password"
+            matInput
             [type]="mostrarPassword ? 'text' : 'password'"
-            [(ngModel)]="password"
+            formControlName="contrasenia"
             placeholder="Tu contraseña"
-            autocomplete="current-password"
-          />
-          <button class="toggle-pass" type="button" (click)="togglePassword()">
-            {{ mostrarPassword ? '🙈' : '👁️' }}
+            autocomplete="current-password">
+
+          <mat-icon matPrefix>lock</mat-icon>
+
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            (click)="togglePassword()">
+
+            <mat-icon>
+              {{ mostrarPassword ? 'visibility_off' : 'visibility' }}
+            </mat-icon>
           </button>
-        </div>
-      </div>
- 
-      <button
-        class="btn-ingresar"
-        (click)="iniciarSesion()"
-        [disabled]="cargando"
-        type="button"
-      >
-        <span *ngIf="!cargando">Ingresar</span>
-        <span *ngIf="cargando" class="spinner">⏳ Verificando...</span>
-      </button>
- 
-      <p class="registro-link">
-        ¿No tenés cuenta?
-        <a routerLink="/registro">Registrarse</a>
-      </p>
+
+          @if (form.get('contrasenia')?.invalid && form.get('contrasenia')?.touched) {
+            <mat-error>{{ passError }}</mat-error>
+          }
+        </mat-form-field>
+
+        <button
+          mat-flat-button
+          class="btn-ingresar"
+          type="submit"
+          [disabled]="cargando">
+
+          @if (cargando) {
+            <mat-spinner diameter="20" color="accent"></mat-spinner>
+            <span>Verificando...</span>
+
+          } @else {
+            <mat-icon>login</mat-icon>
+            <span>Ingresar</span>
+          }
+        </button>
+      </form>
+
+      @if (tipoUsuario === 'responsable') {
+        <p class="register-link">
+          <mat-icon>person_add</mat-icon>
+
+          ¿No tenés cuenta?
+          <a routerLink="/registro">Registrarse</a>
+        </p>
+      }
+
     </div>
   </main>
 </div>
-

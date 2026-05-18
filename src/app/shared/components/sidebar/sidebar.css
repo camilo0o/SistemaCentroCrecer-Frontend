@@ -1,0 +1,132 @@
+.sidebar {
+  width: 260px;
+  height: 100vh;
+  background: #1e293b;
+  color: white;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  padding: 20px 16px;
+  box-sizing: border-box;
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  margin-bottom: 30px;
+}
+
+.sidebar-logo-icon {
+  width: 50px;
+  height: 50px;
+
+  border-radius: 14px;
+  background: rgba(255,255,255,0.1);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-logo-icon mat-icon {
+  font-size: 28px;
+  width: 28px;
+  height: 28px;
+}
+
+.name {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.sub {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.sidebar-section-label {
+  font-size: 11px;
+  letter-spacing: 1px;
+  opacity: 0.6;
+  margin-bottom: 10px;
+}
+
+.sidebar-nav {
+  flex: 1;
+}
+
+.sidebar-item {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: white;
+
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  padding: 12px 14px;
+  border-radius: 12px;
+
+  text-decoration: none;
+  cursor: pointer;
+
+  transition: 0.2s;
+  box-sizing: border-box;
+}
+
+.sidebar-item:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+.sidebar-item.active {
+  background: #2563eb;
+}
+
+.sidebar-item mat-icon {
+  font-size: 22px;
+}
+
+.sidebar-footer {
+  margin-top: 20px;
+}
+
+.user-info-sidebar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  margin-bottom: 16px;
+}
+
+.user-avatar {
+  width: 42px;
+  height: 42px;
+
+  border-radius: 50%;
+  background: #2563eb;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-weight: bold;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.user-role {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.logout-button {
+  color: rgba(255,255,255,0.7);
+}

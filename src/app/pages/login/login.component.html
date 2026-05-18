@@ -1,171 +1,96 @@
 <div class="login-root">
-  <!-- Left panel -->
+
   <aside class="login-aside">
     <div class="aside-content">
-
-      <div class="aside-logo">
-        <mat-icon class="logo-icon">spa</mat-icon>
-      </div>
-
-      <h1 class="aside-title">
-        <mat-icon>account_balance</mat-icon>
-        Centro Crecer
-      </h1>
-
-      <p class="aside-subtitle">
-        <mat-icon>dashboard</mat-icon>
-        Sistema de Gestión Institucional
-      </p>
+      <mat-icon class="aside-logo-icon">spa</mat-icon>
+      <h1 class="aside-title">Centro Crecer</h1>
+      <p class="aside-subtitle">Sistema de Gestión Institucional</p>
 
       <div class="aside-stats">
-        <div class="aside-stat">
-          <mat-icon>admin_panel_settings</mat-icon>
-          <span class="stat-num">12</span>
-          <span class="stat-lbl">Roles</span>
-        </div>
-
-        <div class="aside-stat">
-          <mat-icon>groups</mat-icon>
-          <span class="stat-num">5</span>
-          <span class="stat-lbl">Grupos</span>
-        </div>
-
-        <div class="aside-stat">
-          <mat-icon>monitoring</mat-icon>
-          <span class="stat-num">360°</span>
-          <span class="stat-lbl">Gestión</span>
-        </div>
+        @for(stat of stats; track stat.label){
+          <div class="aside-stat">
+            <mat-icon>{{ stat.icon }}</mat-icon>
+            <span class="stat-num">{{ stat.num }}</span>
+            <span class="stat-lbl">{{ stat.label }}</span>
+          </div>
+        }
       </div>
 
-      <div class="aside-deco">
-        <div class="deco-circle c1"></div>
-        <div class="deco-circle c2"></div>
-        <div class="deco-circle c3"></div>
-      </div>
+      <div class="deco-circle c1"></div>
+      <div class="deco-circle c2"></div>
+      <div class="deco-circle c3"></div>
     </div>
   </aside>
 
-  <!-- Right panel -->
   <main class="login-panel">
-    <div class="login-card">
+    <mat-card appearance="outlined" class="login-card">
 
-      <div class="login-card-header">
-        <h2 class="login-card-title">
-          <mat-icon>login</mat-icon>
-          Iniciar Sesión
-        </h2>
+      <mat-card-header class="login-header">
+        <mat-card-title>Iniciar Sesión</mat-card-title>
+        <mat-card-subtitle>Seleccioná tu tipo de acceso para continuar</mat-card-subtitle>
+      </mat-card-header>
 
-        <p class="login-card-sub">
-          <mat-icon>verified_user</mat-icon>
-          Seleccioná tu tipo de acceso para continuar
-        </p>
-      </div>
+      <mat-card-content>
 
-      <!-- Tipo selector -->
-      <div class="tipo-tabs">
-        <button
-          class="tipo-tab"
-          [class.active]="tipoUsuario === 'funcionario'"
-          (click)="seleccionarTipo('funcionario')"
-          type="button">
-
-          <mat-icon>badge</mat-icon>
-          Funcionario
-        </button>
-
-        <button
-          class="tipo-tab"
-          [class.active]="tipoUsuario === 'responsable'"
-          (click)="seleccionarTipo('responsable')"
-          type="button">
-
-          <mat-icon>family_restroom</mat-icon>
-          Responsable
-        </button>
-      </div>
-
-      <!-- Error -->
-      @if (error) {
-        <div class="error-alert">
-          <mat-icon>error_outline</mat-icon>
-          <span>{{ error }}</span>
+        <div class="tipo-tabs">
+          <button class="tipo-tab" [class.active]="tipoUsuario==='funcionario'"
+            (click)="seleccionarTipo('funcionario')" type="button">
+            <mat-icon>badge</mat-icon> Funcionario
+          </button>
+          <button class="tipo-tab" [class.active]="tipoUsuario==='responsable'"
+            (click)="seleccionarTipo('responsable')" type="button">
+            <mat-icon>family_restroom</mat-icon> Responsable
+          </button>
         </div>
-      }
 
-      <!-- Form -->
-      <form [formGroup]="form" (ngSubmit)="iniciarSesion()" class="login-form">
+        @if(error){
+          <div class="error-alert">
+            <mat-icon>error_outline</mat-icon>
+            {{ error }}
+          </div>
+        }
 
-        <mat-form-field appearance="outline" class="full-field">
-          <mat-label>Correo electrónico</mat-label>
+        <form [formGroup]="form" (ngSubmit)="iniciarSesion()" class="login-form">
 
-          <input
-            matInput
-            type="email"
-            formControlName="email"
-            placeholder="tucorreo@ejemplo.com"
-            autocomplete="email">
+          <mat-form-field appearance="outline">
+            <mat-label>Correo electrónico</mat-label>
+            <mat-icon matPrefix>email</mat-icon>
+            <input matInput type="email" formControlName="email" autocomplete="email">
+            @if(form.get('email')?.invalid && form.get('email')?.touched){
+              <mat-error>{{ emailError }}</mat-error>
+            }
+          </mat-form-field>
 
-          <mat-icon matPrefix>email</mat-icon>
+          <mat-form-field appearance="outline">
+            <mat-label>Contraseña</mat-label>
+            <mat-icon matPrefix>lock</mat-icon>
+            <input matInput [type]="mostrarPassword ? 'text' : 'password'"
+              formControlName="contrasenia" autocomplete="current-password">
+            <button mat-icon-button matSuffix type="button" (click)="togglePassword()">
+              <mat-icon>{{ mostrarPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            @if(form.get('contrasenia')?.invalid && form.get('contrasenia')?.touched){
+              <mat-error>{{ passError }}</mat-error>
+            }
+          </mat-form-field>
 
-          @if (form.get('email')?.invalid && form.get('email')?.touched) {
-            <mat-error>{{ emailError }}</mat-error>
-          }
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-field">
-          <mat-label>Contraseña</mat-label>
-
-          <input
-            matInput
-            [type]="mostrarPassword ? 'text' : 'password'"
-            formControlName="contrasenia"
-            placeholder="Tu contraseña"
-            autocomplete="current-password">
-
-          <mat-icon matPrefix>lock</mat-icon>
-
-          <button
-            mat-icon-button
-            matSuffix
-            type="button"
-            (click)="togglePassword()">
-
-            <mat-icon>
-              {{ mostrarPassword ? 'visibility_off' : 'visibility' }}
-            </mat-icon>
+          <button mat-flat-button color="primary" type="submit" [disabled]="cargando" class="btn-ingresar">
+            @if(cargando){
+              <mat-spinner diameter="20"></mat-spinner> Verificando...
+            } @else {
+              <mat-icon>login</mat-icon> Ingresar
+            }
           </button>
 
-          @if (form.get('contrasenia')?.invalid && form.get('contrasenia')?.touched) {
-            <mat-error>{{ passError }}</mat-error>
-          }
-        </mat-form-field>
+        </form>
 
-        <button
-          mat-flat-button
-          class="btn-ingresar"
-          type="submit"
-          [disabled]="cargando">
+        @if(tipoUsuario==='responsable'){
+          <p class="register-link">
+            ¿No tenés cuenta? <a routerLink="/registro">Registrarse</a>
+          </p>
+        }
 
-          @if (cargando) {
-            <mat-spinner diameter="20" color="accent"></mat-spinner>
-            <span>Verificando...</span>
-
-          } @else {
-            <mat-icon>login</mat-icon>
-            <span>Ingresar</span>
-          }
-        </button>
-      </form>
-
-      @if (tipoUsuario === 'responsable') {
-        <p class="register-link">
-          <mat-icon>person_add</mat-icon>
-
-          ¿No tenés cuenta?
-          <a routerLink="/registro">Registrarse</a>
-        </p>
-      }
-
-    </div>
+      </mat-card-content>
+    </mat-card>
   </main>
 </div>

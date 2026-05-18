@@ -3,61 +3,86 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
-import { MatStepperModule } from '@angular/material/stepper';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
+import { MatDividerModule } from '@angular/material/divider';
 import { environment } from '../../../environments/environment';
 import { ToastService } from '../../services/toast.service';
-
+import { RolService } from '../../services/rol.service';
+import { Rol, ROL_DISPLAY } from '../../models/models';
 
 @Component({
   selector: 'app-registro',
   standalone: true,
   imports: [
     CommonModule, ReactiveFormsModule, RouterModule,
-    MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule,
-    MatSelectModule, MatStepperModule, MatProgressSpinnerModule,
-    MatDatepickerModule, MatNativeDateModule
+    MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule,
+    MatIconModule, MatSelectModule, MatProgressSpinnerModule,
+    MatDatepickerModule, MatNativeDateModule, MatDividerModule
   ],
   templateUrl: './registro.component.html',
   styleUrl: './registro.component.css',
 })
-
 export class RegistroComponent implements OnInit {
+  tipoRegistro: 'responsable' | 'funcionario' = 'responsable';
   form!: FormGroup;
   cargando = false;
   exito = false;
   mostrarPass = false;
- 
+  roles: Rol[] = [];
+
   constructor(
     private fb: FormBuilder,
     private http: HttpClient,
     private router: Router,
-    private toast: ToastService
+    private toast: ToastService,
+    private rolService: RolService
   ) {}
- 
+
   ngOnInit() {
-    this.form = this.fb.group({
-      nombre: ['', [Validators.required, Validators.minLength(2)]],
-      apellido: ['', [Validators.required, Validators.minLength(2)]],
-      email: ['', [Validators.required, Validators.email]],
-      telefono: [''],
-      fechaNacimiento: [''],
-      contrasenia: ['', [Validators.required, Validators.minLength(8)]]
-    });
+    this.rolService.listarActivos().subscribe(r =>
+      this.roles = r.filter(x => x.nombre !== 'ADMINISTRADOR_SISTEMA')
+    );
+    this.buildForm();
   }
- 
+
+  buildForm() {
+    const base = {
+      nombre:          ['', [Validators.required, Validators.minLength(2)]],
+      apellido:        ['', [Validators.required, Validators.minLength(2)]],
+      cedula:          ['', [Validators.required, Validators.pattern('^[0-9]+$')]],
+      email:           ['', [Validators.required, Validators.email]],
+      telefono:        [''],
+      fechaNacimiento: [''],
+      contrasenia:     ['', [Validators.required, Validators.minLength(8)]],
+    };
+
+    if (this.tipoRegistro === 'funcionario') {
+      this.form = this.fb.group({ ...base, rolId: [null, Validators.required] });
+    } else {
+      this.form = this.fb.group(base);
+    }
+  }
+
+  seleccionarTipo(tipo: 'responsable' | 'funcionario') {
+    this.tipoRegistro = tipo;
+    this.buildForm();
+  }
+
   registrar() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.cargando = true;
-    const datos = this.form.value;
-    this.http.post(`${environment.apiUrl}/responsables`, datos).subscribe({
+    const endpoint = this.tipoRegistro === 'responsable'
+      ? `${environment.apiUrl}/responsables`
+      : `${environment.apiUrl}/funcionarios`;
+    this.http.post(endpoint, this.form.value).subscribe({
       next: () => {
         this.cargando = false;
         this.exito = true;
@@ -69,7 +94,7 @@ export class RegistroComponent implements OnInit {
       }
     });
   }
- 
-  irLogin() { this.router.navigate(['/iniciarSesion']); }
 
+  getRolDisplay(nombre: string) { return ROL_DISPLAY[nombre] ?? nombre; }
+  irLogin() { this.router.navigate(['/iniciarSesion']); }
 }

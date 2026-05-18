@@ -1,0 +1,72 @@
+<div class="app-shell">
+  <app-sidebar />
+
+  <div class="main-content">
+
+    <!-- Toolbar -->
+    <mat-toolbar color="primary" style="justify-content:space-between; flex-shrink:0">
+      <span>{{ saludoHora }}, {{ nombre.split(' ')[0] }} <mat-icon>handshake</mat-icon></span>
+      <mat-chip-set>
+        <mat-chip>
+          <mat-icon matChipAvatar>badge</mat-icon>
+          {{ rolDisplay }}
+        </mat-chip>
+      </mat-chip-set>
+    </mat-toolbar>
+
+    <div class="page-content">
+
+      <!-- Loading -->
+      @if (cargando) {
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px;gap:24px">
+          <mat-spinner diameter="48"></mat-spinner>
+          <p style="color:#5C6680">Cargando información...</p>
+        </div>
+      }
+
+      @if (!cargando && stats) {
+
+        <p style="color:#5C6680;font-size:13px;margin-bottom:20px;text-transform:capitalize">
+          {{ fechaFormateada }}
+        </p>
+
+        <!-- Stat cards -->
+        <div class="stat-grid">
+          @for (card of statCards; track card.label) {
+            <mat-card appearance="outlined">
+              <mat-card-content style="display:flex;align-items:center;gap:16px;padding:20px">
+                <div class="stat-icon-wrap" [style.background]="card.bg" [style.color]="card.color">
+                  <mat-icon>{{ card.icon }}</mat-icon>
+                </div>
+                <div>
+                  <div class="stat-value">{{ card.value }}</div>
+                  <div class="stat-label">{{ card.label }}</div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          }
+        </div>
+
+        <!-- Acciones rápidas -->
+        <p class="section-label">Acciones Rápidas</p>
+        <div class="actions-grid">
+          @for (acc of acciones; track acc.route) {
+            <mat-card appearance="outlined" class="action-card" [routerLink]="acc.route">
+              <mat-card-content style="display:flex;align-items:center;gap:16px;padding:16px">
+                <mat-icon [style.color]="acc.color" style="font-size:32px;width:32px;height:32px">
+                  {{ acc.icon }}
+                </mat-icon>
+                <div style="flex:1">
+                  <mat-card-title style="font-size:14px">{{ acc.label }}</mat-card-title>
+                  <mat-card-subtitle>{{ acc.desc }}</mat-card-subtitle>
+                </div>
+                <mat-icon [style.color]="acc.color">chevron_right</mat-icon>
+              </mat-card-content>
+            </mat-card>
+          }
+        </div>
+
+      }
+    </div>
+  </div>
+</div>

@@ -1,0 +1,8 @@
+.avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: #1565C0; color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 12px; flex-shrink: 0;
+}
+.avatar-off { background: #BDBDBD; }
+.row-off { opacity: 0.55; }

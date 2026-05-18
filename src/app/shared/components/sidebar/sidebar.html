@@ -1,0 +1,84 @@
+<aside class="sidebar">
+
+  <div class="sidebar-logo">
+
+    <div class="sidebar-logo-icon">
+      <mat-icon>spa</mat-icon>
+    </div>
+
+    <div class="sidebar-logo-text">
+      <div class="name">Centro Crecer</div>
+      <div class="sub">Sistema de Gestión</div>
+    </div>
+
+  </div>
+
+  <nav class="sidebar-nav">
+
+    <div class="sidebar-section-label">
+      NAVEGACIÓN
+    </div>
+
+    @for (item of navItems; track item.route) {
+
+      <a
+        class="sidebar-item"
+        [class.active]="isActive(item.route)"
+        [routerLink]="item.route"
+      >
+
+        <mat-icon>
+          {{ item.icon }}
+        </mat-icon>
+
+        <span>
+          {{ item.label }}
+        </span>
+
+      </a>
+
+    }
+
+  </nav>
+
+  <!-- Footer -->
+  <div class="sidebar-footer">
+
+    <div class="user-info-sidebar">
+
+      <div class="user-avatar">
+        {{ initials }}
+      </div>
+
+      <div class="user-details">
+
+        <div class="user-name">
+          {{ nombre }}
+        </div>
+
+        <div class="user-role">
+          {{ rolDisplay }}
+        </div>
+
+      </div>
+
+    </div>
+
+    <button
+      class="sidebar-item logout-button"
+      (click)="logout()"
+    >
+
+      <mat-icon>
+        logout
+      </mat-icon>
+
+      <span>
+        Cerrar sesión
+      </span>
+
+    </button>
+
+  </div>
+
+</aside>

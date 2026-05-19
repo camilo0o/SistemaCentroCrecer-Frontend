@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -20,6 +20,8 @@ interface NavItem {
   standalone: true,
   imports: [CommonModule, RouterModule, MatIconModule, MatTooltipModule],
   templateUrl: './sidebar.html',
+  styleUrl: './sidebar.css',
+  encapsulation: ViewEncapsulation.None
 })
 
 export class Sidebar implements OnInit{

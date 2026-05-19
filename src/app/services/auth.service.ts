@@ -28,16 +28,15 @@ export class AuthService {
   }
  
   private saveSession(res: LoginResponse) {
-    sessionStorage.setItem('datos', JSON.stringify(res));
-    // localStorage.setItem('token', res.token);
-    // localStorage.setItem('rol', res.rol);
-    // localStorage.setItem('nombre', res.nombreCompleto);
-    // localStorage.setItem('email', res.email);
-    // localStorage.setItem('userId', res.id.toString());
+  if (res.token) {
+    localStorage.setItem('token', res.token);
   }
+  localStorage.setItem('rol', res.rol);
+  localStorage.setItem('nombre', res.nombreCompleto);
+  localStorage.setItem('email', res.email);
+  localStorage.setItem('userId', res.id.toString());
+}
    
-  // Descomprimir JSON desde sessionStorage.
-
   getToken(): string | null {
     return localStorage.getItem('token'); 
   }

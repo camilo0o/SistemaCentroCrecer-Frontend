@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -43,7 +43,8 @@ export class RegistroComponent implements OnInit {
     private http: HttpClient,
     private router: Router,
     private toast: ToastService,
-    private rolService: RolService
+    private rolService: RolService,
+    private cdr: ChangeDetectorRef 
   ) {}
 
   ngOnInit() {
@@ -61,7 +62,7 @@ export class RegistroComponent implements OnInit {
       email:           ['', [Validators.required, Validators.email]],
       telefono:        [''],
       fechaNacimiento: [''],
-      contrasenia:     ['', [Validators.required, Validators.minLength(8)]],
+      contrasenia:     ['', [Validators.required, Validators.minLength(10)]],
     };
 
     if (this.tipoRegistro === 'funcionario') {
@@ -79,13 +80,22 @@ export class RegistroComponent implements OnInit {
   registrar() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.cargando = true;
+
+    const value = { ...this.form.value };
+    if (value.fechaNacimiento) {
+      const d = new Date(value.fechaNacimiento);
+      value.fechaNacimiento = d.toISOString().split('T')[0];
+    }
+
     const endpoint = this.tipoRegistro === 'responsable'
       ? `${environment.apiUrl}/responsables`
       : `${environment.apiUrl}/funcionarios`;
-    this.http.post(endpoint, this.form.value).subscribe({
+
+    this.http.post(endpoint, value).subscribe({
       next: () => {
         this.cargando = false;
         this.exito = true;
+        this.cdr.detectChanges();
         this.toast.success('¡Cuenta creada exitosamente!');
       },
       error: (err) => {
@@ -93,8 +103,9 @@ export class RegistroComponent implements OnInit {
         this.toast.error(err.error?.error || 'Error al registrarse. Intentá de nuevo.');
       }
     });
-  }
+}
 
   getRolDisplay(nombre: string) { return ROL_DISPLAY[nombre] ?? nombre; }
   irLogin() { this.router.navigate(['/iniciarSesion']); }
 }
+

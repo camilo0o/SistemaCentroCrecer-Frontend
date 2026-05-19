@@ -10,7 +10,7 @@ export const authGuard: CanActivateFn = (route, state) => {
   if (authService.isLoggedIn()) {
     return true;
   }
-  router.navigate(['/Iniciar-Sesion']);
+  router.navigate(['/iniciarSesion']);
   return false;
 };
 
@@ -18,7 +18,7 @@ export const adminGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
   if (!auth.isLoggedIn()) { 
-    router.navigate(['/Iniciar-Sesion']); return false; 
+    router.navigate(['/iniciarSesion']); return false; 
   }
   if (auth.isAdmin()) return true;
   router.navigate(['/dashboard/funcionario']);
@@ -31,7 +31,7 @@ export const rolGuard = (rolesPermitidos: string[]): CanActivateFn => {
     const router = inject(Router);
  
     if (!authService.isLoggedIn()) {
-      router.navigate(['/Iniciar-Sesion']);
+      router.navigate(['/iniciarSesion']);
       return false;
     }
  

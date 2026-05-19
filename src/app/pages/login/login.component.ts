@@ -59,7 +59,7 @@ export class LoginComponent {
       ? this.authService.loginFuncionario(this.form.value)
       : this.authService.loginResponsable(this.form.value);
     peticion.subscribe({
-      next: (res) => { this.cargando = false; this.toast.success('¡Bienvenido/a, ' + res.nombreCompleto + '!'); this.redirect(res.rol); },
+      next: (res) => {this.cargando = false; this.toast.success('¡Bienvenido/a, ' + res.nombreCompleto + '!'); setTimeout(() => this.redirect(res.rol), 0); },
       error: (err) => { this.cargando = false; this.error = err.error?.error || 'Credenciales incorrectas. Intentá de nuevo.'; }
     });
   }

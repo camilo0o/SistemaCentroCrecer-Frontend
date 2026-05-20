@@ -2,6 +2,20 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
+const ROLES_FUNCIONARIO = [
+  'ADMINISTRADOR_SISTEMA','COORDINADORA','PSICOLOGO',
+  'MAESTRA','ASISTENTE_SOCIAL','TALLERISTA_EXPRESION_PLASTICA',
+  'TALLERISTA_PSICOMOTRICIDAD','COCINERA','AUXILIAR_LIMPIEZA'
+];
+
+function redirectSegunRol(auth: AuthService, router: Router): false {
+  const rol = auth.getRol();
+  if (!rol) { router.navigate(['/iniciarSesion']); return false; }
+  if (rol === 'ADMINISTRADOR_SISTEMA') router.navigate(['/admin/dashboard']);
+  else if (rol === 'RESPONSABLE')      router.navigate(['/dashboard/responsable']);
+  else                                 router.navigate(['/dashboard/funcionario']);
+  return false;
+}
 
 export const authGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
@@ -17,29 +31,36 @@ export const authGuard: CanActivateFn = (route, state) => {
 export const adminGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  if (!auth.isLoggedIn()) { 
-    router.navigate(['/iniciarSesion']); return false; 
-  }
+  if (!auth.isLoggedIn()) { router.navigate(['/iniciarSesion']); return false; }
   if (auth.isAdmin()) return true;
-  router.navigate(['/dashboard/funcionario']);
-  return false;
+  return redirectSegunRol(auth, router);
 };
+
+export const funcionarioGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if (!auth.isLoggedIn()) { router.navigate(['/iniciarSesion']); return false; }
+  const rol = auth.getRol();
+  if (rol && ROLES_FUNCIONARIO.includes(rol)) return true;
+  return redirectSegunRol(auth, router);
+};
+
+export const responsableGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if (!auth.isLoggedIn()) { router.navigate(['/iniciarSesion']); return false; }
+  if (auth.getRol() === 'RESPONSABLE') return true;
+  return redirectSegunRol(auth, router);
+};
+
  
 export const rolGuard = (rolesPermitidos: string[]): CanActivateFn => {
   return () => {
-    const authService = inject(AuthService);
+    const auth = inject(AuthService);
     const router = inject(Router);
- 
-    if (!authService.isLoggedIn()) {
-      router.navigate(['/iniciarSesion']);
-      return false;
-    }
- 
-    const rol = authService.getRol();
+    if (!auth.isLoggedIn()) { router.navigate(['/iniciarSesion']); return false; }
+    const rol = auth.getRol();
     if (rol && rolesPermitidos.includes(rol)) return true;
-    if (authService.isAdmin()) router.navigate(['/dashboard/admin']);
-    else router.navigate(['/dashboard/funcionario']);
-    // Redirigir al dashboard correspondiente
-    return false;
+    return redirectSegunRol(auth, router);
   };
 };

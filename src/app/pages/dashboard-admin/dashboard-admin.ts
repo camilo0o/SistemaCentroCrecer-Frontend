@@ -13,7 +13,6 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { DashboardService } from '../../services/dashboard.service';
 import { AuthService } from '../../services/auth.service';
 import { AdminStats } from '../../models/models';
-import { Sidebar } from '../../shared/components/sidebar/sidebar';
 
 @Component({
   selector: 'app-dashboard-admin',
@@ -22,8 +21,7 @@ import { Sidebar } from '../../shared/components/sidebar/sidebar';
     CommonModule, RouterModule,
     MatCardModule, MatButtonModule, MatIconModule,
     MatProgressBarModule, MatChipsModule, MatDividerModule,
-    MatListModule, MatToolbarModule, MatProgressSpinnerModule,
-    Sidebar
+    MatListModule, MatToolbarModule, MatProgressSpinnerModule
   ],
   templateUrl: './dashboard-admin.html',
   styleUrl: './dashboard-admin.css'

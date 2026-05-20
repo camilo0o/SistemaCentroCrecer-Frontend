@@ -51,21 +51,45 @@ export class LoginComponent {
   seleccionarTipo(tipo: 'funcionario' | 'responsable') { this.tipoUsuario = tipo; this.error = ''; }
   togglePassword() { this.mostrarPassword = !this.mostrarPassword; }
 
-  iniciarSesion() {
+ iniciarSesion() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.cargando = true;
     this.error = '';
+
     const peticion = this.tipoUsuario === 'funcionario'
       ? this.authService.loginFuncionario(this.form.value)
       : this.authService.loginResponsable(this.form.value);
+
     peticion.subscribe({
-      next: (res) => {this.cargando = false; this.toast.success('¡Bienvenido/a, ' + res.nombreCompleto + '!'); setTimeout(() => this.redirect(res.rol), 0); },
-      error: (err) => { this.cargando = false; this.error = err.error?.error || 'Credenciales incorrectas. Intentá de nuevo.'; }
+      next: (res) => {
+        this.cargando = false;
+
+        const esResponsable = res.rol === 'RESPONSABLE';
+
+        // Validar que el tipo seleccionado coincida con el rol recibido
+        if (this.tipoUsuario === 'responsable' && !esResponsable) {
+          this.authService.logout();
+          this.error = 'Esta cuenta no es de responsable. Usá la pestaña Funcionario.';
+          return;
+        }
+        if (this.tipoUsuario === 'funcionario' && esResponsable) {
+          this.authService.logout();
+          this.error = 'Esta cuenta no es de funcionario. Usá la pestaña Responsable.';
+          return;
+        }
+
+        this.toast.success('¡Bienvenido/a, ' + res.nombreCompleto + '!');
+        setTimeout(() => this.redirect(res.rol), 0);
+      },
+      error: (err) => {
+        this.cargando = false;
+        this.error = err.error?.error || 'Credenciales incorrectas. Intentá de nuevo.';
+      }
     });
   }
 
   private redirect(rol: string | null) {
-    if (rol === 'ADMINISTRADOR_SISTEMA') this.router.navigate(['/dashboard/admin']);
+    if (rol === 'ADMINISTRADOR_SISTEMA') this.router.navigate(['/admin/dashboard']);
     else if (rol === 'RESPONSABLE')      this.router.navigate(['/dashboard/responsable']);
     else                                 this.router.navigate(['/dashboard/funcionario']);
   }

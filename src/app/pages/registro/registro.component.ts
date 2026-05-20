@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -31,61 +31,48 @@ import { Rol, ROL_DISPLAY } from '../../models/models';
   styleUrl: './registro.component.css',
 })
 export class RegistroComponent implements OnInit {
-  tipoRegistro: 'responsable' | 'funcionario' = 'responsable';
   form!: FormGroup;
   cargando = false;
   exito = false;
   mostrarPass = false;
-  roles: Rol[] = [];
 
   constructor(
     private fb: FormBuilder,
     private http: HttpClient,
     private router: Router,
     private toast: ToastService,
-    private rolService: RolService
+    private rolService: RolService,
+    private cdr: ChangeDetectorRef 
   ) {}
 
   ngOnInit() {
-    this.rolService.listarActivos().subscribe(r =>
-      this.roles = r.filter(x => x.nombre !== 'ADMINISTRADOR_SISTEMA')
-    );
-    this.buildForm();
-  }
-
-  buildForm() {
-    const base = {
+    this.form = this.fb.group({
       nombre:          ['', [Validators.required, Validators.minLength(2)]],
       apellido:        ['', [Validators.required, Validators.minLength(2)]],
       cedula:          ['', [Validators.required, Validators.pattern('^[0-9]+$')]],
       email:           ['', [Validators.required, Validators.email]],
       telefono:        [''],
       fechaNacimiento: [''],
-      contrasenia:     ['', [Validators.required, Validators.minLength(8)]],
-    };
-
-    if (this.tipoRegistro === 'funcionario') {
-      this.form = this.fb.group({ ...base, rolId: [null, Validators.required] });
-    } else {
-      this.form = this.fb.group(base);
-    }
-  }
-
-  seleccionarTipo(tipo: 'responsable' | 'funcionario') {
-    this.tipoRegistro = tipo;
-    this.buildForm();
+      contrasenia:     ['', [Validators.required, Validators.minLength(10)]],
+    });
   }
 
   registrar() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.cargando = true;
-    const endpoint = this.tipoRegistro === 'responsable'
-      ? `${environment.apiUrl}/responsables`
-      : `${environment.apiUrl}/funcionarios`;
-    this.http.post(endpoint, this.form.value).subscribe({
+
+    const value = { ...this.form.value };
+    if (value.fechaNacimiento) {
+      const d = new Date(value.fechaNacimiento);
+      value.fechaNacimiento = d.toISOString().split('T')[0];
+    }
+
+    
+    this.http.post(`${environment.apiUrl}/responsables`, value).subscribe({
       next: () => {
         this.cargando = false;
         this.exito = true;
+        this.cdr.detectChanges();
         this.toast.success('¡Cuenta creada exitosamente!');
       },
       error: (err) => {
@@ -93,8 +80,9 @@ export class RegistroComponent implements OnInit {
         this.toast.error(err.error?.error || 'Error al registrarse. Intentá de nuevo.');
       }
     });
-  }
+}
 
   getRolDisplay(nombre: string) { return ROL_DISPLAY[nombre] ?? nombre; }
   irLogin() { this.router.navigate(['/iniciarSesion']); }
 }
+

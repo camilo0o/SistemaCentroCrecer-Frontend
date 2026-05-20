@@ -1,151 +1,134 @@
-<div class="app-shell">
+<mat-toolbar color="primary" style="justify-content:space-between; flex-shrink:0">
+  <span>{{ saludoHora }}, {{ nombre.split(' ')[0] }} 👋</span>
+  <mat-chip-set>
+    <mat-chip>
+      <mat-icon matChipAvatar>admin_panel_settings</mat-icon>
+      Administrador del Sistema
+    </mat-chip>
+  </mat-chip-set>
+</mat-toolbar>
 
-  <div class="main-content">
+<div class="page-content">
 
-    <!-- Toolbar -->
-    <mat-toolbar color="primary" style="justify-content:space-between; flex-shrink:0">
-      <span>{{ saludoHora }}, {{ nombre.split(' ')[0] }} 👋</span>
-      <mat-chip-set>
-        <mat-chip>
-          <mat-icon matChipAvatar>admin_panel_settings</mat-icon>
-          Administrador del Sistema
-        </mat-chip>
-      </mat-chip-set>
-    </mat-toolbar>
-
-    <div class="page-content">
-
-      <!-- Loading -->
-      @if (cargando) {
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px;gap:24px">
-          <mat-spinner diameter="48"></mat-spinner>
-          <p style="color:#5C6680">Cargando estadísticas...</p>
-        </div>
-      }
-
-      @if (!cargando && stats) {
-
-        <!-- Fecha -->
-        <p style="color:#5C6680;font-size:13px;margin-bottom:20px;text-transform:capitalize">{{ fechaFormateada }}</p>
-
-        <!-- Stat cards -->
-        <div class="stat-grid">
-          @for (card of statCards; track card.label) {
-            <mat-card appearance="outlined">
-              <mat-card-content style="display:flex;align-items:center;gap:16px;padding:20px">
-                <div class="stat-icon-wrap" [style.background]="card.bg" [style.color]="card.color">
-                  <mat-icon>{{ card.icon }}</mat-icon>
-                </div>
-                <div>
-                  <div class="stat-value">{{ card.value }}</div>
-                  <div class="stat-label">{{ card.label }}</div>
-                  <div class="stat-sub">{{ card.sub }}</div>
-                </div>
-              </mat-card-content>
-            </mat-card>
-          }
-
-          <!-- Cobertura card -->
-          <mat-card appearance="outlined">
-            <mat-card-content style="display:flex;align-items:center;gap:16px;padding:20px">
-              <div class="stat-icon-wrap"
-                [style.background]="stats.coberturaPorcentaje >= 80 ? '#E8F5E9' : '#FFEBEE'"
-                [style.color]="stats.coberturaPorcentaje >= 80 ? '#2E7D32' : '#C62828'">
-                <mat-icon>verified_user</mat-icon>
-              </div>
-              <div style="flex:1">
-                <div class="stat-value">{{ stats.coberturaPorcentaje }}%</div>
-                <div class="stat-label">Cobertura Personal</div>
-                <mat-progress-bar
-                  style="margin-top:8px;border-radius:4px"
-                  [color]="coberturaColor"
-                  [value]="stats.coberturaPorcentaje">
-                </mat-progress-bar>
-              </div>
-            </mat-card-content>
-          </mat-card>
-        </div>
-
-        <!-- Quick actions -->
-        <p class="section-label">Acciones Rápidas</p>
-        <div class="actions-grid">
-          <mat-card appearance="outlined" class="action-card" routerLink="/usuarios">
-            <mat-card-content style="display:flex;align-items:center;gap:16px;padding:16px">
-              <mat-icon color="primary" style="font-size:32px;width:32px;height:32px">people</mat-icon>
-              <div style="flex:1">
-                <mat-card-title style="font-size:14px">Gestionar Usuarios</mat-card-title>
-                <mat-card-subtitle>Crear, editar o dar de baja funcionarios</mat-card-subtitle>
-              </div>
-              <mat-icon color="primary">chevron_right</mat-icon>
-            </mat-card-content>
-          </mat-card>
-
-          <mat-card appearance="outlined" class="action-card" routerLink="/turnos">
-            <mat-card-content style="display:flex;align-items:center;gap:16px;padding:16px">
-              <mat-icon style="font-size:32px;width:32px;height:32px;color:#FF6F00">calendar_today</mat-icon>
-              <div style="flex:1">
-                <mat-card-title style="font-size:14px">Gestionar Turnos</mat-card-title>
-                <mat-card-subtitle>Asignar y controlar horarios</mat-card-subtitle>
-              </div>
-              <mat-icon style="color:#FF6F00">chevron_right</mat-icon>
-            </mat-card-content>
-          </mat-card>
-
-          <mat-card appearance="outlined" class="action-card" routerLink="/reportes">
-            <mat-card-content style="display:flex;align-items:center;gap:16px;padding:16px">
-              <mat-icon style="font-size:32px;width:32px;height:32px;color:#7B1FA2">bar_chart</mat-icon>
-              <div style="flex:1">
-                <mat-card-title style="font-size:14px">Ver Reportes</mat-card-title>
-                <mat-card-subtitle>Estadísticas y exportaciones</mat-card-subtitle>
-              </div>
-              <mat-icon style="color:#7B1FA2">chevron_right</mat-icon>
-            </mat-card-content>
-          </mat-card>
-        </div>
-
-        <!-- Info + Roles -->
-        <div class="info-grid">
-
-          <!-- Resumen sistema -->
-          <mat-card appearance="outlined">
-            <mat-card-header>
-              <mat-icon mat-card-avatar>info</mat-icon>
-              <mat-card-title>Resumen del Sistema</mat-card-title>
-            </mat-card-header>
-            <mat-divider></mat-divider>
-            <mat-card-content>
-              <mat-list>
-                @for (item of infoItems; track item.text) {
-                  <mat-list-item>
-                    <mat-icon matListItemIcon [style.color]="item.color">{{ item.icon }}</mat-icon>
-                    <span matListItemTitle style="white-space:normal;font-size:13px">{{ item.text }}</span>
-                  </mat-list-item>
-                }
-              </mat-list>
-            </mat-card-content>
-          </mat-card>
-
-          <!-- Jerarquía de roles -->
-          <mat-card appearance="outlined">
-            <mat-card-header>
-              <mat-icon mat-card-avatar>account_tree</mat-icon>
-              <mat-card-title>Jerarquía de Roles</mat-card-title>
-            </mat-card-header>
-            <mat-divider></mat-divider>
-            <mat-card-content>
-              <mat-list>
-                @for (rol of roleHierarchy; track rol.label) {
-                  <mat-list-item [style.padding-left]="(rol.indent * 16) + 'px'">
-                    <mat-icon matListItemIcon [color]="rol.color">{{ rol.icon }}</mat-icon>
-                    <span matListItemTitle style="font-size:13px">{{ rol.label }}</span>
-                  </mat-list-item>
-                }
-              </mat-list>
-            </mat-card-content>
-          </mat-card>
-
-        </div>
-      }
+  @if (cargando) {
+    <div class="loading-wrap">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p>Cargando estadísticas...</p>
     </div>
-  </div>
+  }
+
+  @if (!cargando && stats) {
+
+    <p class="fecha-label">{{ fechaFormateada }}</p>
+
+    <div class="stat-grid">
+      @for (card of statCards; track card.label) {
+        <mat-card appearance="outlined">
+          <mat-card-content class="stat-card-content">
+            <div class="stat-icon-wrap" [style.background]="card.bg" [style.color]="card.color">
+              <mat-icon>{{ card.icon }}</mat-icon>
+            </div>
+            <div>
+              <div class="stat-value">{{ card.value }}</div>
+              <div class="stat-label">{{ card.label }}</div>
+              <div class="stat-sub">{{ card.sub }}</div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
+
+      <mat-card appearance="outlined">
+        <mat-card-content class="stat-card-content">
+          <div class="stat-icon-wrap"
+            [style.background]="stats.coberturaPorcentaje >= 80 ? '#E8F5E9' : '#FFEBEE'"
+            [style.color]="stats.coberturaPorcentaje >= 80 ? '#2E7D32' : '#C62828'">
+            <mat-icon>verified_user</mat-icon>
+          </div>
+          <div class="cobertura-wrap">
+            <div class="stat-value">{{ stats.coberturaPorcentaje }}%</div>
+            <div class="stat-label">Cobertura Personal</div>
+            <mat-progress-bar
+              class="cobertura-bar"
+              [color]="coberturaColor"
+              [value]="stats.coberturaPorcentaje">
+            </mat-progress-bar>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <p class="section-label">Acciones Rápidas</p>
+    <div class="actions-grid">
+      <mat-card appearance="outlined" class="action-card" routerLink="/admin/usuarios">
+        <mat-card-content class="action-card-content">
+          <mat-icon color="primary" class="action-icon">people</mat-icon>
+          <div class="action-text">
+            <mat-card-title class="action-title">Gestionar Usuarios</mat-card-title>
+            <mat-card-subtitle>Crear, editar o dar de baja funcionarios</mat-card-subtitle>
+          </div>
+          <mat-icon color="primary">chevron_right</mat-icon>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card appearance="outlined" class="action-card" routerLink="/admin/turnos">
+        <mat-card-content class="action-card-content">
+          <mat-icon class="action-icon action-icon--orange">calendar_today</mat-icon>
+          <div class="action-text">
+            <mat-card-title class="action-title">Gestionar Turnos</mat-card-title>
+            <mat-card-subtitle>Asignar y controlar horarios</mat-card-subtitle>
+          </div>
+          <mat-icon class="action-icon--orange">chevron_right</mat-icon>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card appearance="outlined" class="action-card" routerLink="/admin/reportes">
+        <mat-card-content class="action-card-content">
+          <mat-icon class="action-icon action-icon--purple">bar_chart</mat-icon>
+          <div class="action-text">
+            <mat-card-title class="action-title">Ver Reportes</mat-card-title>
+            <mat-card-subtitle>Estadísticas y exportaciones</mat-card-subtitle>
+          </div>
+          <mat-icon class="action-icon--purple">chevron_right</mat-icon>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <div class="info-grid">
+      <mat-card appearance="outlined">
+        <mat-card-header>
+          <mat-icon mat-card-avatar>info</mat-icon>
+          <mat-card-title>Resumen del Sistema</mat-card-title>
+        </mat-card-header>
+        <mat-divider></mat-divider>
+        <mat-card-content>
+          <mat-list>
+            @for (item of infoItems; track item.text) {
+              <mat-list-item>
+                <mat-icon matListItemIcon [style.color]="item.color">{{ item.icon }}</mat-icon>
+                <span matListItemTitle class="info-text">{{ item.text }}</span>
+              </mat-list-item>
+            }
+          </mat-list>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card appearance="outlined">
+        <mat-card-header>
+          <mat-icon mat-card-avatar>account_tree</mat-icon>
+          <mat-card-title>Jerarquía de Roles</mat-card-title>
+        </mat-card-header>
+        <mat-divider></mat-divider>
+        <mat-card-content>
+          <mat-list>
+            @for (rol of roleHierarchy; track rol.label) {
+              <mat-list-item [style.padding-left]="(rol.indent * 16) + 'px'">
+                <mat-icon matListItemIcon [color]="rol.color">{{ rol.icon }}</mat-icon>
+                <span matListItemTitle class="info-text">{{ rol.label }}</span>
+              </mat-list-item>
+            }
+          </mat-list>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
 </div>

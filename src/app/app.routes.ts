@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { adminGuard, authGuard, rolGuard } from './guards/auth-guard';
+import { adminGuard, authGuard, funcionarioGuard, responsableGuard, rolGuard } from './guards/auth-guard';
 import { Home } from './pages/home/home';
 
 
@@ -36,7 +36,7 @@ export const routes: Routes = [
     path: 'dashboard/funcionario',
     loadComponent: () =>
       import('./pages/dashboard-funcionario/dashboard-funcionario').then(m => m.DashboardFuncionarioComponent),
-    canActivate: [authGuard, rolGuard(['FUNCIONARIO'])]
+    canActivate: [funcionarioGuard]
   },
  
   // Dashboard para responsables (padres/tutores)
@@ -44,36 +44,25 @@ export const routes: Routes = [
     path: 'dashboard/responsable',
     loadComponent: () =>
       import('./pages/dashboard-responsable/dashboard-responsable').then(m => m.DashboardResponsableComponent),
-    canActivate: [authGuard, rolGuard(['RESPONSABLE'])]
+    canActivate: [responsableGuard]
   },
   // Dashboard para administradores
   {
-    path: 'dashboard/admin',
+    path: 'admin',
     loadComponent: () =>
-      import('./pages/dashboard-admin/dashboard-admin').then(m => m.DashboardAdminComponent),
-    canActivate: [adminGuard]
+      import('./layouts/admin-layout/admin-layout').then(m => m.AdminLayoutComponent),
+    canActivate: [adminGuard],
+    children: [
+      { path: 'dashboard', loadComponent: () =>
+          import('./pages/dashboard-admin/dashboard-admin').then(m => m.DashboardAdminComponent) },
+      { path: 'usuarios', loadComponent: () =>
+          import('./pages/usuarios/usuarios').then(m => m.UsuariosComponent) },
+      { path: 'turnos', loadComponent: () =>
+          import('./pages/turnos/turnos').then(m => m.TurnosComponent) },
+      { path: 'reportes', loadComponent: () =>
+          import('./pages/reportes/reportes').then(m => m.ReportesComponent) },
+    ]
   },
-
-    {
-    path: 'usuarios',
-    loadComponent: () =>
-      import('./pages/usuarios/usuarios').then(m => m.UsuariosComponent),
-    canActivate: [adminGuard]
-  },
-
-  {
-    path: 'turnos',
-    loadComponent: () =>
-      import('./pages/turnos/turnos').then(m => m.TurnosComponent),
-    canActivate: [authGuard]
-  },
- 
-  {
-    path: 'reportes',
-    loadComponent: () =>
-      import('./pages/reportes/reportes').then(m => m.ReportesComponent),
-    canActivate: [authGuard]
-  }
  
 ];
  

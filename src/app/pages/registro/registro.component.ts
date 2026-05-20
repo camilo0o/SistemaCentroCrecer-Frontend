@@ -31,12 +31,10 @@ import { Rol, ROL_DISPLAY } from '../../models/models';
   styleUrl: './registro.component.css',
 })
 export class RegistroComponent implements OnInit {
-  tipoRegistro: 'responsable' | 'funcionario' = 'responsable';
   form!: FormGroup;
   cargando = false;
   exito = false;
   mostrarPass = false;
-  roles: Rol[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -48,14 +46,7 @@ export class RegistroComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.rolService.listarActivos().subscribe(r =>
-      this.roles = r.filter(x => x.nombre !== 'ADMINISTRADOR_SISTEMA')
-    );
-    this.buildForm();
-  }
-
-  buildForm() {
-    const base = {
+    this.form = this.fb.group({
       nombre:          ['', [Validators.required, Validators.minLength(2)]],
       apellido:        ['', [Validators.required, Validators.minLength(2)]],
       cedula:          ['', [Validators.required, Validators.pattern('^[0-9]+$')]],
@@ -63,18 +54,7 @@ export class RegistroComponent implements OnInit {
       telefono:        [''],
       fechaNacimiento: [''],
       contrasenia:     ['', [Validators.required, Validators.minLength(10)]],
-    };
-
-    if (this.tipoRegistro === 'funcionario') {
-      this.form = this.fb.group({ ...base, rolId: [null, Validators.required] });
-    } else {
-      this.form = this.fb.group(base);
-    }
-  }
-
-  seleccionarTipo(tipo: 'responsable' | 'funcionario') {
-    this.tipoRegistro = tipo;
-    this.buildForm();
+    });
   }
 
   registrar() {
@@ -87,11 +67,8 @@ export class RegistroComponent implements OnInit {
       value.fechaNacimiento = d.toISOString().split('T')[0];
     }
 
-    const endpoint = this.tipoRegistro === 'responsable'
-      ? `${environment.apiUrl}/responsables`
-      : `${environment.apiUrl}/funcionarios`;
-
-    this.http.post(endpoint, value).subscribe({
+    
+    this.http.post(`${environment.apiUrl}/responsables`, value).subscribe({
       next: () => {
         this.cargando = false;
         this.exito = true;

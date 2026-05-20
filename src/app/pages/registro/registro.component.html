@@ -4,9 +4,7 @@
     <mat-card-header class="registro-header">
       <mat-icon class="header-icon">spa</mat-icon>
       <mat-card-title>Centro Crecer</mat-card-title>
-      <mat-card-subtitle>
-        {{ tipoRegistro === 'responsable' ? 'Crear cuenta de responsable (familiar)' : 'Registrar funcionario' }}
-      </mat-card-subtitle>
+      <mat-card-subtitle>Crear cuenta de responsable (familiar)</mat-card-subtitle>
     </mat-card-header>
 
     <mat-card-content>
@@ -21,20 +19,6 @@
           </button>
         </div>
       } @else {
-
-        <!-- Selector tipo -->
-        <div class="tipo-tabs">
-          <button class="tipo-tab" [class.active]="tipoRegistro==='responsable'"
-            (click)="seleccionarTipo('responsable')" type="button">
-            <mat-icon>family_restroom</mat-icon> Responsable
-          </button>
-          <button class="tipo-tab" [class.active]="tipoRegistro==='funcionario'"
-            (click)="seleccionarTipo('funcionario')" type="button">
-            <mat-icon>badge</mat-icon> Funcionario
-          </button>
-        </div>
-
-        <mat-divider class="divider"></mat-divider>
 
         <form [formGroup]="form" (ngSubmit)="registrar()" class="form-col">
 
@@ -90,21 +74,6 @@
             <mat-datepicker #picker></mat-datepicker>
           </mat-form-field>
 
-          @if(tipoRegistro === 'funcionario') {
-            <mat-form-field appearance="outline">
-              <mat-label>Rol</mat-label>
-              <mat-icon matPrefix>admin_panel_settings</mat-icon>
-              <mat-select formControlName="rolId">
-                @for(rol of roles; track rol.id){
-                  <mat-option [value]="rol.id">{{ getRolDisplay(rol.nombre) }}</mat-option>
-                }
-              </mat-select>
-              @if(form.get('rolId')?.invalid && form.get('rolId')?.touched){
-                <mat-error>Seleccioná un rol</mat-error>
-              }
-            </mat-form-field>
-          }
-
           <mat-form-field appearance="outline">
             <mat-label>Contraseña</mat-label>
             <mat-icon matPrefix>lock</mat-icon>
@@ -113,7 +82,7 @@
               <mat-icon>{{ mostrarPass ? 'visibility_off' : 'visibility' }}</mat-icon>
             </button>
             @if(form.get('contrasenia')?.invalid && form.get('contrasenia')?.touched){
-              <mat-error>Mínimo 8 caracteres</mat-error>
+              <mat-error>Mínimo 10 caracteres</mat-error>
             }
           </mat-form-field>
 
@@ -131,6 +100,7 @@
           ¿Ya tenés cuenta?
           <a routerLink="/iniciarSesion">Iniciar Sesión</a>
         </p>
+
       }
 
     </mat-card-content>

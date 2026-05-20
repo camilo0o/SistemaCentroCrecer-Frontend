@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef  } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -13,6 +13,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { DashboardService } from '../../services/dashboard.service';
 import { AuthService } from '../../services/auth.service';
 import { AdminStats } from '../../models/models';
+import { finalize } from 'rxjs/operators';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-dashboard-admin',
@@ -49,25 +51,26 @@ export class DashboardAdminComponent implements OnInit {
     { icon: 'supervisor_account',color:'#7B1FA2', text: 'Supervisiones cada 2 meses' },
   ];
 
-  constructor(private dashService: DashboardService, public auth: AuthService) {}
+  constructor(private dashService: DashboardService, public auth: AuthService, private cdr: ChangeDetectorRef, private toast: ToastService) {}
 
   ngOnInit() {
-    this.nombre = this.auth.getNombre() ?? 'Administrador';
-    this.dashService.getAdminStats().subscribe({
-      next: (s) => {
-        this.stats = s;
-        this.statCards = [
-          { icon: 'people',         label: 'Funcionarios Activos', value: s.funcionariosActivos, sub: `de ${s.funcionariosTotales} registrados`, color: '#1565C0', bg: '#E3F2FD' },
-          { icon: 'child_care',     label: 'Niños Registrados',    value: s.niniosTotales,        sub: 'en el sistema',    color: '#2E7D32', bg: '#E8F5E9' },
-          { icon: 'schedule',       label: 'Turnos Activos',       value: s.turnosActivos,        sub: 'asignados',        color: '#FF6F00', bg: '#FFF3E0' },
-          { icon: 'groups',         label: 'Grupos Activos',       value: s.gruposActivos,        sub: 'en funcionamiento',color: '#7B1FA2', bg: '#F3E5F5' },
-          { icon: 'event',          label: 'Actividades',          value: s.actividadesTotal,     sub: 'registradas',      color: '#00695C', bg: '#E0F2F1' },
-        ];
-        this.cargando = false;
-      },
-      error: () => { this.cargando = false; }
-    });
-  }
+  this.nombre = this.auth.getNombre() ?? 'Administrador';
+  this.dashService.getAdminStats().pipe(
+    finalize(() => { this.cargando = false; this.cdr.detectChanges(); })
+  ).subscribe({
+    next: (s) => {
+      this.stats = s;
+      this.statCards = [
+        { icon: 'people',         label: 'Funcionarios Activos', value: s.funcionariosActivos, sub: `de ${s.funcionariosTotales} registrados`, color: '#1565C0', bg: '#E3F2FD' },
+        { icon: 'child_care',     label: 'Niños Registrados',    value: s.niniosTotales,        sub: 'en el sistema',    color: '#2E7D32', bg: '#E8F5E9' },
+        { icon: 'schedule',       label: 'Turnos Activos',       value: s.turnosActivos,        sub: 'asignados',        color: '#FF6F00', bg: '#FFF3E0' },
+        { icon: 'groups',         label: 'Grupos Activos',       value: s.gruposActivos,        sub: 'en funcionamiento',color: '#7B1FA2', bg: '#F3E5F5' },
+        { icon: 'event',          label: 'Actividades',          value: s.actividadesTotal,     sub: 'registradas',      color: '#00695C', bg: '#E0F2F1' },
+      ];
+    },
+    error: () => { this.toast.error('Error al cargar estadísticas'); }
+  });
+}
 
   get saludoHora(): string {
     const h = this.ahora.getHours();

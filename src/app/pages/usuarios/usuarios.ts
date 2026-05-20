@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject } from '@angular/core';
+import { Component, OnInit, Inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
@@ -19,6 +19,7 @@ import { FuncionarioService } from '../../services/funcionario.service';
 import { RolService } from '../../services/rol.service';
 import { ToastService } from '../../services/toast.service';
 import { FuncionarioResponse, FuncionarioRequest, Rol, ROL_DISPLAY } from '../../models/models';
+import { finalize } from 'rxjs/operators';
 
 // Dialog Funcionario
 @Component({
@@ -150,7 +151,6 @@ export class FuncionarioDialogComponent {
   standalone: true,
   imports: [
     CommonModule, ReactiveFormsModule, Sidebar,
-
     MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule,
     MatProgressSpinnerModule, MatDialogTitle, MatDialogContent, MatDialogActions
   ],
@@ -206,7 +206,7 @@ export class PasswordDialogComponent {
   }
 }
 
-// Main 
+// Main
 @Component({
   selector: 'app-usuarios',
   standalone: true,
@@ -237,7 +237,8 @@ export class UsuariosComponent implements OnInit {
     private funcionarioService: FuncionarioService,
     private rolService: RolService,
     private dialog: MatDialog,
-    private toast: ToastService
+    private toast: ToastService,
+    private cdr: ChangeDetectorRef 
   ) {}
 
   ngOnInit() {
@@ -247,9 +248,11 @@ export class UsuariosComponent implements OnInit {
 
   cargarFuncionarios() {
     this.cargando = true;
-    this.funcionarioService.listarTodos().subscribe({
-      next: (f) => { this.funcionarios = f; this.aplicarFiltros(); this.cargando = false; },
-      error: () => { this.cargando = false; this.toast.error('Error al cargar funcionarios'); }
+    this.funcionarioService.listarTodos().pipe(
+      finalize(() => { this.cargando = false; this.cdr.detectChanges(); })
+    ).subscribe({
+      next: (f) => { this.funcionarios = f; this.aplicarFiltros(); },
+      error: () => { this.toast.error('Error al cargar funcionarios'); }
     });
   }
 

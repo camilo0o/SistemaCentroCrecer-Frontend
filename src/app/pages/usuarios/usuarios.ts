@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject } from '@angular/core';
+import { Component, OnInit, Inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
@@ -8,6 +8,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDialogModule, MatDialog, MAT_DIALOG_DATA, MatDialogRef, MatDialogTitle, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -19,6 +21,7 @@ import { FuncionarioService } from '../../services/funcionario.service';
 import { RolService } from '../../services/rol.service';
 import { ToastService } from '../../services/toast.service';
 import { FuncionarioResponse, FuncionarioRequest, Rol, ROL_DISPLAY } from '../../models/models';
+import { finalize } from 'rxjs/operators';
 
 // Dialog Funcionario
 @Component({
@@ -28,7 +31,8 @@ import { FuncionarioResponse, FuncionarioRequest, Rol, ROL_DISPLAY } from '../..
     CommonModule, ReactiveFormsModule, Sidebar,
     MatFormFieldModule, MatInputModule, MatSelectModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule,
-    MatDialogTitle, MatDialogContent, MatDialogActions
+    MatDialogTitle, MatDialogContent, MatDialogActions,
+    MatDatepickerModule, MatNativeDateModule
   ],
   template: `
     <h2 mat-dialog-title>{{ data.modo === 'crear' ? 'Nuevo Funcionario' : 'Editar Funcionario' }}</h2>
@@ -56,6 +60,13 @@ import { FuncionarioResponse, FuncionarioRequest, Rol, ROL_DISPLAY } from '../..
         <mat-form-field appearance="outline">
           <mat-label>Teléfono</mat-label>
           <input matInput formControlName="telefono" placeholder="+598 99 000 000">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha de Nacimiento</mat-label>
+          <input matInput [matDatepicker]="picker" formControlName="fechaNacimiento">
+          <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full">
@@ -118,6 +129,7 @@ export class FuncionarioDialogComponent {
       cedula:      [f?.cedula   ?? '', Validators.required],
       email:       [f?.email    ?? '', [Validators.required, Validators.email]],
       telefono:    [f?.telefono ?? ''],
+      fechaNacimiento: [f?.fechaNacimiento ? new Date(f.fechaNacimiento) : null],
       rolId:       [f?.rol?.id  ?? null, Validators.required],
       contrasenia: ['', data.modo === 'crear' ? [Validators.required, Validators.minLength(8)] : [Validators.minLength(8)]]
     });
@@ -132,6 +144,7 @@ export class FuncionarioDialogComponent {
     const payload: FuncionarioRequest = {
       nombre: v.nombre, apellido: v.apellido, cedula: v.cedula,
       email: v.email, telefono: v.telefono, rolId: v.rolId,
+      ...(v.fechaNacimiento ? { fechaNacimiento: (v.fechaNacimiento as Date).toISOString().split('T')[0] } : {}),
       ...(v.contrasenia ? { contrasenia: v.contrasenia } : {})
     };
     const op = this.data.modo === 'crear'
@@ -150,7 +163,6 @@ export class FuncionarioDialogComponent {
   standalone: true,
   imports: [
     CommonModule, ReactiveFormsModule, Sidebar,
-
     MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule,
     MatProgressSpinnerModule, MatDialogTitle, MatDialogContent, MatDialogActions
   ],
@@ -206,7 +218,7 @@ export class PasswordDialogComponent {
   }
 }
 
-// Main 
+// Main
 @Component({
   selector: 'app-usuarios',
   standalone: true,
@@ -237,7 +249,8 @@ export class UsuariosComponent implements OnInit {
     private funcionarioService: FuncionarioService,
     private rolService: RolService,
     private dialog: MatDialog,
-    private toast: ToastService
+    private toast: ToastService,
+    private cdr: ChangeDetectorRef 
   ) {}
 
   ngOnInit() {
@@ -247,9 +260,11 @@ export class UsuariosComponent implements OnInit {
 
   cargarFuncionarios() {
     this.cargando = true;
-    this.funcionarioService.listarTodos().subscribe({
-      next: (f) => { this.funcionarios = f; this.aplicarFiltros(); this.cargando = false; },
-      error: () => { this.cargando = false; this.toast.error('Error al cargar funcionarios'); }
+    this.funcionarioService.listarTodos().pipe(
+      finalize(() => { this.cargando = false; this.cdr.detectChanges(); })
+    ).subscribe({
+      next: (f) => { this.funcionarios = f; this.aplicarFiltros(); },
+      error: () => { this.toast.error('Error al cargar funcionarios'); }
     });
   }
 

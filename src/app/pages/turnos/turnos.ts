@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject } from '@angular/core';
+import { Component, OnInit, Inject, ChangeDetectorRef  } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
@@ -18,6 +18,7 @@ import { FuncionarioService } from '../../services/funcionario.service';
 import { ToastService } from '../../services/toast.service';
 import { TurnoResponse, TurnoRequest, FuncionarioResponse, ROL_DISPLAY } from '../../models/models';
 import { FormsModule } from '@angular/forms';
+import { finalize } from 'rxjs/operators';
 
 // Turno Dialog 
 @Component({
@@ -139,11 +140,12 @@ export class TurnosComponent implements OnInit {
   pageIndex = 0;
 
   constructor(
-    private turnoService: TurnoService,
-    private funcionarioService: FuncionarioService,
-    private dialog: MatDialog,
-    private toast: ToastService
-  ) {}
+  private turnoService: TurnoService,
+  private funcionarioService: FuncionarioService,
+  private dialog: MatDialog,
+  private toast: ToastService,
+  private cdr: ChangeDetectorRef
+) {}
 
   ngOnInit() {
     this.funcionarioService.listarActivos().subscribe(f => this.funcionarios = f);
@@ -151,12 +153,14 @@ export class TurnosComponent implements OnInit {
   }
 
   cargarTurnos() {
-    this.cargando = true;
-    this.turnoService.listarTodos().subscribe({
-      next: (t) => { this.turnos = t; this.aplicarFiltros(); this.cargando = false; },
-      error: () => { this.cargando = false; this.toast.error('Error al cargar turnos'); }
-    });
-  }
+  this.cargando = true;
+  this.turnoService.listarTodos().pipe(
+    finalize(() => { this.cargando = false; this.cdr.detectChanges(); })
+  ).subscribe({
+    next: (t) => { this.turnos = t; this.aplicarFiltros(); },
+    error: () => { this.toast.error('Error al cargar turnos'); }
+  });
+}
 
   aplicarFiltros() {
     let res = [...this.turnos];

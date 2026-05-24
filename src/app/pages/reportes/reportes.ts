@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject } from '@angular/core';
+import { Component, OnInit, Inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -23,6 +23,7 @@ import { FuncionarioService } from '../../services/funcionario.service';
 import { AuthService } from '../../services/auth.service';
 import { environment } from '../../../environments/environment';
 import { ReporteResponse, FuncionarioResponse } from '../../models/models';
+import { finalize } from 'rxjs/operators';
 
 // Crear Reporte Dialog
 @Component({
@@ -117,6 +118,7 @@ export class ReportesComponent implements OnInit {
     private auth: AuthService,
     private funcionarioService: FuncionarioService,
     private dialog: MatDialog,
+    private cdr: ChangeDetectorRef, 
     private toast: ToastService
   ) {}
 
@@ -128,9 +130,11 @@ export class ReportesComponent implements OnInit {
 
   cargarReportes() {
     this.cargando = true;
-    this.http.get<ReporteResponse[]>(`${environment.apiUrl}/reportes`).subscribe({
-      next: (r) => { this.reportes = r; this.aplicarFiltros(); this.cargando = false; },
-      error: () => { this.cargando = false; this.toast.error('Error al cargar reportes'); }
+    this.http.get<ReporteResponse[]>(`${environment.apiUrl}/reportes`).pipe(
+      finalize(() => { this.cargando = false; this.cdr.detectChanges(); })
+    ).subscribe({
+      next: (r) => { this.reportes = r; this.aplicarFiltros(); },
+      error: () => { this.toast.error('Error al cargar reportes'); }
     });
   }
 

@@ -8,6 +8,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDialogModule, MatDialog, MAT_DIALOG_DATA, MatDialogRef, MatDialogTitle, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -29,7 +31,8 @@ import { finalize } from 'rxjs/operators';
     CommonModule, ReactiveFormsModule, Sidebar,
     MatFormFieldModule, MatInputModule, MatSelectModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule,
-    MatDialogTitle, MatDialogContent, MatDialogActions
+    MatDialogTitle, MatDialogContent, MatDialogActions,
+    MatDatepickerModule, MatNativeDateModule
   ],
   template: `
     <h2 mat-dialog-title>{{ data.modo === 'crear' ? 'Nuevo Funcionario' : 'Editar Funcionario' }}</h2>
@@ -57,6 +60,13 @@ import { finalize } from 'rxjs/operators';
         <mat-form-field appearance="outline">
           <mat-label>Teléfono</mat-label>
           <input matInput formControlName="telefono" placeholder="+598 99 000 000">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha de Nacimiento</mat-label>
+          <input matInput [matDatepicker]="picker" formControlName="fechaNacimiento">
+          <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full">
@@ -119,6 +129,7 @@ export class FuncionarioDialogComponent {
       cedula:      [f?.cedula   ?? '', Validators.required],
       email:       [f?.email    ?? '', [Validators.required, Validators.email]],
       telefono:    [f?.telefono ?? ''],
+      fechaNacimiento: [f?.fechaNacimiento ? new Date(f.fechaNacimiento) : null],
       rolId:       [f?.rol?.id  ?? null, Validators.required],
       contrasenia: ['', data.modo === 'crear' ? [Validators.required, Validators.minLength(8)] : [Validators.minLength(8)]]
     });
@@ -133,6 +144,7 @@ export class FuncionarioDialogComponent {
     const payload: FuncionarioRequest = {
       nombre: v.nombre, apellido: v.apellido, cedula: v.cedula,
       email: v.email, telefono: v.telefono, rolId: v.rolId,
+      ...(v.fechaNacimiento ? { fechaNacimiento: (v.fechaNacimiento as Date).toISOString().split('T')[0] } : {}),
       ...(v.contrasenia ? { contrasenia: v.contrasenia } : {})
     };
     const op = this.data.modo === 'crear'

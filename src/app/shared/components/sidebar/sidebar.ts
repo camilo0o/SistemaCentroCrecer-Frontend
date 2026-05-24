@@ -33,6 +33,7 @@ export class Sidebar implements OnInit {
   { label: 'Usuarios',  icon: 'groups',         route: '/admin/usuarios' },
   { label: 'Turnos',    icon: 'calendar_month', route: '/admin/turnos' },
   { label: 'Reportes',  icon: 'analytics',      route: '/admin/reportes' },
+  { label: 'Niños',     icon: 'child_care',      route: '/admin/ninios' },
 ];
 
   funcionarioItems: NavItem[] = [

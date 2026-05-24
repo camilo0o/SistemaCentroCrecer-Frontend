@@ -50,6 +50,34 @@ export interface FuncionarioResponse {
   grupos?: GrupoResponse[];
 }
 
+// Niño models
+export interface NinioRequest {
+  id: number;
+  cedula: string;
+  nombre: string;
+  sexo: string;
+  direccion?: string;
+  observaciones?: string;
+  fechaNacimiento?: string;
+  activo: boolean;
+  fechaBaja?: string;
+  grupo: GrupoResponse[];
+}
+
+export interface NinioResponse {
+  id: number;
+  cedula: string;
+  nombre: string;
+  apellido: string;
+  sexo: string;
+  direccion?: string;
+  observaciones?: string;
+  fechaNacimiento?: string;
+  activo: boolean;
+  fechaBaja?: string;
+  grupo?: GrupoResponse;
+}
+
 // Grupo model
 export interface GrupoResponse {
   id: number;

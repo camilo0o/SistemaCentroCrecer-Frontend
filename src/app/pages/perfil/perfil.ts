@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -9,6 +9,8 @@ import { PerfilService } from '../../services/perfil.service';
 import { ToastService } from '../../services/toast.service';
 import { Sidebar } from '../../shared/components/sidebar/sidebar';
 import { environment } from '../../../environments/environment';
+import { finalize } from 'rxjs/operators';
+
 
 @Component({
   selector: 'app-perfil',
@@ -41,7 +43,6 @@ export class PerfilComponent implements OnInit {
   showNewPassword = false;
   showConfirmPassword = false;
 
-  // Cloudinary config — configurar en environments/environment.ts
   CLOUDINARY_CLOUD_NAME = environment.cloudinaryCloudName;
   CLOUDINARY_UPLOAD_PRESET = environment.cloudinaryUploadPreset;
 
@@ -67,7 +68,8 @@ export class PerfilComponent implements OnInit {
     private fb: FormBuilder,
     private auth: AuthService,
     private perfilService: PerfilService,
-    private toast: ToastService
+    private toast: ToastService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -103,7 +105,9 @@ export class PerfilComponent implements OnInit {
       ? this.perfilService.obtenerResponsable(this.userId)
       : this.perfilService.obtenerFuncionario(this.userId);
 
-    req.subscribe({
+    req.pipe(
+      finalize(() => { this.loading = false; this.cdr.detectChanges(); })
+    ).subscribe({
       next: (data) => {
         this.userData = data;
         this.perfilForm.patchValue({
@@ -113,11 +117,9 @@ export class PerfilComponent implements OnInit {
           telefono: data.telefono ?? '',
           fechaNacimiento: data.fechaNacimiento ?? ''
         });
-        this.loading = false;
       },
       error: () => {
         this.toast.error('No se pudo cargar el perfil');
-        this.loading = false;
       }
     });
   }
@@ -138,18 +140,17 @@ export class PerfilComponent implements OnInit {
       ? this.perfilService.actualizarPerfilResponsable(this.userId, body)
       : this.perfilService.actualizarPerfilFuncionario(this.userId, body);
 
-    req.subscribe({
+    req.pipe(
+      finalize(() => { this.savingPerfil = false; this.cdr.detectChanges(); })
+    ).subscribe({
       next: (updated) => {
         this.userData = { ...this.userData, ...updated };
-        // Update localStorage name
         localStorage.setItem('nombre', `${updated.nombre} ${updated.apellido}`);
         if (updated.fotoPerfil) localStorage.setItem('fotoPerfil', updated.fotoPerfil);
         this.toast.success('Perfil actualizado correctamente');
-        this.savingPerfil = false;
       },
       error: (err) => {
         this.toast.error(err?.error?.message ?? 'Error al actualizar el perfil');
-        this.savingPerfil = false;
       }
     });
   }
@@ -167,15 +168,15 @@ export class PerfilComponent implements OnInit {
       ? this.perfilService.cambiarPasswordResponsable(this.userId, { contraseniaActual, nuevaContrasenia })
       : this.perfilService.cambiarPasswordFuncionario(this.userId, { contraseniaActual, nuevaContrasenia });
 
-    req.subscribe({
+    req.pipe(
+      finalize(() => { this.savingPassword = false; this.cdr.detectChanges(); })
+    ).subscribe({
       next: () => {
         this.toast.success('Contraseña actualizada correctamente');
         this.passwordForm.reset();
-        this.savingPassword = false;
       },
       error: (err) => {
         this.toast.error(err?.error?.message ?? 'Error al cambiar la contraseña');
-        this.savingPassword = false;
       }
     });
   }
@@ -185,7 +186,6 @@ export class PerfilComponent implements OnInit {
     const file = input.files?.[0];
     if (!file) return;
 
-    // Validate
     if (!file.type.startsWith('image/')) {
       this.toast.error('Solo se permiten imágenes');
       return;
@@ -201,7 +201,6 @@ export class PerfilComponent implements OnInit {
       const url = await this.uploadToCloudinary(file);
       this.userData = { ...this.userData, fotoPerfil: url };
 
-      // Auto-save the photo URL
       const body = {
         nombre: this.userData.nombre,
         apellido: this.userData.apellido,
@@ -220,15 +219,19 @@ export class PerfilComponent implements OnInit {
           localStorage.setItem('fotoPerfil', url);
           this.toast.success('Foto de perfil actualizada');
           this.uploadingPhoto = false;
+          this.cdr.detectChanges();
         },
         error: () => {
           this.toast.error('La foto se subió pero no se guardó en el servidor');
           this.uploadingPhoto = false;
+          this.cdr.detectChanges();
         }
       });
     } catch {
       this.toast.error('Error al subir la imagen a Cloudinary');
+    } finally {
       this.uploadingPhoto = false;
+      this.cdr.detectChanges();
     }
   }
 

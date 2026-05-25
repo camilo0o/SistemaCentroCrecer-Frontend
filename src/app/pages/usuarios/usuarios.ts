@@ -85,16 +85,18 @@ import { finalize } from 'rxjs/operators';
           @if(form.get('rolId')?.invalid && form.get('rolId')?.touched){<mat-error>Seleccioná un rol</mat-error>}
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="full">
-          <mat-label>{{ data.modo === 'crear' ? 'Contraseña' : 'Nueva contraseña (vacío = sin cambios)' }}</mat-label>
-          <input matInput [type]="showPass ? 'text' : 'password'" formControlName="contrasenia">
-          <button mat-icon-button matSuffix type="button" (click)="showPass=!showPass">
-            <mat-icon>{{ showPass ? 'visibility_off' : 'visibility' }}</mat-icon>
-          </button>
-          @if(form.get('contrasenia')?.invalid && form.get('contrasenia')?.touched){
-            <mat-error>Mínimo 8 caracteres</mat-error>
-          }
-        </mat-form-field>
+        @if(data.modo === 'crear'){
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Contraseña</mat-label>
+            <input matInput [type]="showPass ? 'text' : 'password'" formControlName="contrasenia">
+            <button mat-icon-button matSuffix type="button" (click)="showPass=!showPass">
+              <mat-icon>{{ showPass ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            @if(form.get('contrasenia')?.invalid && form.get('contrasenia')?.touched){
+              <mat-error>Mínimo 8 caracteres</mat-error>
+            }
+          </mat-form-field>
+        }
       </form>
     </mat-dialog-content>
 
@@ -131,7 +133,7 @@ export class FuncionarioDialogComponent {
       telefono:    [f?.telefono ?? ''],
       fechaNacimiento: [f?.fechaNacimiento ? new Date(f.fechaNacimiento) : null],
       rolId:       [f?.rol?.id  ?? null, Validators.required],
-      contrasenia: ['', data.modo === 'crear' ? [Validators.required, Validators.minLength(8)] : [Validators.minLength(8)]]
+      contrasenia: ['', data.modo === 'crear' ? [Validators.required, Validators.minLength(8)] : []]
     });
   }
 

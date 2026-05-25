@@ -1,0 +1,263 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { AuthService } from '../../services/auth.service';
+import { PerfilService } from '../../services/perfil.service';
+import { ToastService } from '../../services/toast.service';
+import { Sidebar } from '../../shared/components/sidebar/sidebar';
+import { environment } from '../../../environments/environment';
+
+@Component({
+  selector: 'app-perfil',
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    RouterModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+    Sidebar
+  ],
+  templateUrl: './perfil.html',
+  styleUrl: './perfil.css'
+})
+export class PerfilComponent implements OnInit {
+  perfilForm!: FormGroup;
+  passwordForm!: FormGroup;
+
+  userData: any = null;
+  loading = true;
+  savingPerfil = false;
+  savingPassword = false;
+  uploadingPhoto = false;
+
+  activeTab: 'datos' | 'seguridad' = 'datos';
+
+  showCurrentPassword = false;
+  showNewPassword = false;
+  showConfirmPassword = false;
+
+  // Cloudinary config — configurar en environments/environment.ts
+  CLOUDINARY_CLOUD_NAME = environment.cloudinaryCloudName;
+  CLOUDINARY_UPLOAD_PRESET = environment.cloudinaryUploadPreset;
+
+  get isResponsable(): boolean {
+    return this.auth.getRol() === 'RESPONSABLE';
+  }
+
+  get userId(): number {
+    return this.auth.getUserId() ?? 0;
+  }
+
+  get initials(): string {
+    const n = this.userData?.nombre ?? '';
+    const a = this.userData?.apellido ?? '';
+    return ((n[0] ?? '') + (a[0] ?? '')).toUpperCase() || 'U';
+  }
+
+  get nombreCompleto(): string {
+    return `${this.userData?.nombre ?? ''} ${this.userData?.apellido ?? ''}`.trim();
+  }
+
+  constructor(
+    private fb: FormBuilder,
+    private auth: AuthService,
+    private perfilService: PerfilService,
+    private toast: ToastService
+  ) {}
+
+  ngOnInit() {
+    this.initForms();
+    this.loadProfile();
+  }
+
+  private initForms() {
+    this.perfilForm = this.fb.group({
+      nombre: ['', [Validators.required, Validators.minLength(2)]],
+      apellido: ['', [Validators.required, Validators.minLength(2)]],
+      email: ['', [Validators.required, Validators.email]],
+      telefono: [''],
+      fechaNacimiento: ['']
+    });
+
+    this.passwordForm = this.fb.group({
+      contraseniaActual: ['', Validators.required],
+      nuevaContrasenia: ['', [Validators.required, Validators.minLength(8)]],
+      confirmarContrasenia: ['', Validators.required]
+    }, { validators: this.passwordMatchValidator });
+  }
+
+  private passwordMatchValidator(g: AbstractControl) {
+    const nueva = g.get('nuevaContrasenia')?.value;
+    const confirmar = g.get('confirmarContrasenia')?.value;
+    return nueva === confirmar ? null : { passwordMismatch: true };
+  }
+
+  loadProfile() {
+    this.loading = true;
+    const req = this.isResponsable
+      ? this.perfilService.obtenerResponsable(this.userId)
+      : this.perfilService.obtenerFuncionario(this.userId);
+
+    req.subscribe({
+      next: (data) => {
+        this.userData = data;
+        this.perfilForm.patchValue({
+          nombre: data.nombre,
+          apellido: data.apellido,
+          email: data.email,
+          telefono: data.telefono ?? '',
+          fechaNacimiento: data.fechaNacimiento ?? ''
+        });
+        this.loading = false;
+      },
+      error: () => {
+        this.toast.error('No se pudo cargar el perfil');
+        this.loading = false;
+      }
+    });
+  }
+
+  onSavePerfil() {
+    if (this.perfilForm.invalid) {
+      this.perfilForm.markAllAsTouched();
+      return;
+    }
+
+    this.savingPerfil = true;
+    const body = {
+      ...this.perfilForm.value,
+      fotoPerfil: this.userData?.fotoPerfil
+    };
+
+    const req = this.isResponsable
+      ? this.perfilService.actualizarPerfilResponsable(this.userId, body)
+      : this.perfilService.actualizarPerfilFuncionario(this.userId, body);
+
+    req.subscribe({
+      next: (updated) => {
+        this.userData = { ...this.userData, ...updated };
+        // Update localStorage name
+        localStorage.setItem('nombre', `${updated.nombre} ${updated.apellido}`);
+        if (updated.fotoPerfil) localStorage.setItem('fotoPerfil', updated.fotoPerfil);
+        this.toast.success('Perfil actualizado correctamente');
+        this.savingPerfil = false;
+      },
+      error: (err) => {
+        this.toast.error(err?.error?.message ?? 'Error al actualizar el perfil');
+        this.savingPerfil = false;
+      }
+    });
+  }
+
+  onSavePassword() {
+    if (this.passwordForm.invalid) {
+      this.passwordForm.markAllAsTouched();
+      return;
+    }
+
+    this.savingPassword = true;
+    const { contraseniaActual, nuevaContrasenia } = this.passwordForm.value;
+
+    const req = this.isResponsable
+      ? this.perfilService.cambiarPasswordResponsable(this.userId, { contraseniaActual, nuevaContrasenia })
+      : this.perfilService.cambiarPasswordFuncionario(this.userId, { contraseniaActual, nuevaContrasenia });
+
+    req.subscribe({
+      next: () => {
+        this.toast.success('Contraseña actualizada correctamente');
+        this.passwordForm.reset();
+        this.savingPassword = false;
+      },
+      error: (err) => {
+        this.toast.error(err?.error?.message ?? 'Error al cambiar la contraseña');
+        this.savingPassword = false;
+      }
+    });
+  }
+
+  async onPhotoSelect(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    // Validate
+    if (!file.type.startsWith('image/')) {
+      this.toast.error('Solo se permiten imágenes');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      this.toast.error('La imagen no puede superar 5 MB');
+      return;
+    }
+
+    this.uploadingPhoto = true;
+
+    try {
+      const url = await this.uploadToCloudinary(file);
+      this.userData = { ...this.userData, fotoPerfil: url };
+
+      // Auto-save the photo URL
+      const body = {
+        nombre: this.userData.nombre,
+        apellido: this.userData.apellido,
+        email: this.userData.email,
+        telefono: this.userData.telefono,
+        fechaNacimiento: this.userData.fechaNacimiento,
+        fotoPerfil: url
+      };
+
+      const req = this.isResponsable
+        ? this.perfilService.actualizarPerfilResponsable(this.userId, body)
+        : this.perfilService.actualizarPerfilFuncionario(this.userId, body);
+
+      req.subscribe({
+        next: () => {
+          localStorage.setItem('fotoPerfil', url);
+          this.toast.success('Foto de perfil actualizada');
+          this.uploadingPhoto = false;
+        },
+        error: () => {
+          this.toast.error('La foto se subió pero no se guardó en el servidor');
+          this.uploadingPhoto = false;
+        }
+      });
+    } catch {
+      this.toast.error('Error al subir la imagen a Cloudinary');
+      this.uploadingPhoto = false;
+    }
+  }
+
+  private uploadToCloudinary(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', this.CLOUDINARY_UPLOAD_PRESET);
+      formData.append('folder', 'centro-crecer/perfiles');
+
+      fetch(`https://api.cloudinary.com/v1_1/${this.CLOUDINARY_CLOUD_NAME}/image/upload`, {
+        method: 'POST',
+        body: formData
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.secure_url) resolve(data.secure_url);
+          else reject(new Error('Upload failed'));
+        })
+        .catch(reject);
+    });
+  }
+
+  triggerPhotoUpload() {
+    document.getElementById('photoInput')?.click();
+  }
+
+  fieldError(form: FormGroup, field: string): boolean {
+    const c = form.get(field);
+    return !!(c?.invalid && c?.touched);
+  }
+}

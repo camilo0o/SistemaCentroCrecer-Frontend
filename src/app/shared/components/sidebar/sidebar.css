@@ -101,6 +101,24 @@
   gap: 12px;
 
   margin-bottom: 16px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: white;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.user-info-sidebar:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+.user-chevron {
+  font-size: 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+  margin-left: auto;
+  opacity: 0.5;
 }
 
 .user-avatar {
@@ -115,6 +133,15 @@
   justify-content: center;
 
   font-weight: bold;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.user-avatar-img {
+  width: 42px;
+  height: 42px;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .user-name {

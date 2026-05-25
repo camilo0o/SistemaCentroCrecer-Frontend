@@ -44,10 +44,19 @@
   <!-- Footer -->
   <div class="sidebar-footer">
 
-    <div class="user-info-sidebar">
+    <!-- User info — click to go to profile -->
+    <a
+      class="user-info-sidebar"
+      routerLink="/perfil"
+      matTooltip="Ver mi perfil"
+    >
 
       <div class="user-avatar">
-        {{ initials }}
+        @if (fotoPerfil) {
+          <img [src]="fotoPerfil" alt="Avatar" class="user-avatar-img" />
+        } @else {
+          {{ initials }}
+        }
       </div>
 
       <div class="user-details">
@@ -62,7 +71,9 @@
 
       </div>
 
-    </div>
+      <mat-icon class="user-chevron">chevron_right</mat-icon>
+
+    </a>
 
     <button
       class="sidebar-item logout-button"

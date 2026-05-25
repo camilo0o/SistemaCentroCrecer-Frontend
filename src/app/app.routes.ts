@@ -63,6 +63,16 @@ export const routes: Routes = [
           import('./pages/reportes/reportes').then(m => m.ReportesComponent) },
     ]
   },
+
+  // Perfil de usuario (todos los tipos)
+  {
+    path: 'perfil',
+    loadComponent: () =>
+      import('./pages/perfil/perfil').then(m => m.PerfilComponent),
+    canActivate: [authGuard]
+  }
+
+  
  
 ];
  

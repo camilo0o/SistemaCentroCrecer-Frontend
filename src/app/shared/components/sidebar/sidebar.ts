@@ -27,6 +27,7 @@ export class Sidebar implements OnInit {
   nombre: string | null = null;
   rolDisplay = '';
   initials = '';
+  fotoPerfil: string | null = null;
 
   adminItems: NavItem[] = [
   { label: 'Dashboard', icon: 'dashboard',     route: '/admin/dashboard' },
@@ -62,9 +63,20 @@ export class Sidebar implements OnInit {
       ? this.nombre.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
       : 'U';
 
+    // Load photo from localStorage
+    this.fotoPerfil = localStorage.getItem('fotoPerfil');
+
+    // Refresh on navigation (in case photo was updated)
     this.router.events.pipe(
       filter(e => e instanceof NavigationEnd)
-    ).subscribe((e: any) => this.currentRoute = e.urlAfterRedirects);
+    ).subscribe((e: any) => {
+      this.currentRoute = e.urlAfterRedirects;
+      this.nombre = this.auth.getNombre();
+      this.fotoPerfil = localStorage.getItem('fotoPerfil');
+      this.initials = this.nombre
+        ? this.nombre.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
+        : 'U';
+    });
 
     this.currentRoute = this.router.url;
   }

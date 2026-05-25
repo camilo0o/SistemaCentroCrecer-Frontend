@@ -151,4 +151,95 @@ export const ROL_DISPLAY: Record<string, string> = {
   'TALLERISTA_CORPORAL': 'Tallerista Expresión Corporal',
   'AUXILIAR_LIMPIEZA': 'Auxiliar de Limpieza',
   'RESPONSABLE': 'Responsable (Familiar)'
-};
+}
+
+// Empresa externa
+export interface EmpresaExternaResponse {
+  id: number;
+  nombre: string;
+  contacto?: string;
+  telefono?: string;
+  activo: boolean;
+}
+
+// Permiso
+export interface PermisoRequest {
+  ninioId: number;
+  autorizado: boolean;
+  observaciones?: string;
+}
+
+export interface PermisoResponse {
+  id: number;
+  ninioId: number;
+  ninioNombre?: string;
+  autorizado: boolean;
+  observaciones?: string;
+  fechaRegistro: string;
+}
+
+// Actividad
+export type EstadoActividad = 'PLANIFICADA' | 'EN_CURSO' | 'FINALIZADA' | 'CANCELADA';
+
+export interface ActividadRequest {
+  nombre: string;
+  descripcion?: string;
+  fechaDesde: string;    
+  fechaHasta?: string;   
+  horaInicio: string;
+  horaSalida?: string;   
+  lugar: string;
+}
+
+export interface ActividadResponse {
+  id: number;
+  nombre: string;
+  descripcion?: string;
+  fechaDesde: string;
+  fechaHasta?: string;
+  horaInicio: string;
+  horaSalida?: string;
+  lugar?: string;
+  activo: boolean;
+  fechaBaja?: string;
+  ninios?: ParticipanteResponse[];
+  permisos?: PermisoResponse[];
+  empresasExternas?: EmpresaExternaResponse[];
+}
+export interface ParticipanteResponse {
+  id: number;
+  nombre: string;
+  apellido: string;
+  grupoNombre?: string;
+}
+
+// Labels para estados de actividad
+export const ESTADO_ACTIVIDAD_DISPLAY: Record<EstadoActividad, string> = {
+  PLANIFICADA: 'Planificada',
+  EN_CURSO:    'En curso',
+  FINALIZADA:  'Finalizada',
+  CANCELADA:   'Cancelada',
+}
+
+export type TipoEvento = 'ACTIVIDAD' | 'TURNO' | 'REUNION' | 'OTRO';
+ 
+export interface AgendaResponse {
+  id: number;
+  titulo: string;
+  descripcion?: string;
+  fecha: string;           // 'YYYY-MM-DD'
+  horaInicio: string;      // 'HH:mm'
+  horaFin?: string;
+  tipo: TipoEvento;
+  funcionarioNombre?: string;
+  lugar?: string;
+}
+ 
+export const TIPO_EVENTO_DISPLAY: Record<TipoEvento, string> = {
+  ACTIVIDAD: 'Actividad',
+  TURNO:     'Turno',
+  REUNION:   'Reunión',
+  OTRO:      'Otro',
+}
+
+;

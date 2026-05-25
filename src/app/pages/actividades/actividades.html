@@ -1,0 +1,165 @@
+<div class="app-shell">
+  <div class="main-content">
+    <header class="topbar">
+      <div>
+        <h2 class="page-title">Gestión de Actividades</h2>
+        <p class="page-subtitle">Planificación, participantes y permisos</p>
+      </div>
+      <button mat-flat-button class="btn-create" (click)="abrirCrear()">
+        <mat-icon>add_circle</mat-icon> Nueva Actividad
+      </button>
+    </header>
+
+    <div class="page-content">
+      <div class="summary-row">
+        <div class="chip-stat">
+          <span class="chip-num">{{ actividades.length }}</span>
+          <span class="chip-lbl">Total</span>
+        </div>
+        <div class="chip-stat en-curso">
+          <span class="chip-num">{{ totalActivas }}</span>
+          <span class="chip-lbl">Activas</span>
+        </div>
+        <div class="chip-stat planificada">
+          <span class="chip-num">{{ totalInactivas }}</span>
+          <span class="chip-lbl">Inactivas</span>
+        </div>
+      </div>
+
+      <div class="card filters-card">
+        <div class="filters-row">
+          <mat-form-field appearance="outline" class="search-field">
+            <mat-label>Buscar actividad</mat-label>
+            <input matInput [(ngModel)]="busqueda" (ngModelChange)="aplicarFiltros()" placeholder="Nombre, lugar, empresa...">
+            <mat-icon matPrefix>search</mat-icon>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Estado</mat-label>
+            <mat-select [(ngModel)]="filtroActivo" (ngModelChange)="aplicarFiltros()">
+              <mat-option value="todos">Todos</mat-option>
+              <mat-option [value]="true">Activas</mat-option>
+              <mat-option [value]="false">Inactivas</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="card table-card">
+        @if(cargando){
+          <div class="loading-center">
+            <mat-spinner diameter="40"></mat-spinner>
+            <p>Cargando actividades...</p>
+          </div>
+        } @else {
+          <table mat-table [dataSource]="pagina" class="mat-elevation-z0">
+
+            <ng-container matColumnDef="nombre">
+              <th mat-header-cell *matHeaderCellDef>Actividad</th>
+              <td mat-cell *matCellDef="let a">
+                <div class="nombre-cell">
+                  <div class="act-icon">
+                    <mat-icon>event</mat-icon>
+                  </div>
+                  <div>
+                    <div class="act-nombre">{{ a.nombre }}</div>
+                    @if(a.descripcion){
+                      <div class="act-desc">{{ a.descripcion | slice:0:50 }}{{ a.descripcion.length > 50 ? '...' : '' }}</div>
+                    }
+                  </div>
+                </div>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="fecha">
+              <th mat-header-cell *matHeaderCellDef>Fecha</th>
+              <td mat-cell *matCellDef="let a">
+                <span class="fecha-chip">
+                  <mat-icon>calendar_today</mat-icon>
+                  {{ a.fechaDesde }}{{ a.fechaHasta ? ' → ' + a.fechaHasta : '' }}
+                </span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="hora">
+              <th mat-header-cell *matHeaderCellDef>Hora</th>
+              <td mat-cell *matCellDef="let a">
+                <span class="hora-chip">
+                  <mat-icon>access_time</mat-icon>
+                  {{ a.horaInicio }}{{ a.horaSalida ? ' — ' + a.horaSalida : '' }}
+                </span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="lugar">
+              <th mat-header-cell *matHeaderCellDef>Lugar</th>
+              <td mat-cell *matCellDef="let a">
+                <span class="lugar-text">{{ a.lugar ?? '—' }}</span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="empresa">
+              <th mat-header-cell *matHeaderCellDef>Empresa ext.</th>
+              <td mat-cell *matCellDef="let a">
+                @if(a.empresasExternas?.length){
+                  <span class="empresa-chip">
+                    <mat-icon>business</mat-icon>
+                    {{ a.empresasExternas[0].nombre }}{{ a.empresasExternas.length > 1 ? ' +' + (a.empresasExternas.length - 1) : '' }}
+                  </span>
+                } @else {
+                  <span class="sin-empresa">—</span>
+                }
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="participantes">
+              <th mat-header-cell *matHeaderCellDef>Participantes</th>
+              <td mat-cell *matCellDef="let a">
+                <span class="count-chip">
+                  <mat-icon>group</mat-icon>
+                  {{ a.ninios?.length ?? 0 }}
+                </span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef>Acciones</th>
+              <td mat-cell *matCellDef="let a">
+                <div class="acciones-row">
+                  <button mat-icon-button matTooltip="Ver detalle" (click)="verDetalle(a)">
+                    <mat-icon class="icon-view">visibility</mat-icon>
+                  </button>
+                  <button mat-icon-button matTooltip="Editar" (click)="abrirEditar(a)" [disabled]="!a.activo">
+                    <mat-icon class="icon-edit">edit</mat-icon>
+                  </button>
+                  @if(a.activo){
+                    <button mat-icon-button matTooltip="Dar de baja" (click)="darDeBaja(a)">
+                      <mat-icon class="icon-baja">cancel</mat-icon>
+                    </button>
+                  }
+                </div>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnas;" [class.row-inactive]="!row.activo"></tr>
+          </table>
+
+          @if(filtrados.length === 0){
+            <div class="empty-state">
+              <mat-icon>event_busy</mat-icon>
+              <p>No hay actividades registradas</p>
+              <button mat-flat-button class="btn-create" (click)="abrirCrear()">Crear primera actividad</button>
+            </div>
+          }
+
+          <mat-paginator
+            [length]="filtrados.length"
+            [pageSize]="pageSize"
+            [pageSizeOptions]="[5, 10, 25]"
+            (page)="onPage($event)">
+          </mat-paginator>
+        }
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,130 @@
+<div class="app-shell">
+  <div class="main-content">
+
+    <header class="topbar">
+      <div>
+        <h2 class="page-title">Agenda</h2>
+        <p class="page-subtitle">Eventos y actividades del centro</p>
+      </div>
+      <!-- Selector de vista -->
+      <div class="vista-toggle">
+        <button mat-stroked-button [class.active]="vista === 'semana'" (click)="cambiarVista('semana')">
+          <mat-icon>view_week</mat-icon> Semana
+        </button>
+        <button mat-stroked-button [class.active]="vista === 'dia'" (click)="cambiarVista('dia')">
+          <mat-icon>view_day</mat-icon> Día
+        </button>
+      </div>
+    </header>
+
+    <div class="page-content">
+
+      <!-- Barra de navegación -->
+      <div class="nav-bar card">
+        <button mat-icon-button matTooltip="Anterior" (click)="anterior()">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <div class="nav-titulo">
+          <span class="nav-fecha">{{ tituloNavegacion }}</span>
+          @if(cargando){
+            <mat-spinner diameter="16"></mat-spinner>
+          }
+        </div>
+        <button mat-stroked-button class="btn-hoy" (click)="irHoy()">Hoy</button>
+        <button mat-icon-button matTooltip="Siguiente" (click)="siguiente()">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+
+      <!-- Summary -->
+      <div class="summary-row">
+        <div class="chip-stat">
+          <span class="chip-num">{{ totalEventos }}</span>
+          <span class="chip-lbl">{{ vista === 'semana' ? 'Eventos esta semana' : 'Eventos hoy' }}</span>
+        </div>
+        <div class="leyenda-row">
+          <span class="leyenda-item tipo-actividad">Actividad</span>
+          <span class="leyenda-item tipo-turno">Turno</span>
+          <span class="leyenda-item tipo-reunion">Reunión</span>
+          <span class="leyenda-item tipo-otro">Otro</span>
+        </div>
+      </div>
+
+      <!-- ═══ VISTA SEMANAL ══════════════════════════════════════════════ -->
+      @if(vista === 'semana'){
+        <div class="semana-grid">
+          @for(dia of diasDeSemana; track dia.toISOString(); let i = $index){
+            <div class="dia-col" [class.hoy]="esHoy(dia)">
+              <div class="dia-header">
+                <span class="dia-nombre">{{ diasSemana[i] }}</span>
+                <span class="dia-numero" [class.hoy-num]="esHoy(dia)">
+                  {{ dia.getDate() }}
+                </span>
+              </div>
+              <div class="dia-eventos">
+                @if(eventosDelDia(dia).length === 0){
+                  <div class="sin-eventos">—</div>
+                }
+                @for(ev of eventosDelDia(dia); track ev.id){
+                  <div class="evento-card" [ngClass]="tipoClass(ev.tipo)" matTooltip="{{ ev.descripcion ?? '' }}">
+                    <div class="ev-hora">{{ ev.horaInicio }}{{ ev.horaFin ? ' – ' + ev.horaFin : '' }}</div>
+                    <div class="ev-titulo">{{ ev.titulo }}</div>
+                    @if(ev.lugar){
+                      <div class="ev-lugar">
+                        <mat-icon>place</mat-icon>{{ ev.lugar }}
+                      </div>
+                    }
+                    @if(ev.funcionarioNombre){
+                      <div class="ev-func">
+                        <mat-icon>person</mat-icon>{{ ev.funcionarioNombre }}
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ═══ VISTA DIARIA ══════════════════════════════════════════════ -->
+      @if(vista === 'dia'){
+        <div class="card dia-lista-card">
+          @if(!cargando && eventosDiaActual.length === 0){
+            <div class="empty-state">
+              <mat-icon>event_busy</mat-icon>
+              <p>No hay eventos para este día</p>
+            </div>
+          }
+          @for(ev of eventosDiaActual; track ev.id){
+            <div class="dia-lista-row">
+              <div class="dl-hora">
+                <span class="hora-inicio">{{ ev.horaInicio }}</span>
+                @if(ev.horaFin){<span class="hora-fin">{{ ev.horaFin }}</span>}
+              </div>
+              <div class="dl-linea" [ngClass]="tipoClass(ev.tipo)"></div>
+              <div class="dl-contenido">
+                <div class="dl-header">
+                  <span class="dl-titulo">{{ ev.titulo }}</span>
+                  <span class="tipo-badge" [ngClass]="tipoClass(ev.tipo)">{{ tipoDisplay[ev.tipo] }}</span>
+                </div>
+                @if(ev.descripcion){
+                  <div class="dl-desc">{{ ev.descripcion }}</div>
+                }
+                <div class="dl-meta">
+                  @if(ev.lugar){
+                    <span class="dl-meta-item"><mat-icon>place</mat-icon>{{ ev.lugar }}</span>
+                  }
+                  @if(ev.funcionarioNombre){
+                    <span class="dl-meta-item"><mat-icon>person</mat-icon>{{ ev.funcionarioNombre }}</span>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+    </div>
+  </div>
+</div>

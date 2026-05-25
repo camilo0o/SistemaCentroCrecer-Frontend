@@ -1,0 +1,86 @@
+<mat-toolbar color="primary" class="toolbar">
+  <span>Niños registrados</span>
+</mat-toolbar>
+
+<div class="page-content">
+  <div class="top-panel">
+    <mat-card class="summary-card">
+      <div class="summary-row">
+        <div class="summary-item">
+          <span class="summary-label">Total de niños</span>
+          <span class="summary-value">{{ ninios.length }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Activos</span>
+          <span class="summary-value success">{{ totalActivos }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Inactivos</span>
+          <span class="summary-value danger">{{ totalInactivos }}</span>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Buscar</mat-label>
+      <input matInput [(ngModel)]="busqueda" (ngModelChange)="aplicarFiltros()" placeholder="Nombre, cédula, grupo, dirección...">
+      <button mat-icon-button matSuffix *ngIf="busqueda" type="button" (click)="busqueda=''; aplicarFiltros()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </mat-form-field>
+  </div>
+
+  <div *ngIf="cargando" class="loading-wrap">
+    <mat-spinner diameter="40"></mat-spinner>
+    <span>Cargando niños...</span>
+  </div>
+
+  <div *ngIf="!cargando && filtrados.length === 0" class="empty-wrap">
+    <mat-icon class="empty-icon">child_care</mat-icon>
+    <p>No se encontraron niños</p>
+  </div>
+
+  <div class="cards-grid" *ngIf="!cargando && filtrados.length > 0">
+    <mat-card *ngFor="let ninio of filtrados" class="ninio-card" [class.inactivo]="!ninio.activo">
+      <div class="card-header">
+        <div class="card-title">
+          <mat-icon>child_care</mat-icon>
+          <div>
+            <div class="title">{{ getNombreCompleto(ninio) }}</div>
+            <div class="subtitle">{{ ninio.grupo?.nombre || 'Grupo no asignado' }}</div>
+          </div>
+        </div>
+        <mat-chip class="status-chip" [class.status-inactivo]="!ninio.activo">
+          {{ ninio.activo ? 'Activo' : 'Inactivo' }}
+        </mat-chip>
+      </div>
+
+      <mat-card-content>
+        <div class="field-row">
+          <span class="field-label">Cédula</span>
+          <span>{{ ninio.cedula }}</span>
+        </div>
+        <div class="field-row">
+          <span class="field-label">Sexo</span>
+          <span>{{ displaySexo(ninio.sexo) }}</span>
+        </div>
+        <div class="field-row">
+          <span class="field-label">Fecha de nacimiento</span>
+          <span>{{ formatDate(ninio.fechaNacimiento) }}</span>
+        </div>
+        <div class="field-row">
+          <span class="field-label">Rango de edad</span>
+          <span>{{ ninio.grupo?.rangoEdad || '—' }}</span>
+        </div>
+        <div class="field-row">
+          <span class="field-label">Dirección</span>
+          <span>{{ ninio.direccion || '—' }}</span>
+        </div>
+        <div class="field-row">
+          <span class="field-label">Observaciones</span>
+          <span>{{ ninio.observaciones || '—' }}</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

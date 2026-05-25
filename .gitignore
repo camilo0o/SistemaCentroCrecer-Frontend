@@ -44,3 +44,4 @@ __screenshots__/
 Thumbs.db
 # Angular environments (solo prod con credenciales reales)
 src/environments/environment.prod.ts
+src/environments/environment.ts

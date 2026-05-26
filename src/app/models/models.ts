@@ -221,25 +221,30 @@ export const ESTADO_ACTIVIDAD_DISPLAY: Record<EstadoActividad, string> = {
   CANCELADA:   'Cancelada',
 }
 
-export type TipoEvento = 'ACTIVIDAD' | 'TURNO' | 'REUNION' | 'OTRO';
- 
+// Agenda — anotaciones personales del funcionario
 export interface AgendaResponse {
   id: number;
-  titulo: string;
-  descripcion?: string;
   fecha: string;           // 'YYYY-MM-DD'
   horaInicio: string;      // 'HH:mm'
   horaFin?: string;
-  tipo: TipoEvento;
+  descripcion: string;
+  funcionarioId: number;
   funcionarioNombre?: string;
-  lugar?: string;
-}
- 
-export const TIPO_EVENTO_DISPLAY: Record<TipoEvento, string> = {
-  ACTIVIDAD: 'Actividad',
-  TURNO:     'Turno',
-  REUNION:   'Reunión',
-  OTRO:      'Otro',
+  tipoId: number;
+  tipoNombre?: string;
+  activo: boolean;
 }
 
-;
+export interface AgendaRequest {
+  fecha: string;
+  horaInicio: string;
+  horaFin: string;
+  descripcion: string;
+  funcionarioId: number;
+  tipoId: number;
+}
+
+export interface TipoAgendaResponse {
+  id: number;
+  tipo: string;
+}

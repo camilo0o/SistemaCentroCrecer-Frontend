@@ -3,127 +3,169 @@
 
     <header class="topbar">
       <div>
-        <h2 class="page-title">Agenda</h2>
-        <p class="page-subtitle">Eventos y actividades del centro</p>
+        <h2 class="page-title">Mi Agenda</h2>
+        <p class="page-subtitle">Anotaciones personales del funcionario</p>
       </div>
-      <!-- Selector de vista -->
-      <div class="vista-toggle">
-        <button mat-stroked-button [class.active]="vista === 'semana'" (click)="cambiarVista('semana')">
-          <mat-icon>view_week</mat-icon> Semana
-        </button>
-        <button mat-stroked-button [class.active]="vista === 'dia'" (click)="cambiarVista('dia')">
-          <mat-icon>view_day</mat-icon> Día
-        </button>
-      </div>
+      <button mat-flat-button class="btn-create" (click)="abrirCrear()">
+        <mat-icon>add_circle</mat-icon> Nueva anotación
+      </button>
     </header>
 
     <div class="page-content">
 
-      <!-- Barra de navegación -->
-      <div class="nav-bar card">
-        <button mat-icon-button matTooltip="Anterior" (click)="anterior()">
-          <mat-icon>chevron_left</mat-icon>
-        </button>
-        <div class="nav-titulo">
-          <span class="nav-fecha">{{ tituloNavegacion }}</span>
-          @if(cargando){
-            <mat-spinner diameter="16"></mat-spinner>
-          }
-        </div>
-        <button mat-stroked-button class="btn-hoy" (click)="irHoy()">Hoy</button>
-        <button mat-icon-button matTooltip="Siguiente" (click)="siguiente()">
-          <mat-icon>chevron_right</mat-icon>
-        </button>
-      </div>
-
-      <!-- Summary -->
+      <!-- Resumen -->
       <div class="summary-row">
         <div class="chip-stat">
-          <span class="chip-num">{{ totalEventos }}</span>
-          <span class="chip-lbl">{{ vista === 'semana' ? 'Eventos esta semana' : 'Eventos hoy' }}</span>
+          <span class="chip-num">{{ anotaciones.length }}</span>
+          <span class="chip-lbl">Total</span>
         </div>
-        <div class="leyenda-row">
-          <span class="leyenda-item tipo-actividad">Actividad</span>
-          <span class="leyenda-item tipo-turno">Turno</span>
-          <span class="leyenda-item tipo-reunion">Reunión</span>
-          <span class="leyenda-item tipo-otro">Otro</span>
+        <div class="chip-stat activa">
+          <span class="chip-num">{{ totalActivas }}</span>
+          <span class="chip-lbl">Activas</span>
+        </div>
+        <div class="chip-stat inactiva">
+          <span class="chip-num">{{ totalInactivas }}</span>
+          <span class="chip-lbl">Inactivas</span>
         </div>
       </div>
 
-      <!-- ═══ VISTA SEMANAL ══════════════════════════════════════════════ -->
-      @if(vista === 'semana'){
-        <div class="semana-grid">
-          @for(dia of diasDeSemana; track dia.toISOString(); let i = $index){
-            <div class="dia-col" [class.hoy]="esHoy(dia)">
-              <div class="dia-header">
-                <span class="dia-nombre">{{ diasSemana[i] }}</span>
-                <span class="dia-numero" [class.hoy-num]="esHoy(dia)">
-                  {{ dia.getDate() }}
-                </span>
-              </div>
-              <div class="dia-eventos">
-                @if(eventosDelDia(dia).length === 0){
-                  <div class="sin-eventos">—</div>
-                }
-                @for(ev of eventosDelDia(dia); track ev.id){
-                  <div class="evento-card" [ngClass]="tipoClass(ev.tipo)" matTooltip="{{ ev.descripcion ?? '' }}">
-                    <div class="ev-hora">{{ ev.horaInicio }}{{ ev.horaFin ? ' – ' + ev.horaFin : '' }}</div>
-                    <div class="ev-titulo">{{ ev.titulo }}</div>
-                    @if(ev.lugar){
-                      <div class="ev-lugar">
-                        <mat-icon>place</mat-icon>{{ ev.lugar }}
-                      </div>
-                    }
-                    @if(ev.funcionarioNombre){
-                      <div class="ev-func">
-                        <mat-icon>person</mat-icon>{{ ev.funcionarioNombre }}
-                      </div>
-                    }
-                  </div>
-                }
-              </div>
-            </div>
-          }
-        </div>
-      }
+      <!-- Filtros -->
+      <div class="card filters-card">
+        <div class="filters-row">
+          <mat-form-field appearance="outline" class="search-field">
+            <mat-label>Buscar</mat-label>
+            <input matInput [(ngModel)]="busqueda" (ngModelChange)="aplicarFiltros()"
+              placeholder="Descripción, tipo...">
+            <mat-icon matPrefix>search</mat-icon>
+          </mat-form-field>
 
-      <!-- ═══ VISTA DIARIA ══════════════════════════════════════════════ -->
-      @if(vista === 'dia'){
-        <div class="card dia-lista-card">
-          @if(!cargando && eventosDiaActual.length === 0){
-            <div class="empty-state">
-              <mat-icon>event_busy</mat-icon>
-              <p>No hay eventos para este día</p>
-            </div>
-          }
-          @for(ev of eventosDiaActual; track ev.id){
-            <div class="dia-lista-row">
-              <div class="dl-hora">
-                <span class="hora-inicio">{{ ev.horaInicio }}</span>
-                @if(ev.horaFin){<span class="hora-fin">{{ ev.horaFin }}</span>}
-              </div>
-              <div class="dl-linea" [ngClass]="tipoClass(ev.tipo)"></div>
-              <div class="dl-contenido">
-                <div class="dl-header">
-                  <span class="dl-titulo">{{ ev.titulo }}</span>
-                  <span class="tipo-badge" [ngClass]="tipoClass(ev.tipo)">{{ tipoDisplay[ev.tipo] }}</span>
-                </div>
-                @if(ev.descripcion){
-                  <div class="dl-desc">{{ ev.descripcion }}</div>
-                }
-                <div class="dl-meta">
-                  @if(ev.lugar){
-                    <span class="dl-meta-item"><mat-icon>place</mat-icon>{{ ev.lugar }}</span>
-                  }
-                  @if(ev.funcionarioNombre){
-                    <span class="dl-meta-item"><mat-icon>person</mat-icon>{{ ev.funcionarioNombre }}</span>
-                  }
-                </div>
-              </div>
-            </div>
-          }
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Tipo</mat-label>
+            <mat-select [(ngModel)]="filtroTipo" (ngModelChange)="aplicarFiltros()">
+              <mat-option [value]="0">Todos los tipos</mat-option>
+              @for(t of tipos; track t.id){
+                <mat-option [value]="t.id">{{ t.tipo }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Estado</mat-label>
+            <mat-select [(ngModel)]="filtroActivo" (ngModelChange)="aplicarFiltros()">
+              <mat-option value="todos">Todos</mat-option>
+              <mat-option [value]="true">Activas</mat-option>
+              <mat-option [value]="false">Inactivas</mat-option>
+            </mat-select>
+          </mat-form-field>
         </div>
-      }
+      </div>
+
+      <!-- Tabla -->
+      <div class="card table-card">
+        @if(cargando){
+          <div class="loading-center">
+            <mat-spinner diameter="40"></mat-spinner>
+            <p>Cargando agenda...</p>
+          </div>
+        } @else {
+          <table mat-table [dataSource]="pagina" class="mat-elevation-z0">
+
+            <!-- Descripción -->
+            <ng-container matColumnDef="descripcion">
+              <th mat-header-cell *matHeaderCellDef>Descripción</th>
+              <td mat-cell *matCellDef="let a">
+                <div class="desc-cell">
+                  <div class="desc-icon"><mat-icon>notes</mat-icon></div>
+                  <span class="desc-text">
+                    {{ a.descripcion | slice:0:80 }}{{ a.descripcion?.length > 80 ? '...' : '' }}
+                  </span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Tipo -->
+            <ng-container matColumnDef="tipo">
+              <th mat-header-cell *matHeaderCellDef>Tipo</th>
+              <td mat-cell *matCellDef="let a">
+                <span class="tipo-badge">{{ a.tipoNombre ?? '—' }}</span>
+              </td>
+            </ng-container>
+
+            <!-- Fecha -->
+            <ng-container matColumnDef="fecha">
+              <th mat-header-cell *matHeaderCellDef>Fecha</th>
+              <td mat-cell *matCellDef="let a">
+                <span class="fecha-chip">
+                  <mat-icon>calendar_today</mat-icon>
+                  {{ a.fecha ?? '—' }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Hora -->
+            <ng-container matColumnDef="hora">
+              <th mat-header-cell *matHeaderCellDef>Horario</th>
+              <td mat-cell *matCellDef="let a">
+                <span class="hora-chip">
+                  <mat-icon>access_time</mat-icon>
+                  {{ a.horaInicio }}{{ a.horaFin ? ' — ' + a.horaFin : '' }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Estado -->
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <td mat-cell *matCellDef="let a">
+                <span class="estado-badge" [class.activo]="a.activo" [class.inactivo]="!a.activo">
+                  {{ a.activo ? 'Activa' : 'Baja' }}
+                </span>
+              </td>
+            </ng-container>
+
+            <!-- Acciones -->
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef>Acciones</th>
+              <td mat-cell *matCellDef="let a">
+                <div class="acciones-row">
+                  <button mat-icon-button matTooltip="Editar" (click)="abrirEditar(a)" [disabled]="!a.activo">
+                    <mat-icon class="icon-edit">edit</mat-icon>
+                  </button>
+                  @if(a.activo){
+                    <button mat-icon-button matTooltip="Dar de baja" (click)="darDeBaja(a)">
+                      <mat-icon class="icon-baja">cancel</mat-icon>
+                    </button>
+                  } @else {
+                    <button mat-icon-button matTooltip="Reactivar" (click)="darDeAlta(a)">
+                      <mat-icon class="icon-alta">check_circle</mat-icon>
+                    </button>
+                  }
+                </div>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnas;" [class.row-inactive]="!row.activo"></tr>
+          </table>
+
+          @if(filtradas.length === 0){
+            <div class="empty-state">
+              <mat-icon>event_note</mat-icon>
+              <p>No hay anotaciones registradas</p>
+              <button mat-flat-button class="btn-create" (click)="abrirCrear()">
+                Crear primera anotación
+              </button>
+            </div>
+          }
+
+          <mat-paginator
+            [length]="filtradas.length"
+            [pageSize]="pageSize"
+            [pageSizeOptions]="[5, 10, 25]"
+            (page)="onPage($event)">
+          </mat-paginator>
+        }
+      </div>
 
     </div>
   </div>

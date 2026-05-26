@@ -25,7 +25,9 @@ import {
   PermisoResponse
 } from '../../models/models';
 
-// ─── Dialog Crear/Editar Actividad ──────────────────────────────────────────
+type Vista = 'tabla' | 'calendario';
+
+// ─── Dialog Crear/Editar Actividad ───────────────────────────────────────────
 @Component({
   selector: 'app-actividad-dialog',
   standalone: true,
@@ -133,7 +135,7 @@ export class ActividadDialogComponent {
   }
 }
 
-// ─── Dialog Detalle (participantes + permisos) ───────────────────────────────
+// ─── Dialog Detalle ──────────────────────────────────────────────────────────
 @Component({
   selector: 'app-actividad-detalle-dialog',
   standalone: true,
@@ -148,7 +150,6 @@ export class ActividadDialogComponent {
     </div>
     <mat-dialog-content style="padding:24px;min-width:520px;max-height:70vh">
       <mat-tab-group>
-        <!-- Participantes -->
         <mat-tab label="Participantes ({{ data.actividad.ninios?.length ?? 0 }})">
           <div style="padding:16px 0">
             @if(!data.actividad.ninios?.length){
@@ -169,7 +170,6 @@ export class ActividadDialogComponent {
           </div>
         </mat-tab>
 
-        <!-- Permisos -->
         @if(data.actividad.permisos?.length){
           <mat-tab label="Permisos ({{ data.actividad.permisos?.length ?? 0 }})">
             <div style="padding:16px 0">
@@ -191,7 +191,6 @@ export class ActividadDialogComponent {
           </mat-tab>
         }
 
-        <!-- Info general -->
         <mat-tab label="Detalle">
           <div style="padding:16px 0;display:flex;flex-direction:column;gap:12px">
             @if(data.actividad.descripcion){
@@ -231,6 +230,9 @@ export class ActividadDialogComponent {
     .part-grupo { font-size:12px;color:#5C6680 }
     .info-row { display:flex;align-items:flex-start;gap:10px;font-size:14px;color:#374151 }
     .info-row mat-icon { color:#1565C0;font-size:18px;width:18px;height:18px;margin-top:2px }
+    .badge { padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700 }
+    .badge-success { background:#E8F5E9;color:#2E7D32 }
+    .badge-danger  { background:#FFEBEE;color:#C62828 }
   `]
 })
 export class ActividadDetalleDialogComponent {
@@ -254,16 +256,25 @@ export class ActividadDetalleDialogComponent {
   styleUrl: './actividades.css'
 })
 export class ActividadesComponent implements OnInit {
+
+  // ── Estado compartido ──────────────────────────────────────────────────
   actividades: ActividadResponse[] = [];
-  filtrados: ActividadResponse[] = [];
-  pagina: ActividadResponse[] = [];
   empresas: EmpresaExternaResponse[] = [];
   cargando = true;
+  vista: Vista = 'tabla';
+
+  // ── Estado tabla ───────────────────────────────────────────────────────
+  filtrados: ActividadResponse[] = [];
+  pagina: ActividadResponse[] = [];
   busqueda = '';
   filtroActivo: boolean | 'todos' = 'todos';
   columnas = ['nombre', 'fecha', 'hora', 'lugar', 'empresa', 'participantes', 'acciones'];
   pageSize = 10;
   pageIndex = 0;
+
+  // ── Estado calendario ──────────────────────────────────────────────────
+  fechaActual = new Date();
+  readonly diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
   constructor(
     private actividadService: ActividadService,
@@ -287,6 +298,9 @@ export class ActividadesComponent implements OnInit {
     });
   }
 
+  cambiarVista(v: Vista) { this.vista = v; }
+
+  // ── Tabla ──────────────────────────────────────────────────────────────
   aplicarFiltros() {
     let res = [...this.actividades];
     if (this.busqueda) {
@@ -312,6 +326,74 @@ export class ActividadesComponent implements OnInit {
 
   onPage(e: PageEvent) { this.pageIndex = e.pageIndex; this.pageSize = e.pageSize; this.actualizarPagina(); }
 
+  // ── Calendario ─────────────────────────────────────────────────────────
+  get diasDeSemana(): Date[] {
+    const lunes = new Date(this.fechaActual);
+    const dia = lunes.getDay();
+    const diff = dia === 0 ? -6 : 1 - dia;
+    lunes.setDate(lunes.getDate() + diff);
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(lunes);
+      d.setDate(lunes.getDate() + i);
+      return d;
+    });
+  }
+
+  /** Devuelve actividades cuyo rango fechaDesde–fechaHasta incluye el día dado */
+  actividadesDelDia(fecha: Date): ActividadResponse[] {
+    const iso = this.toISODate(fecha);
+    return this.actividades
+      .filter(a => {
+        if (!a.activo) return false;
+        const hasta = a.fechaHasta ?? a.fechaDesde;
+        return iso >= a.fechaDesde && iso <= hasta;
+      })
+      .sort((a, b) => a.horaInicio.localeCompare(b.horaInicio));
+  }
+
+  esMultidia(a: ActividadResponse): boolean {
+    return !!a.fechaHasta && a.fechaHasta !== a.fechaDesde;
+  }
+
+  anteriorSemana() {
+    const d = new Date(this.fechaActual);
+    d.setDate(d.getDate() - 7);
+    this.fechaActual = d;
+  }
+
+  siguienteSemana() {
+    const d = new Date(this.fechaActual);
+    d.setDate(d.getDate() + 7);
+    this.fechaActual = d;
+  }
+
+  irHoy() { this.fechaActual = new Date(); }
+
+  esHoy(fecha: Date): boolean {
+    return fecha.toDateString() === new Date().toDateString();
+  }
+
+  toISODate(d: Date): string {
+    return d.toISOString().split('T')[0];
+  }
+
+  get tituloSemana(): string {
+    const dias = this.diasDeSemana;
+    const lunes   = dias[0].toLocaleDateString('es-UY', { day: 'numeric', month: 'short' });
+    const domingo = dias[6].toLocaleDateString('es-UY', { day: 'numeric', month: 'short', year: 'numeric' });
+    return `${lunes} — ${domingo}`;
+  }
+
+  get actividadesSemana(): number {
+    const isos = new Set(this.diasDeSemana.map(d => this.toISODate(d)));
+    return this.actividades.filter(a => {
+      if (!a.activo) return false;
+      const hasta = a.fechaHasta ?? a.fechaDesde;
+      return [...isos].some(iso => iso >= a.fechaDesde && iso <= hasta);
+    }).length;
+  }
+
+  // ── Acciones compartidas ───────────────────────────────────────────────
   abrirCrear() {
     const ref = this.dialog.open(ActividadDialogComponent, {
       data: { modo: 'crear', empresas: this.empresas }
@@ -340,6 +422,6 @@ export class ActividadesComponent implements OnInit {
     });
   }
 
-  get totalActivas() { return this.actividades.filter(a => a.activo).length; }
+  get totalActivas()   { return this.actividades.filter(a => a.activo).length; }
   get totalInactivas() { return this.actividades.filter(a => !a.activo).length; }
 }

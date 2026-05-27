@@ -48,6 +48,8 @@ export interface FuncionarioResponse {
   fechaBaja?: string;
   rol: Rol;
   grupos?: GrupoResponse[];
+  fotoPerfil?: string;
+  mustChangePassword: boolean | null;
 }
 
 // Niño models
@@ -89,10 +91,25 @@ export interface GrupoResponse {
 }
 
 // Turno models
+/** Valores ISO que devuelve Java DayOfWeek serializado por Jackson */
+export type DiaSemana = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
+
+/** Mapeo de DayOfWeek → etiquetas en español */
+export const DIAS_SEMANA: { valor: DiaSemana; etiqueta: string; abrev: string }[] = [
+  { valor: 'MONDAY',    etiqueta: 'Lunes',     abrev: 'Lun' },
+  { valor: 'TUESDAY',   etiqueta: 'Martes',    abrev: 'Mar' },
+  { valor: 'WEDNESDAY', etiqueta: 'Miércoles', abrev: 'Mié' },
+  { valor: 'THURSDAY',  etiqueta: 'Jueves',    abrev: 'Jue' },
+  { valor: 'FRIDAY',    etiqueta: 'Viernes',   abrev: 'Vie' },
+  { valor: 'SATURDAY',  etiqueta: 'Sábado',    abrev: 'Sáb' },
+  { valor: 'SUNDAY',    etiqueta: 'Domingo',   abrev: 'Dom' },
+];
+
 export interface TurnoRequest {
   horaInicio: string;
   horaFin: string;
   funcionarioId: number;
+  dias: DiaSemana[];
 }
 
 export interface TurnoResponse {
@@ -103,6 +120,7 @@ export interface TurnoResponse {
   fechaBaja?: string;
   funcionarioId?: number;
   funcionarioNombre?: string;
+  dias: DiaSemana[];
 }
 
 // Dashboard stats

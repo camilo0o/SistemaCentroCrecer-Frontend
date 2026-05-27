@@ -79,6 +79,12 @@
               <div>
                 <div class="funcionario-nombre">{{ f.nombre }} {{ f.apellido }}</div>
                 <div class="funcionario-email">{{ f.email }}</div>
+                @if(f.mustChangePassword){
+                  <mat-chip style="font-size:10px;height:18px;padding:0 8px;background:#FFF3CD;color:#92400E;">
+                    <mat-icon style="font-size:12px;height:12px;width:12px;margin-right:2px">lock_reset</mat-icon>
+                    Debe cambiar contraseña
+                  </mat-chip>
+                }
               </div>
             </div>
           </td>
@@ -118,12 +124,19 @@
             <button mat-icon-button matTooltip="Editar" (click)="abrirEditar(f)" color="primary">
               <mat-icon>edit</mat-icon>
             </button>
-            <button mat-icon-button matTooltip="Cambiar contraseña" (click)="abrirPassword(f)" class="btn-password">
-              <mat-icon>key</mat-icon>
+            <button mat-icon-button
+              [matTooltip]="esAdminSistema(f) ? 'Blanquear contraseña (obligará a cambiarla)' : 'Blanquear contraseña'"
+              (click)="abrirBlanqueo(f)"
+              class="btn-password"
+              [disabled]="!f.activo">
+              <mat-icon>lock_reset</mat-icon>
             </button>
-            <button mat-icon-button [matTooltip]="f.activo ? 'Dar de baja' : 'Dar de alta'" (click)="toggleEstado(f)">
-              <mat-icon [color]="f.activo ? 'warn' : 'primary'">
-                {{ f.activo ? 'person_off' : 'person' }}
+            <button mat-icon-button
+              [matTooltip]="esAdminSistema(f) ? 'Los administradores de sistema no pueden darse de baja' : (f.activo ? 'Dar de baja' : 'Dar de alta')"
+              (click)="toggleEstado(f)"
+              [disabled]="esAdminSistema(f)">
+              <mat-icon [color]="esAdminSistema(f) ? '' : (f.activo ? 'warn' : 'primary')">
+                {{ esAdminSistema(f) ? 'shield' : (f.activo ? 'person_off' : 'person') }}
               </mat-icon>
             </button>
           </td>

@@ -41,4 +41,8 @@ export class FuncionarioService {
   cambiarPassword(id: number, nuevaContrasenia: string): Observable<any> {
     return this.http.put(`${this.apiUrl}/${id}/cambiar-contrasenia`, { nuevaContrasenia });
   }
+
+  blanquearPassword(id: number, nuevaContrasenia: string): Observable<any> {
+    return this.http.put(`${this.apiUrl}/${id}/blanquear-contrasenia`, { nuevaContrasenia });
+  }
 }

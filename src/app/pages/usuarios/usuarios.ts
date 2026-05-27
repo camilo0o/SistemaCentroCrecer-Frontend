@@ -81,7 +81,18 @@ import { finalize } from 'rxjs/operators';
             @for(rol of roles; track rol.id){
               <mat-option [value]="rol.id">{{ getRolDisplay(rol.nombre) }}</mat-option>
             }
+            @if(data.funcionario?.rol?.nombre === 'ADMINISTRADOR_SISTEMA'){
+              <mat-option [value]="data.funcionario?.rol?.id" disabled>
+                {{ getRolDisplay('ADMINISTRADOR_SISTEMA') }}
+              </mat-option>
+            }
           </mat-select>
+          @if(data.funcionario?.rol?.nombre === 'ADMINISTRADOR_SISTEMA'){
+            <mat-hint style="color:#92400E">
+              <mat-icon style="font-size:13px;vertical-align:middle">lock</mat-icon>
+              El rol Administrador de Sistema no se puede modificar
+            </mat-hint>
+          }
           @if(form.get('rolId')?.invalid && form.get('rolId')?.touched){<mat-error>Seleccioná un rol</mat-error>}
         </mat-form-field>
 
@@ -123,8 +134,11 @@ export class FuncionarioDialogComponent {
     private funcionarioService: FuncionarioService,
     private toast: ToastService
   ) {
+    // Filtrar ADMINISTRADOR_SISTEMA de la lista de roles disponibles para asignar
     this.roles = data.roles.filter(r => r.nombre !== 'ADMINISTRADOR_SISTEMA');
     const f = data.funcionario;
+    const esAdminSistema = f?.rol?.nombre === 'ADMINISTRADOR_SISTEMA';
+
     this.form = this.fb.group({
       nombre:      [f?.nombre   ?? '', Validators.required],
       apellido:    [f?.apellido ?? '', Validators.required],
@@ -132,7 +146,7 @@ export class FuncionarioDialogComponent {
       email:       [f?.email    ?? '', [Validators.required, Validators.email]],
       telefono:    [f?.telefono ?? ''],
       fechaNacimiento: [f?.fechaNacimiento ? new Date(f.fechaNacimiento) : null],
-      rolId:       [f?.rol?.id  ?? null, Validators.required],
+      rolId:       [{ value: f?.rol?.id ?? null, disabled: esAdminSistema }, Validators.required],
       contrasenia: ['', data.modo === 'crear' ? [Validators.required, Validators.minLength(8)] : []]
     });
   }
@@ -142,7 +156,7 @@ export class FuncionarioDialogComponent {
   guardar() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.guardando = true;
-    const v = this.form.value;
+    const v = this.form.getRawValue(); // getRawValue incluye campos deshabilitados (rolId bloqueado para admin)
     const payload: FuncionarioRequest = {
       nombre: v.nombre, apellido: v.apellido, cedula: v.cedula,
       email: v.email, telefono: v.telefono, rolId: v.rolId,
@@ -159,9 +173,9 @@ export class FuncionarioDialogComponent {
   }
 }
 
-// Dialog Password
+// Dialog Blanqueo de Contraseña (Admin obliga a cambiar)
 @Component({
-  selector: 'app-password-dialog',
+  selector: 'app-blanqueo-dialog',
   standalone: true,
   imports: [
     CommonModule, ReactiveFormsModule, Sidebar,
@@ -169,14 +183,20 @@ export class FuncionarioDialogComponent {
     MatProgressSpinnerModule, MatDialogTitle, MatDialogContent, MatDialogActions
   ],
   template: `
-    <h2 mat-dialog-title>Cambiar Contraseña</h2>
-    <mat-dialog-content style="min-width:380px; padding-top:12px">
-      <p style="color:#5C6680;font-size:13px;margin-bottom:16px">
+    <h2 mat-dialog-title>Blanquear Contraseña</h2>
+    <mat-dialog-content style="min-width:400px; padding-top:12px">
+      <p style="color:#5C6680;font-size:13px;margin-bottom:8px">
         Funcionario: <strong>{{ data.nombre }}</strong>
       </p>
+      <div style="background:#FFF3CD;border:1px solid #FFCA28;border-radius:8px;padding:10px 14px;margin-bottom:16px;display:flex;align-items:flex-start;gap:8px">
+        <mat-icon style="color:#F59E0B;font-size:18px;margin-top:2px">warning</mat-icon>
+        <span style="font-size:12px;color:#92400E;line-height:1.5">
+          Se asignará una contraseña temporal. El funcionario <strong>deberá cambiarla</strong> obligatoriamente al iniciar sesión.
+        </span>
+      </div>
       <form [formGroup]="form">
         <mat-form-field appearance="outline" style="width:100%">
-          <mat-label>Nueva contraseña</mat-label>
+          <mat-label>Contraseña temporal</mat-label>
           <input matInput [type]="show ? 'text' : 'password'" formControlName="pass">
           <button mat-icon-button matSuffix type="button" (click)="show=!show">
             <mat-icon>{{ show ? 'visibility_off' : 'visibility' }}</mat-icon>
@@ -189,20 +209,20 @@ export class FuncionarioDialogComponent {
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-stroked-button (click)="ref.close()">Cancelar</button>
-      <button mat-flat-button color="primary" (click)="cambiar()" [disabled]="guardando">
-        @if(guardando){ <mat-spinner diameter="18"></mat-spinner> }@else{ Cambiar }
+      <button mat-flat-button color="warn" (click)="blanquear()" [disabled]="guardando">
+        @if(guardando){ <mat-spinner diameter="18"></mat-spinner> }@else{ Blanquear }
       </button>
     </mat-dialog-actions>
   `
 })
-export class PasswordDialogComponent {
+export class BlanqueoPasswordDialogComponent {
   form: FormGroup;
   show = false;
   guardando = false;
 
   constructor(
     private fb: FormBuilder,
-    public ref: MatDialogRef<PasswordDialogComponent>,
+    public ref: MatDialogRef<BlanqueoPasswordDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { id: number; nombre: string },
     private funcionarioService: FuncionarioService,
     private toast: ToastService
@@ -210,12 +230,16 @@ export class PasswordDialogComponent {
     this.form = this.fb.group({ pass: ['', [Validators.required, Validators.minLength(8)]] });
   }
 
-  cambiar() {
+  blanquear() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.guardando = true;
-    this.funcionarioService.cambiarPassword(this.data.id, this.form.value.pass).subscribe({
-      next: () => { this.guardando = false; this.toast.success('Contraseña actualizada'); this.ref.close(true); },
-      error: (err) => { this.guardando = false; this.toast.error(err.error?.error ?? 'Error'); }
+    this.funcionarioService.blanquearPassword(this.data.id, this.form.value.pass).subscribe({
+      next: () => {
+        this.guardando = false;
+        this.toast.success('Contraseña blanqueada. El funcionario deberá cambiarla al ingresar.');
+        this.ref.close(true);
+      },
+      error: (err) => { this.guardando = false; this.toast.error(err.error?.error ?? 'Error al blanquear'); }
     });
   }
 }
@@ -252,7 +276,7 @@ export class UsuariosComponent implements OnInit {
     private rolService: RolService,
     private dialog: MatDialog,
     private toast: ToastService,
-    private cdr: ChangeDetectorRef 
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -294,6 +318,11 @@ export class UsuariosComponent implements OnInit {
 
   onPage(e: PageEvent) { this.pageIndex = e.pageIndex; this.pageSize = e.pageSize; this.actualizarPagina(); }
 
+  /** Devuelve true si el funcionario tiene rol ADMINISTRADOR_SISTEMA */
+  esAdminSistema(f: FuncionarioResponse): boolean {
+    return f.rol?.nombre === 'ADMINISTRADOR_SISTEMA';
+  }
+
   abrirCrear() {
     this.dialog.open(FuncionarioDialogComponent, { data: { modo: 'crear', roles: this.roles } })
       .afterClosed().subscribe(r => { if (r) { this.toast.success('Funcionario creado'); this.cargarFuncionarios(); } });
@@ -304,11 +333,17 @@ export class UsuariosComponent implements OnInit {
       .afterClosed().subscribe(r => { if (r) { this.toast.success('Funcionario actualizado'); this.cargarFuncionarios(); } });
   }
 
-  abrirPassword(f: FuncionarioResponse) {
-    this.dialog.open(PasswordDialogComponent, { data: { id: f.id, nombre: `${f.nombre} ${f.apellido}` } });
+  abrirBlanqueo(f: FuncionarioResponse) {
+    this.dialog.open(BlanqueoPasswordDialogComponent, {
+      data: { id: f.id, nombre: `${f.nombre} ${f.apellido}` }
+    }).afterClosed().subscribe(r => { if (r) this.cargarFuncionarios(); });
   }
 
   toggleEstado(f: FuncionarioResponse) {
+    if (this.esAdminSistema(f) && f.activo) {
+      this.toast.error('No se puede dar de baja a un Administrador de Sistema');
+      return;
+    }
     const op = f.activo ? this.funcionarioService.darDeBaja(f.id) : this.funcionarioService.darDeAlta(f.id);
     op.subscribe({
       next: () => { this.toast.success(f.activo ? 'Dado de baja' : 'Dado de alta'); this.cargarFuncionarios(); },

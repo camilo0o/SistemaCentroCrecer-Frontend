@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject, ChangeDetectorRef  } from '@angular/core';
+import { Component, OnInit, Inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
@@ -12,29 +12,95 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { Sidebar } from '../../shared/components/sidebar/sidebar';
 import { TurnoService } from '../../services/turno.service';
 import { FuncionarioService } from '../../services/funcionario.service';
 import { ToastService } from '../../services/toast.service';
-import { TurnoResponse, TurnoRequest, FuncionarioResponse, ROL_DISPLAY } from '../../models/models';
+import {
+  TurnoResponse, TurnoRequest, FuncionarioResponse,
+  ROL_DISPLAY, DiaSemana, DIAS_SEMANA
+} from '../../models/models';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs/operators';
 
-// Turno Dialog 
+// ─── Dialog ───────────────────────────────────────────────────────────────────
 @Component({
   selector: 'app-turno-dialog',
   standalone: true,
   imports: [
     CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule,
-    MatSelectModule, MatButtonModule, MatIconModule, MatDialogModule, MatProgressSpinnerModule
+    MatSelectModule, MatButtonModule, MatIconModule, MatDialogModule,
+    MatProgressSpinnerModule, MatCheckboxModule
   ],
+  styles: [`
+    .dias-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .dia-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1.5px solid #e0e0e0;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: #555;
+      transition: all 0.15s;
+      user-select: none;
+    }
+    .dia-toggle.selected {
+      border-color: #1565C0;
+      background: #e3f0fb;
+      color: #1565C0;
+    }
+    .dias-label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+    .dias-error {
+      color: #C62828;
+      font-size: 11px;
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .semana-atajos {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .atajo-btn {
+      font-size: 11px;
+      padding: 2px 10px;
+      border-radius: 12px;
+      border: 1px solid #1565C0;
+      color: #1565C0;
+      background: white;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .atajo-btn:hover { background: #e3f0fb; }
+  `],
   template: `
     <div class="dialog-header">
       <h2 class="dialog-title">{{ data.modo === 'crear' ? 'Nuevo Turno' : 'Editar Turno' }}</h2>
       <button mat-icon-button (click)="ref.close()"><mat-icon>close</mat-icon></button>
     </div>
-    <mat-dialog-content style="padding:24px;min-width:440px">
+
+    <mat-dialog-content style="padding:24px;min-width:460px">
       <form [formGroup]="form" style="display:flex;flex-direction:column;gap:16px">
+
+        <!-- Funcionario -->
         <mat-form-field appearance="outline">
           <mat-label>Funcionario</mat-label>
           <mat-select formControlName="funcionarioId">
@@ -42,32 +108,73 @@ import { finalize } from 'rxjs/operators';
               <mat-option [value]="f.id">{{ f.nombre }} {{ f.apellido }} — {{ getRolDisplay(f.rol?.nombre) }}</mat-option>
             }
           </mat-select>
-          @if(form.get('funcionarioId')?.invalid && form.get('funcionarioId')?.touched){<mat-error>Seleccioná un funcionario</mat-error>}
+          @if(form.get('funcionarioId')?.invalid && form.get('funcionarioId')?.touched){
+            <mat-error>Seleccioná un funcionario</mat-error>
+          }
         </mat-form-field>
+
+        <!-- Horario -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
           <mat-form-field appearance="outline">
             <mat-label>Hora inicio</mat-label>
             <input matInput type="time" formControlName="horaInicio">
-            @if(form.get('horaInicio')?.invalid && form.get('horaInicio')?.touched){<mat-error>Requerida</mat-error>}
+            @if(form.get('horaInicio')?.invalid && form.get('horaInicio')?.touched){
+              <mat-error>Requerida</mat-error>
+            }
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>Hora fin</mat-label>
             <input matInput type="time" formControlName="horaFin">
-            @if(form.get('horaFin')?.invalid && form.get('horaFin')?.touched){<mat-error>Requerida</mat-error>}
+            @if(form.get('horaFin')?.invalid && form.get('horaFin')?.touched){
+              <mat-error>Requerida</mat-error>
+            }
           </mat-form-field>
         </div>
         @if(horasError){
-          <div style="color:#C62828;font-size:12px;display:flex;gap:6px;align-items:center">
+          <div style="color:#C62828;font-size:12px;display:flex;gap:6px;align-items:center;margin-top:-8px">
             <mat-icon style="font-size:16px;width:16px;height:16px">error</mat-icon>
             La hora de fin debe ser posterior a la de inicio
           </div>
         }
+
+        <!-- Días de la semana -->
+        <div>
+          <div class="dias-label">Días de la semana *</div>
+
+          <!-- Atajos rápidos -->
+          <div class="semana-atajos">
+            <button type="button" class="atajo-btn" (click)="seleccionarLunesViernes()">Lun – Vie</button>
+            <button type="button" class="atajo-btn" (click)="seleccionarTodos()">Todos</button>
+            <button type="button" class="atajo-btn" (click)="limpiarDias()">Ninguno</button>
+          </div>
+
+          <div class="dias-grid">
+            @for(d of diasSemana; track d.valor){
+              <div class="dia-toggle" [class.selected]="isDiaSelected(d.valor)" (click)="toggleDia(d.valor)">
+                <mat-icon style="font-size:15px;width:15px;height:15px">
+                  {{ isDiaSelected(d.valor) ? 'check_box' : 'check_box_outline_blank' }}
+                </mat-icon>
+                {{ d.etiqueta }}
+              </div>
+            }
+          </div>
+
+          @if(diasError){
+            <div class="dias-error">
+              <mat-icon style="font-size:14px;width:14px;height:14px">error</mat-icon>
+              Seleccioná al menos un día
+            </div>
+          }
+        </div>
+
       </form>
     </mat-dialog-content>
+
     <div class="dialog-actions">
       <button mat-stroked-button (click)="ref.close()">Cancelar</button>
       <button mat-flat-button style="background:#1565C0;color:white" (click)="guardar()" [disabled]="guardando">
-        @if(guardando){<mat-spinner diameter="18" color="accent"></mat-spinner>}@else{Guardar Turno}
+        @if(guardando){<mat-spinner diameter="18" color="accent"></mat-spinner>}
+        @else { Guardar Turno }
       </button>
     </div>
   `
@@ -75,15 +182,24 @@ import { finalize } from 'rxjs/operators';
 export class TurnoDialogComponent {
   form: FormGroup;
   guardando = false;
+  diasSemana = DIAS_SEMANA;
+  diasSeleccionados: Set<DiaSemana> = new Set();
+  diasTocados = false;
+
   get horasError() {
     const hi = this.form.get('horaInicio')?.value;
     const hf = this.form.get('horaFin')?.value;
     return hi && hf && hi >= hf;
   }
+
+  get diasError() {
+    return this.diasTocados && this.diasSeleccionados.size === 0;
+  }
+
   constructor(
     private fb: FormBuilder,
     public ref: MatDialogRef<TurnoDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { modo: 'crear'|'editar'; turno?: TurnoResponse; funcionarios: FuncionarioResponse[] },
+    @Inject(MAT_DIALOG_DATA) public data: { modo: 'crear' | 'editar'; turno?: TurnoResponse; funcionarios: FuncionarioResponse[] },
     private turnoService: TurnoService,
     private toast: ToastService
   ) {
@@ -91,19 +207,45 @@ export class TurnoDialogComponent {
     this.form = this.fb.group({
       funcionarioId: [t?.funcionarioId ?? null, Validators.required],
       horaInicio: [t?.horaInicio ?? '', Validators.required],
-      horaFin: [t?.horaFin ?? '', Validators.required]
+      horaFin: [t?.horaFin ?? '', Validators.required],
     });
-  }
-  get funcionarios(){
-     return this.data.funcionarios; 
+    if (t?.dias?.length) {
+      this.diasSeleccionados = new Set(t.dias);
     }
-  getRolDisplay(n?: string) {
-    return n ? (ROL_DISPLAY[n] ?? n) : 'Sin rol';
   }
+
+  get funcionarios() { return this.data.funcionarios; }
+
+  getRolDisplay(n?: string) { return n ? (ROL_DISPLAY[n] ?? n) : 'Sin rol'; }
+
+  isDiaSelected(dia: DiaSemana): boolean { return this.diasSeleccionados.has(dia); }
+
+  toggleDia(dia: DiaSemana) {
+    if (this.diasSeleccionados.has(dia)) this.diasSeleccionados.delete(dia);
+    else this.diasSeleccionados.add(dia);
+  }
+
+  seleccionarLunesViernes() {
+    this.diasSeleccionados = new Set<DiaSemana>(['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY']);
+  }
+
+  seleccionarTodos() {
+    this.diasSeleccionados = new Set(DIAS_SEMANA.map(d => d.valor));
+  }
+
+  limpiarDias() { this.diasSeleccionados.clear(); }
+
   guardar() {
-    if (this.form.invalid || this.horasError) { this.form.markAllAsTouched(); return; }
+    this.diasTocados = true;
+    if (this.form.invalid || this.horasError || this.diasSeleccionados.size === 0) {
+      this.form.markAllAsTouched();
+      return;
+    }
     this.guardando = true;
-    const payload: TurnoRequest = this.form.value;
+    const payload: TurnoRequest = {
+      ...this.form.value,
+      dias: Array.from(this.diasSeleccionados)
+    };
     const op = this.data.modo === 'crear'
       ? this.turnoService.crear(payload)
       : this.turnoService.actualizar(this.data.turno!.id, payload);
@@ -114,7 +256,7 @@ export class TurnoDialogComponent {
   }
 }
 
-// Main
+// ─── Main Component ────────────────────────────────────────────────────────────
 @Component({
   selector: 'app-turnos',
   standalone: true,
@@ -122,7 +264,7 @@ export class TurnoDialogComponent {
     CommonModule, FormsModule, ReactiveFormsModule, Sidebar,
     MatTableModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatDialogModule, MatTooltipModule, MatProgressSpinnerModule,
-    MatChipsModule, MatPaginatorModule
+    MatChipsModule, MatPaginatorModule, MatCheckboxModule
   ],
   templateUrl: './turnos.html',
   styleUrl: './turnos.css'
@@ -135,17 +277,19 @@ export class TurnosComponent implements OnInit {
   cargando = true;
   busqueda = '';
   filtroEstado = 'todos';
-  columnas = ['funcionario', 'horaInicio', 'horaFin', 'duracion', 'estado', 'acciones'];
+  filtroDia = 'todos';
+  columnas = ['funcionario', 'dias', 'horaInicio', 'horaFin', 'duracion', 'estado', 'acciones'];
   pageSize = 10;
   pageIndex = 0;
+  diasSemana = DIAS_SEMANA;
 
   constructor(
-  private turnoService: TurnoService,
-  private funcionarioService: FuncionarioService,
-  private dialog: MatDialog,
-  private toast: ToastService,
-  private cdr: ChangeDetectorRef
-) {}
+    private turnoService: TurnoService,
+    private funcionarioService: FuncionarioService,
+    private dialog: MatDialog,
+    private toast: ToastService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit() {
     this.funcionarioService.listarActivos().subscribe(f => this.funcionarios = f);
@@ -153,14 +297,14 @@ export class TurnosComponent implements OnInit {
   }
 
   cargarTurnos() {
-  this.cargando = true;
-  this.turnoService.listarTodos().pipe(
-    finalize(() => { this.cargando = false; this.cdr.detectChanges(); })
-  ).subscribe({
-    next: (t) => { this.turnos = t; this.aplicarFiltros(); },
-    error: () => { this.toast.error('Error al cargar turnos'); }
-  });
-}
+    this.cargando = true;
+    this.turnoService.listarTodos().pipe(
+      finalize(() => { this.cargando = false; this.cdr.detectChanges(); })
+    ).subscribe({
+      next: (t) => { this.turnos = t; this.aplicarFiltros(); },
+      error: () => this.toast.error('Error al cargar turnos')
+    });
+  }
 
   aplicarFiltros() {
     let res = [...this.turnos];
@@ -170,6 +314,9 @@ export class TurnosComponent implements OnInit {
     }
     if (this.filtroEstado === 'activos') res = res.filter(t => t.activo);
     else if (this.filtroEstado === 'inactivos') res = res.filter(t => !t.activo);
+    if (this.filtroDia !== 'todos') {
+      res = res.filter(t => t.dias?.includes(this.filtroDia as DiaSemana));
+    }
     this.filtrados = res;
     this.pageIndex = 0;
     this.actualizarPagina();
@@ -190,7 +337,18 @@ export class TurnosComponent implements OnInit {
     if (mins <= 0) return '—';
     const h = Math.floor(mins / 60);
     const m = mins % 60;
-    return h > 0 ? `${h}h ${m > 0 ? m + 'm' : ''}` : `${m}m`;
+    return h > 0 ? `${h}h${m > 0 ? ' ' + m + 'm' : ''}` : `${m}m`;
+  }
+
+  /** Devuelve la abreviación del día en español */
+  getDiaLabel(dia: string): string {
+    return DIAS_SEMANA.find(d => d.valor === dia)?.abrev ?? dia;
+  }
+
+  /** Ordena días en orden natural de la semana */
+  ordenarDias(dias: DiaSemana[]): DiaSemana[] {
+    const orden = DIAS_SEMANA.map(d => d.valor);
+    return [...(dias ?? [])].sort((a, b) => orden.indexOf(a) - orden.indexOf(b));
   }
 
   abrirCrear() {

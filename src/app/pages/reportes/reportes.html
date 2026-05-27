@@ -33,13 +33,6 @@
           </div>
         </div>
         <div class="export-card">
-          <div class="export-icon excel"><mat-icon>table_chart</mat-icon></div>
-          <div>
-            <div class="export-title">Exportar Asistencia Personal</div>
-            <div class="export-sub">Registro de asistencia del equipo</div>
-          </div>
-        </div>
-        <div class="export-card">
           <div class="export-icon pdf"><mat-icon>event_note</mat-icon></div>
           <div>
             <div class="export-title">Exportar Actividades</div>
@@ -123,9 +116,6 @@
                 <div class="acciones-row">
                   <button mat-icon-button matTooltip="Exportar PDF" (click)="exportarPDF(r.id)">
                     <mat-icon style="color:#C62828">picture_as_pdf</mat-icon>
-                  </button>
-                  <button mat-icon-button matTooltip="Exportar Excel" (click)="exportarExcel(r.id)">
-                    <mat-icon style="color:#2E7D32">table_chart</mat-icon>
                   </button>
                   <button mat-icon-button matTooltip="Dar de baja" (click)="darDeBaja(r.id)" [disabled]="!r.activo">
                     <mat-icon style="color:#9AA0B9">delete_outline</mat-icon>

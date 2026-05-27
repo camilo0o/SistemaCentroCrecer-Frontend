@@ -59,6 +59,8 @@ export const routes: Routes = [
           import('./pages/usuarios/usuarios').then(m => m.UsuariosComponent) },
       { path: 'ninios', loadComponent: () =>
           import('./pages/ninios/ninios').then(m => m.NiniosComponent) },
+      { path: 'grupos', loadComponent: () =>
+          import('./pages/grupos/grupos').then(m => m.GruposComponent) },
       { path: 'turnos', loadComponent: () =>
           import('./pages/turnos/turnos').then(m => m.TurnosComponent) },
       { path: 'reportes', loadComponent: () =>
@@ -81,4 +83,3 @@ export const routes: Routes = [
   
  
 ];
- 

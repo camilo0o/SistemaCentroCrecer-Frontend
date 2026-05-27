@@ -175,19 +175,6 @@ export class ReportesComponent implements OnInit {
     });
   }
 
-  exportarExcel(id: number) {
-    this.http.get(`${environment.apiUrl}/reportes/${id}/excel`, { responseType: 'blob' }).subscribe({
-      next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = `reporte-${id}.xlsx`; a.click();
-        window.URL.revokeObjectURL(url);
-        this.toast.success('Excel descargado');
-      },
-      error: () => this.toast.error('No se pudo exportar el Excel')
-    });
-  }
-
   darDeBaja(id: number) {
     this.http.delete(`${environment.apiUrl}/reportes/${id}`).subscribe({
       next: () => { this.toast.success('Reporte dado de baja'); this.cargarReportes(); },

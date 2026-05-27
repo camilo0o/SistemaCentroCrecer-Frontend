@@ -1,0 +1,184 @@
+<div class="grupos-page">
+
+  <!-- ── Header ────────────────────────────────────────────────────────── -->
+  <header class="grupos-header">
+    <div>
+      <h1 class="grupos-title">Grupos</h1>
+      <p class="grupos-subtitle">Organización de niños por sala y rango etario</p>
+    </div>
+    <button mat-flat-button class="btn-primary" (click)="abrirCrear()">
+      <mat-icon>add</mat-icon> Nuevo Grupo
+    </button>
+  </header>
+
+  <!-- ── Summary chips ─────────────────────────────────────────────────── -->
+  <div class="summary-strip">
+    <div class="summary-chip">
+      <mat-icon style="color:#1565C0">groups</mat-icon>
+      <span><strong>{{ totalGruposActivos }}</strong> grupos activos</span>
+    </div>
+    <div class="summary-chip">
+      <mat-icon style="color:#2E7D32">child_care</mat-icon>
+      <span><strong>{{ totalNinos }}</strong> niños registrados</span>
+    </div>
+    <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
+      <mat-label>Buscar grupo</mat-label>
+      <input matInput [(ngModel)]="busqueda" placeholder="Nombre del grupo…">
+      <mat-icon matPrefix>search</mat-icon>
+      @if(busqueda){ <button mat-icon-button matSuffix (click)="busqueda=''"><mat-icon>close</mat-icon></button> }
+    </mat-form-field>
+  </div>
+
+  <!-- ── Loading ────────────────────────────────────────────────────────── -->
+  @if(cargando){
+    <div class="loading-wrap">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p>Cargando grupos...</p>
+    </div>
+  }
+
+  <!-- ── Rangos ─────────────────────────────────────────────────────────── -->
+  @if(!cargando){
+    <div class="rangos-list">
+
+      @for(rango of RANGOS; track rango.valor){
+        <div class="rango-section">
+
+          <!-- Rango header -->
+          <div class="rango-header" [style.border-left-color]="rango.color">
+            <div class="rango-icon-wrap" [style.background]="rango.bg" [style.color]="rango.color">
+              <mat-icon>{{ rango.icon }}</mat-icon>
+            </div>
+            <div>
+              <h2 class="rango-label">{{ rango.label }}</h2>
+              <span class="rango-count">{{ gruposPorRango(rango.valor).length }} grupo(s)</span>
+            </div>
+            <div class="rango-spacer"></div>
+          </div>
+
+          <!-- Grupos de este rango -->
+          @if(gruposPorRango(rango.valor).length === 0){
+            <div class="empty-rango">
+              <mat-icon>inbox</mat-icon>
+              <span>Sin grupos en este rango. <button class="link-btn" (click)="abrirCrear()">Crear uno</button></span>
+            </div>
+          }
+
+          <div class="grupos-grid">
+            @for(grupo of gruposPorRango(rango.valor); track grupo.id){
+              <mat-card class="grupo-card">
+
+                <!-- Card header -->
+                <div class="gc-header" [style.border-top]="'4px solid ' + rango.color">
+                  <div class="gc-title-row">
+                    <span class="gc-nombre">{{ grupo.nombre }}</span>
+                    <div class="gc-actions">
+                      <button mat-icon-button matTooltip="Editar grupo" (click)="abrirEditar(grupo)">
+                        <mat-icon style="font-size:18px">edit</mat-icon>
+                      </button>
+                      <button mat-icon-button matTooltip="Dar de baja" (click)="darDeBaja(grupo)">
+                        <mat-icon style="font-size:18px;color:#C62828">delete_outline</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="gc-meta">
+                    <span class="gc-badge" [style.background]="rango.bg" [style.color]="rango.color">
+                      <mat-icon style="font-size:14px">schedule</mat-icon>
+                      {{ formatHora(grupo.horaInicio) }} – {{ formatHora(grupo.horaFin) }}
+                    </span>
+                    <span class="gc-badge secondary">
+                      <mat-icon style="font-size:14px">child_care</mat-icon>
+                      {{ grupo.cantidadNinios ?? grupo.ninios?.length ?? 0 }} niños
+                    </span>
+                  </div>
+                </div>
+
+                <mat-card-content class="gc-content">
+
+                  <!-- Lista de niños -->
+                  @if((grupo.ninios?.length ?? 0) > 0){
+                    <div class="ninios-list">
+                      @for(ninio of grupo.ninios; track ninio.id){
+                        <div class="ninio-row">
+                          <div class="ninio-avatar" [style.background]="rango.bg" [style.color]="rango.color">
+                            {{ ninio.nombre[0] }}{{ ninio.apellido?.[0] ?? '' }}
+                          </div>
+                          <div class="ninio-info">
+                            <span class="ninio-nombre">{{ ninio.nombre }} {{ ninio.apellido }}</span>
+                            <span class="ninio-sub">{{ formatFechaNacimiento(ninio.fechaNacimiento) }} · {{ ninio.cedula }}</span>
+                          </div>
+                          <mat-chip class="ninio-status" [class.inactivo]="!ninio.activo">
+                            {{ ninio.activo ? 'Activo' : 'Inactivo' }}
+                          </mat-chip>
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <div class="ninios-empty">
+                      <mat-icon>child_care</mat-icon>
+                      <span>Sin niños aún</span>
+                    </div>
+                  }
+
+                  <!-- Botón agregar niño -->
+                  <button mat-stroked-button class="btn-agregar" [style.color]="rango.color"
+                          [style.border-color]="rango.color" (click)="abrirAgregarNinio(grupo)">
+                    <mat-icon>person_add</mat-icon> Agregar Niño
+                  </button>
+
+                </mat-card-content>
+              </mat-card>
+            }
+          </div>
+
+        </div>
+      }
+
+      <!-- Grupos sin rango -->
+      @if(gruposSinRango().length > 0){
+        <div class="rango-section">
+          <div class="rango-header" style="border-left-color:#9AA0B9">
+            <div class="rango-icon-wrap" style="background:#F0F2F7;color:#5C6680">
+              <mat-icon>help_outline</mat-icon>
+            </div>
+            <div>
+              <h2 class="rango-label">Sin rango asignado</h2>
+              <span class="rango-count">{{ gruposSinRango().length }} grupo(s)</span>
+            </div>
+          </div>
+          <div class="grupos-grid">
+            @for(grupo of gruposSinRango(); track grupo.id){
+              <mat-card class="grupo-card">
+                <div class="gc-header" style="border-top:4px solid #9AA0B9">
+                  <div class="gc-title-row">
+                    <span class="gc-nombre">{{ grupo.nombre }}</span>
+                    <div class="gc-actions">
+                      <button mat-icon-button matTooltip="Editar" (click)="abrirEditar(grupo)">
+                        <mat-icon style="font-size:18px">edit</mat-icon>
+                      </button>
+                      <button mat-icon-button matTooltip="Dar de baja" (click)="darDeBaja(grupo)">
+                        <mat-icon style="font-size:18px;color:#C62828">delete_outline</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="gc-meta">
+                    <span class="gc-badge secondary">
+                      {{ formatHora(grupo.horaInicio) }} – {{ formatHora(grupo.horaFin) }}
+                    </span>
+                  </div>
+                </div>
+                <mat-card-content class="gc-content">
+                  <button mat-stroked-button class="btn-agregar" (click)="abrirAgregarNinio(grupo)">
+                    <mat-icon>person_add</mat-icon> Agregar Niño
+                  </button>
+                </mat-card-content>
+              </mat-card>
+            }
+          </div>
+        </div>
+      }
+
+    </div>
+  }
+
+</div>

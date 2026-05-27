@@ -11,6 +11,6 @@ export class NinioService {
   constructor(private http: HttpClient) {}
 
   listarTodos(): Observable<NinioResponse[]> {
-    return this.http.get<NinioResponse[]>(`${this.apiUrl}/filtrar`);
+    return this.http.get<NinioResponse[]>(`${this.apiUrl}`);
   }
 }

@@ -88,6 +88,18 @@ export interface GrupoResponse {
   rangoEdad?: string;
   horaInicio?: string;
   horaFin?: string;
+  cantidadNinios?: number;
+  ninios?: NinioResponse[];
+  funcionarios?: FuncionarioResponse[];
+}
+
+export interface GrupoRequest {
+  nombre: string;
+  rangoEdad?: string;
+  horaInicio: string;
+  horaFin: string;
+  funcionariosIds?: number[];
+  niniosIds?: number[];
 }
 
 // Turno models

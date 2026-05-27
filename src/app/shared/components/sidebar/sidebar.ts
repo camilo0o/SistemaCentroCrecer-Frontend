@@ -30,13 +30,14 @@ export class Sidebar implements OnInit {
   fotoPerfil: string | null = null;
 
   adminItems: NavItem[] = [
-    { label: 'Dashboard', icon: 'dashboard', route: '/admin/dashboard' },
-    { label: 'Usuarios', icon: 'groups', route: '/admin/usuarios' },
-    { label: 'Turnos', icon: 'calendar_month', route: '/admin/turnos' },
-    { label: 'Reportes', icon: 'analytics', route: '/admin/reportes' },
-    { label: 'Niños', icon: 'child_care', route: '/admin/ninios' },
-    { label: 'Actividades', icon: 'event', route: '/admin/actividades' },
-    { label: 'Agenda', icon: 'calendar_month', route: '/admin/agenda' },
+    { label: 'Dashboard',  icon: 'dashboard',    route: '/admin/dashboard' },
+    { label: 'Usuarios',   icon: 'groups',        route: '/admin/usuarios' },
+    { label: 'Grupos',     icon: 'category',      route: '/admin/grupos' },
+    { label: 'Niños',      icon: 'child_care',    route: '/admin/ninios' },
+    { label: 'Turnos',     icon: 'calendar_month',route: '/admin/turnos' },
+    { label: 'Reportes',   icon: 'analytics',     route: '/admin/reportes' },
+    { label: 'Actividades',icon: 'event',         route: '/admin/actividades' },
+    { label: 'Agenda',     icon: 'calendar_month',route: '/admin/agenda' },
   ];
 
   funcionarioItems: NavItem[] = [

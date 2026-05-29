@@ -30,20 +30,18 @@ export class Sidebar implements OnInit {
   fotoPerfil: string | null = null;
 
   adminItems: NavItem[] = [
-    { label: 'Dashboard',  icon: 'dashboard',    route: '/admin/dashboard' },
-    { label: 'Usuarios',   icon: 'groups',        route: '/admin/usuarios' },
-    { label: 'Grupos',     icon: 'category',      route: '/admin/grupos' },
-    { label: 'Niños',      icon: 'child_care',    route: '/admin/ninios' },
-    { label: 'Turnos',     icon: 'calendar_month',route: '/admin/turnos' },
-    { label: 'Reportes',   icon: 'analytics',     route: '/admin/reportes' },
-    { label: 'Actividades',icon: 'event',         route: '/admin/actividades' },
-    { label: 'Agenda',     icon: 'calendar_month',route: '/admin/agenda' },
+    { label: 'Dashboard',  icon: 'dashboard', route: '/admin/dashboard' },
+    { label: 'Usuarios',   icon: 'groups',    route: '/admin/usuarios' },
   ];
 
   funcionarioItems: NavItem[] = [
-    { label: 'Dashboard', icon: 'dashboard',     route: '/dashboard/funcionario' },
-    { label: 'Turnos',    icon: 'calendar_month', route: '/turnos' },
-    { label: 'Reportes',  icon: 'analytics',      route: '/reportes' },
+    { label: 'Dashboard',  icon: 'dashboard',      route: '/dashboard/funcionario' },
+    { label: 'Niños',      icon: 'child_care',      route: '/funcionario/ninios' },
+    { label: 'Grupos',     icon: 'category',        route: '/funcionario/grupos' },
+    { label: 'Turnos',     icon: 'calendar_month',  route: '/funcionario/turnos' },
+    { label: 'Reportes',   icon: 'analytics',       route: '/funcionario/reportes' },
+    { label: 'Actividades',icon: 'event',            route: '/funcionario/actividades' },
+    { label: 'Agenda',     icon: 'calendar_month',  route: '/funcionario/agenda' },
   ];
 
   responsableItems: NavItem[] = [

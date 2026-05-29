@@ -46,7 +46,8 @@ export const routes: Routes = [
       import('./pages/dashboard-responsable/dashboard-responsable').then(m => m.DashboardResponsableComponent),
     canActivate: [responsableGuard]
   },
-  // Dashboard para administradores
+
+  // Dashboard para administradores — SOLO gestión de funcionarios del sistema
   {
     path: 'admin',
     loadComponent: () =>
@@ -57,6 +58,20 @@ export const routes: Routes = [
           import('./pages/dashboard-admin/dashboard-admin').then(m => m.DashboardAdminComponent) },
       { path: 'usuarios', loadComponent: () =>
           import('./pages/usuarios/usuarios').then(m => m.UsuariosComponent) },
+      // NOTA: ninios, grupos, turnos, reportes, actividades y agenda
+      // fueron removidos del área de administrador porque esas
+      // responsabilidades corresponden a los demás funcionarios.
+    ]
+  },
+
+  // Sección de funcionarios (coordinadora, psicólogo, maestra, etc.)
+  // El administrador de sistema NO tiene acceso a estas rutas.
+  {
+    path: 'funcionario',
+    loadComponent: () =>
+      import('./layouts/admin-layout/admin-layout').then(m => m.AdminLayoutComponent),
+    canActivate: [funcionarioGuard],
+    children: [
       { path: 'ninios', loadComponent: () =>
           import('./pages/ninios/ninios').then(m => m.NiniosComponent) },
       { path: 'grupos', loadComponent: () =>
@@ -68,7 +83,7 @@ export const routes: Routes = [
       { path: 'actividades', loadComponent: () =>
           import('./pages/actividades/actividades').then(m => m.ActividadesComponent) },
       { path: 'agenda', loadComponent: () =>
-          import('./pages/agenda/agenda').then(m => m.AgendaComponent) },        
+          import('./pages/agenda/agenda').then(m => m.AgendaComponent) },
     ]
   },
 

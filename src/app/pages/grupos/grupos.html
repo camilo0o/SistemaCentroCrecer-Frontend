@@ -1,6 +1,5 @@
 <div class="grupos-page">
 
-  <!-- ── Header ────────────────────────────────────────────────────────── -->
   <header class="grupos-header">
     <div>
       <h1 class="grupos-title">Grupos</h1>
@@ -11,7 +10,6 @@
     </button>
   </header>
 
-  <!-- ── Summary chips ─────────────────────────────────────────────────── -->
   <div class="summary-strip">
     <div class="summary-chip">
       <mat-icon style="color:#1565C0">groups</mat-icon>
@@ -29,7 +27,6 @@
     </mat-form-field>
   </div>
 
-  <!-- ── Loading ────────────────────────────────────────────────────────── -->
   @if(cargando){
     <div class="loading-wrap">
       <mat-spinner diameter="48"></mat-spinner>
@@ -37,7 +34,6 @@
     </div>
   }
 
-  <!-- ── Rangos ─────────────────────────────────────────────────────────── -->
   @if(!cargando){
     <div class="rangos-list">
 

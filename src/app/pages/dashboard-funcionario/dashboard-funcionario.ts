@@ -72,12 +72,11 @@ export class DashboardFuncionarioComponent implements OnInit {
       bannerIcon: 'star',
       bannerDesc: 'Coordinación general del centro — 40 horas semanales',
       acciones: [
-        { route: '/admin/usuarios',    icon: 'manage_accounts', label: 'Gestión de Personal',   desc: 'Administrar funcionarios y roles',         color: '#1565C0', bg: '#E3F2FD' },
-        { route: '/admin/grupos',      icon: 'category',         label: 'Grupos',                 desc: 'Ver y organizar grupos de niños',            color: '#7B1FA2', bg: '#F3E5F5' },
-        { route: '/admin/turnos',      icon: 'schedule',         label: 'Turnos',                 desc: 'Gestionar horarios del equipo',              color: '#FF6F00', bg: '#FFF3E0' },
-        { route: '/admin/reportes',    icon: 'assessment',       label: 'Reportes',               desc: 'Supervisar reportes del sistema',             color: '#00695C', bg: '#E0F2F1' },
-        { route: '/admin/actividades', icon: 'event',            label: 'Actividades',            desc: 'Planificar actividades del centro',          color: '#2E7D32', bg: '#E8F5E9' },
-        { route: '/admin/agenda',      icon: 'calendar_month',   label: 'Agenda',                 desc: 'Organizar supervisiones y reuniones',        color: '#C62828', bg: '#FFEBEE' },
+        { route: '/funcionario/grupos',      icon: 'category',         label: 'Grupos',                 desc: 'Ver y organizar grupos de niños',            color: '#7B1FA2', bg: '#F3E5F5' },
+        { route: '/funcionario/turnos',      icon: 'schedule',         label: 'Turnos',                 desc: 'Gestionar horarios del equipo',              color: '#FF6F00', bg: '#FFF3E0' },
+        { route: '/funcionario/reportes',    icon: 'assessment',       label: 'Reportes',               desc: 'Supervisar reportes del sistema',             color: '#00695C', bg: '#E0F2F1' },
+        { route: '/funcionario/actividades', icon: 'event',            label: 'Actividades',            desc: 'Planificar actividades del centro',          color: '#2E7D32', bg: '#E8F5E9' },
+        { route: '/funcionario/agenda',      icon: 'calendar_month',   label: 'Agenda',                 desc: 'Organizar supervisiones y reuniones',        color: '#C62828', bg: '#FFEBEE' },
       ],
       infoItems: [
         { icon: 'schedule',          color: '#1565C0', text: 'Jornada completa: 40 horas semanales' },
@@ -93,10 +92,10 @@ export class DashboardFuncionarioComponent implements OnInit {
       bannerIcon: 'social_distance',
       bannerDesc: 'Equipo técnico — 20 horas semanales',
       acciones: [
-        { route: '/admin/ninios',   icon: 'child_care', label: 'Niños',      desc: 'Ver información de niños registrados',  color: '#2E7D32', bg: '#E8F5E9' },
-        { route: '/admin/grupos',   icon: 'category',   label: 'Grupos',     desc: 'Consultar grupos del centro',           color: '#7B1FA2', bg: '#F3E5F5' },
-        { route: '/admin/reportes', icon: 'assessment', label: 'Reportes',   desc: 'Generar y ver reportes sociales',       color: '#1565C0', bg: '#E3F2FD' },
-        { route: '/admin/agenda',   icon: 'calendar_month', label: 'Agenda', desc: 'Mi agenda de atenciones',              color: '#FF6F00', bg: '#FFF3E0' },
+        { route: '/funcionario/ninios',   icon: 'child_care', label: 'Niños',      desc: 'Ver información de niños registrados',  color: '#2E7D32', bg: '#E8F5E9' },
+        { route: '/funcionario/grupos',   icon: 'category',   label: 'Grupos',     desc: 'Consultar grupos del centro',           color: '#7B1FA2', bg: '#F3E5F5' },
+        { route: '/funcionario/reportes', icon: 'assessment', label: 'Reportes',   desc: 'Generar y ver reportes sociales',       color: '#1565C0', bg: '#E3F2FD' },
+        { route: '/funcionario/agenda',   icon: 'calendar_month', label: 'Agenda', desc: 'Mi agenda de atenciones',              color: '#FF6F00', bg: '#FFF3E0' },
       ],
       infoItems: [
         { icon: 'schedule',    color: '#1565C0', text: 'Jornada parcial: 20 horas semanales' },
@@ -111,9 +110,9 @@ export class DashboardFuncionarioComponent implements OnInit {
       bannerIcon: 'psychology',
       bannerDesc: 'Equipo técnico — 20 horas semanales',
       acciones: [
-        { route: '/admin/ninios',   icon: 'child_care',    label: 'Niños',       desc: 'Seguimiento de niños',               color: '#2E7D32', bg: '#E8F5E9' },
-        { route: '/admin/reportes', icon: 'assessment',    label: 'Reportes',    desc: 'Informes psicológicos',              color: '#6A1B9A', bg: '#EDE7F6' },
-        { route: '/admin/agenda',   icon: 'calendar_month',label: 'Agenda',      desc: 'Sesiones y reuniones programadas',   color: '#FF6F00', bg: '#FFF3E0' },
+        { route: '/funcionario/ninios',   icon: 'child_care',    label: 'Niños',       desc: 'Seguimiento de niños',               color: '#2E7D32', bg: '#E8F5E9' },
+        { route: '/funcionario/reportes', icon: 'assessment',    label: 'Reportes',    desc: 'Informes psicológicos',              color: '#6A1B9A', bg: '#EDE7F6' },
+        { route: '/funcionario/agenda',   icon: 'calendar_month',label: 'Agenda',      desc: 'Sesiones y reuniones programadas',   color: '#FF6F00', bg: '#FFF3E0' },
       ],
       infoItems: [
         { icon: 'schedule',     color: '#6A1B9A', text: 'Jornada parcial: 20 horas semanales' },
@@ -128,9 +127,9 @@ export class DashboardFuncionarioComponent implements OnInit {
       bannerIcon: 'directions_run',
       bannerDesc: 'Equipo técnico — 20 horas semanales',
       acciones: [
-        { route: '/admin/grupos',      icon: 'category',      label: 'Grupos',      desc: 'Grupos donde trabajo',              color: '#00695C', bg: '#E0F2F1' },
-        { route: '/admin/actividades', icon: 'event',         label: 'Actividades', desc: 'Sesiones de psicomotricidad',       color: '#FF6F00', bg: '#FFF3E0' },
-        { route: '/admin/reportes',    icon: 'assessment',    label: 'Reportes',    desc: 'Reportes de seguimiento',           color: '#1565C0', bg: '#E3F2FD' },
+        { route: '/funcionario/grupos',      icon: 'category',      label: 'Grupos',      desc: 'Grupos donde trabajo',              color: '#00695C', bg: '#E0F2F1' },
+        { route: '/funcionario/actividades', icon: 'event',         label: 'Actividades', desc: 'Sesiones de psicomotricidad',       color: '#FF6F00', bg: '#FFF3E0' },
+        { route: '/funcionario/reportes',    icon: 'assessment',    label: 'Reportes',    desc: 'Reportes de seguimiento',           color: '#1565C0', bg: '#E3F2FD' },
       ],
       infoItems: [
         { icon: 'schedule',        color: '#00695C', text: 'Jornada parcial: 20 horas semanales' },
@@ -145,10 +144,10 @@ export class DashboardFuncionarioComponent implements OnInit {
       bannerIcon: 'school',
       bannerDesc: 'Equipo técnico — 20 horas semanales · Parte pedagógica',
       acciones: [
-        { route: '/admin/grupos',      icon: 'category',      label: 'Mis Grupos',   desc: 'Grupos a mi cargo',                 color: '#1565C0', bg: '#E3F2FD' },
-        { route: '/admin/ninios',      icon: 'child_care',    label: 'Niños',        desc: 'Ver niños registrados',             color: '#2E7D32', bg: '#E8F5E9' },
-        { route: '/admin/actividades', icon: 'event',         label: 'Actividades',  desc: 'Planificación pedagógica',          color: '#FF6F00', bg: '#FFF3E0' },
-        { route: '/admin/reportes',    icon: 'assessment',    label: 'Reportes',     desc: 'Informes de avance',               color: '#7B1FA2', bg: '#F3E5F5' },
+        { route: '/funcionario/grupos',      icon: 'category',      label: 'Mis Grupos',   desc: 'Grupos a mi cargo',                 color: '#1565C0', bg: '#E3F2FD' },
+        { route: '/funcionario/ninios',      icon: 'child_care',    label: 'Niños',        desc: 'Ver niños registrados',             color: '#2E7D32', bg: '#E8F5E9' },
+        { route: '/funcionario/actividades', icon: 'event',         label: 'Actividades',  desc: 'Planificación pedagógica',          color: '#FF6F00', bg: '#FFF3E0' },
+        { route: '/funcionario/reportes',    icon: 'assessment',    label: 'Reportes',     desc: 'Informes de avance',               color: '#7B1FA2', bg: '#F3E5F5' },
       ],
       infoItems: [
         { icon: 'schedule',    color: '#1565C0', text: 'Jornada parcial: 20 horas semanales' },
@@ -163,9 +162,8 @@ export class DashboardFuncionarioComponent implements OnInit {
       bannerIcon: 'admin_panel_settings',
       bannerDesc: 'Equipo técnico — 20 horas semanales',
       acciones: [
-        { route: '/admin/usuarios',    icon: 'manage_accounts', label: 'Usuarios',    desc: 'Gestión administrativa',            color: '#37474F', bg: '#ECEFF1' },
-        { route: '/admin/turnos',      icon: 'schedule',        label: 'Turnos',      desc: 'Control de horarios',              color: '#FF6F00', bg: '#FFF3E0' },
-        { route: '/admin/reportes',    icon: 'assessment',      label: 'Reportes',    desc: 'Documentación y reportes',         color: '#1565C0', bg: '#E3F2FD' },
+        { route: '/funcionario/turnos',      icon: 'schedule',        label: 'Turnos',      desc: 'Control de horarios',              color: '#FF6F00', bg: '#FFF3E0' },
+        { route: '/funcionario/reportes',    icon: 'assessment',      label: 'Reportes',    desc: 'Documentación y reportes',         color: '#1565C0', bg: '#E3F2FD' },
       ],
       infoItems: [
         { icon: 'schedule',           color: '#37474F', text: 'Jornada parcial: 20 horas semanales' },
@@ -179,10 +177,10 @@ export class DashboardFuncionarioComponent implements OnInit {
       bannerIcon: 'face',
       bannerDesc: 'Educador/a — Por debajo del equipo técnico',
       acciones: [
-        { route: '/admin/grupos',      icon: 'category',      label: 'Mis Grupos',    desc: 'Niños a mi cargo',                 color: '#2E7D32', bg: '#E8F5E9' },
-        { route: '/admin/actividades', icon: 'event',         label: 'Actividades',   desc: 'Actividades programadas',          color: '#FF6F00', bg: '#FFF3E0' },
-        { route: '/admin/reportes',    icon: 'assessment',    label: 'Reportes',      desc: 'Reportes de mi sala',             color: '#1565C0', bg: '#E3F2FD' },
-        { route: '/admin/agenda',      icon: 'calendar_month',label: 'Agenda',        desc: 'Mi agenda diaria',                color: '#7B1FA2', bg: '#F3E5F5' },
+        { route: '/funcionario/grupos',      icon: 'category',      label: 'Mis Grupos',    desc: 'Niños a mi cargo',                 color: '#2E7D32', bg: '#E8F5E9' },
+        { route: '/funcionario/actividades', icon: 'event',         label: 'Actividades',   desc: 'Actividades programadas',          color: '#FF6F00', bg: '#FFF3E0' },
+        { route: '/funcionario/reportes',    icon: 'assessment',    label: 'Reportes',      desc: 'Reportes de mi sala',             color: '#1565C0', bg: '#E3F2FD' },
+        { route: '/funcionario/agenda',      icon: 'calendar_month',label: 'Agenda',        desc: 'Mi agenda diaria',                color: '#7B1FA2', bg: '#F3E5F5' },
       ],
       infoItems: [
         { icon: 'group_work',  color: '#2E7D32', text: 'Trabaja directamente con los niños en sala' },
@@ -196,9 +194,9 @@ export class DashboardFuncionarioComponent implements OnInit {
       bannerIcon: 'palette',
       bannerDesc: 'Tallerista de Expresión Plástica',
       acciones: [
-        { route: '/admin/actividades', icon: 'palette',     label: 'Talleres',     desc: 'Mis talleres de expresión plástica', color: '#E64A19', bg: '#FBE9E7' },
-        { route: '/admin/grupos',      icon: 'category',    label: 'Grupos',       desc: 'Grupos que atiendo',                color: '#2E7D32', bg: '#E8F5E9' },
-        { route: '/admin/reportes',    icon: 'assessment',  label: 'Reportes',     desc: 'Reportes de taller',                color: '#1565C0', bg: '#E3F2FD' },
+        { route: '/funcionario/actividades', icon: 'palette',     label: 'Talleres',     desc: 'Mis talleres de expresión plástica', color: '#E64A19', bg: '#FBE9E7' },
+        { route: '/funcionario/grupos',      icon: 'category',    label: 'Grupos',       desc: 'Grupos que atiendo',                color: '#2E7D32', bg: '#E8F5E9' },
+        { route: '/funcionario/reportes',    icon: 'assessment',  label: 'Reportes',     desc: 'Reportes de taller',                color: '#1565C0', bg: '#E3F2FD' },
       ],
       infoItems: [
         { icon: 'palette',   color: '#E64A19', text: 'Talleres de expresión artística y plástica' },
@@ -212,9 +210,9 @@ export class DashboardFuncionarioComponent implements OnInit {
       bannerIcon: 'architecture',
       bannerDesc: 'Tallerista de Cerámica',
       acciones: [
-        { route: '/admin/actividades', icon: 'architecture', label: 'Talleres',    desc: 'Mis talleres de cerámica',          color: '#5D4037', bg: '#EFEBE9' },
-        { route: '/admin/grupos',      icon: 'category',     label: 'Grupos',      desc: 'Grupos que atiendo',               color: '#2E7D32', bg: '#E8F5E9' },
-        { route: '/admin/reportes',    icon: 'assessment',   label: 'Reportes',    desc: 'Reportes de taller',               color: '#1565C0', bg: '#E3F2FD' },
+        { route: '/funcionario/actividades', icon: 'architecture', label: 'Talleres',    desc: 'Mis talleres de cerámica',          color: '#5D4037', bg: '#EFEBE9' },
+        { route: '/funcionario/grupos',      icon: 'category',     label: 'Grupos',      desc: 'Grupos que atiendo',               color: '#2E7D32', bg: '#E8F5E9' },
+        { route: '/funcionario/reportes',    icon: 'assessment',   label: 'Reportes',    desc: 'Reportes de taller',               color: '#1565C0', bg: '#E3F2FD' },
       ],
       infoItems: [
         { icon: 'architecture',color: '#5D4037', text: 'Talleres de modelado y cerámica' },
@@ -228,9 +226,9 @@ export class DashboardFuncionarioComponent implements OnInit {
       bannerIcon: 'self_improvement',
       bannerDesc: 'Tallerista de Expresión Corporal',
       acciones: [
-        { route: '/admin/actividades', icon: 'self_improvement', label: 'Talleres',  desc: 'Mis talleres corporales',           color: '#1565C0', bg: '#E3F2FD' },
-        { route: '/admin/grupos',      icon: 'category',          label: 'Grupos',    desc: 'Grupos que atiendo',               color: '#2E7D32', bg: '#E8F5E9' },
-        { route: '/admin/reportes',    icon: 'assessment',        label: 'Reportes',  desc: 'Reportes de taller',               color: '#7B1FA2', bg: '#F3E5F5' },
+        { route: '/funcionario/actividades', icon: 'self_improvement', label: 'Talleres',  desc: 'Mis talleres corporales',           color: '#1565C0', bg: '#E3F2FD' },
+        { route: '/funcionario/grupos',      icon: 'category',          label: 'Grupos',    desc: 'Grupos que atiendo',               color: '#2E7D32', bg: '#E8F5E9' },
+        { route: '/funcionario/reportes',    icon: 'assessment',        label: 'Reportes',  desc: 'Reportes de taller',               color: '#7B1FA2', bg: '#F3E5F5' },
       ],
       infoItems: [
         { icon: 'self_improvement', color: '#1565C0', text: 'Talleres de expresión corporal y movimiento' },
@@ -244,8 +242,8 @@ export class DashboardFuncionarioComponent implements OnInit {
       bannerIcon: 'cleaning_services',
       bannerDesc: 'Auxiliar de Limpieza — Turnos rotativos 7:00 – 19:00 hs',
       acciones: [
-        { route: '/admin/turnos',  icon: 'schedule',   label: 'Mis Turnos',  desc: 'Ver mis horarios asignados',         color: '#FF6F00', bg: '#FFF3E0' },
-        { route: '/admin/agenda',  icon: 'calendar_month', label: 'Agenda', desc: 'Novedades y comunicados del día',     color: '#1565C0', bg: '#E3F2FD' },
+        { route: '/funcionario/turnos',  icon: 'schedule',   label: 'Mis Turnos',  desc: 'Ver mis horarios asignados',         color: '#FF6F00', bg: '#FFF3E0' },
+        { route: '/funcionario/agenda',  icon: 'calendar_month', label: 'Agenda', desc: 'Novedades y comunicados del día',     color: '#1565C0', bg: '#E3F2FD' },
       ],
       infoItems: [
         { icon: 'schedule',          color: '#FF6F00', text: 'El centro opera 7:00 – 19:00 hs de lunes a viernes' },
@@ -264,8 +262,8 @@ export class DashboardFuncionarioComponent implements OnInit {
     bannerIcon: 'badge',
     bannerDesc: 'Funcionario del Centro Crecer',
     acciones: [
-      { route: '/admin/turnos',  icon: 'schedule',  label: 'Mis Turnos', desc: 'Ver mis horarios',            color: '#FF6F00', bg: '#FFF3E0' },
-      { route: '/admin/reportes',icon: 'assessment',label: 'Reportes',   desc: 'Generar y ver reportes',      color: '#7B1FA2', bg: '#F3E5F5' },
+      { route: '/funcionario/turnos',  icon: 'schedule',  label: 'Mis Turnos', desc: 'Ver mis horarios',            color: '#FF6F00', bg: '#FFF3E0' },
+      { route: '/funcionario/reportes',icon: 'assessment',label: 'Reportes',   desc: 'Generar y ver reportes',      color: '#7B1FA2', bg: '#F3E5F5' },
     ],
     infoItems: [
       { icon: 'schedule', color: '#1565C0', text: 'El centro opera de lunes a viernes, 7:00 – 19:00 hs' },

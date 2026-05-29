@@ -97,6 +97,7 @@ export class GrupoDialogComponent {
     { valor: '1-2',  label: '1 a 2 años' },
     { valor: '2-3',  label: '2 a 3 años' },
     { valor: '3-4',  label: '3 a 4 años' },
+    { valor: '4-5',  label: '4 a 5 años' },
     { valor: '5-12', label: '5 a 12 años' },
   ];
 
@@ -288,6 +289,7 @@ export class GruposComponent implements OnInit {
     { valor: '1-2',  label: '1 – 2 años',   icon: 'child_friendly',        color: '#7B1FA2', bg: '#F3E5F5' },
     { valor: '2-3',  label: '2 – 3 años',   icon: 'directions_run',        color: '#00695C', bg: '#E0F2F1' },
     { valor: '3-4',  label: '3 – 4 años',   icon: 'school',                color: '#1565C0', bg: '#E3F2FD' },
+    { valor: '4-5',  label: '4 – 5 años',   icon: 'emoji_people',          color: '#E65100', bg: '#FBE9E7' },
     { valor: '5-12', label: '5 – 12 años',  icon: 'menu_book',             color: '#2E7D32', bg: '#E8F5E9' },
   ];
 

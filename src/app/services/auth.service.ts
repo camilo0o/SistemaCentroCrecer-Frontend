@@ -5,9 +5,6 @@ import { Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
 import { LoginRequest, LoginResponse } from '../models/models';
 
-
-
-
 @Injectable({ providedIn: 'root' })
 export class AuthService {
  
@@ -28,14 +25,21 @@ export class AuthService {
   }
  
   private saveSession(res: LoginResponse) {
-  if (res.token) {
-    localStorage.setItem('token', res.token);
+    if (res.token) {
+      localStorage.setItem('token', res.token);
+    }
+    localStorage.setItem('rol', res.rol);
+    localStorage.setItem('nombre', res.nombreCompleto);
+    localStorage.setItem('email', res.email);
+    localStorage.setItem('userId', res.id.toString());
+
+    // Guardar flag de cambio de contraseña obligatorio
+    if (res.mustChangePassword) {
+      localStorage.setItem('mustChangePassword', 'true');
+    } else {
+      localStorage.removeItem('mustChangePassword');
+    }
   }
-  localStorage.setItem('rol', res.rol);
-  localStorage.setItem('nombre', res.nombreCompleto);
-  localStorage.setItem('email', res.email);
-  localStorage.setItem('userId', res.id.toString());
-}
    
   getToken(): string | null {
     return localStorage.getItem('token'); 
@@ -53,17 +57,24 @@ export class AuthService {
     return localStorage.getItem('email'); 
   }
 
-    getUserId(): number | null {
+  getUserId(): number | null {
     const v = localStorage.getItem('userId');
     return v ? Number(v) : null;
   }
 
- 
+  mustChangePassword(): boolean {
+    return localStorage.getItem('mustChangePassword') === 'true';
+  }
+
+  clearMustChangePassword() {
+    localStorage.removeItem('mustChangePassword');
+  }
+
   isLoggedIn(): boolean {
     return !!this.getToken();
   }
   
-    isAdmin(): boolean {
+  isAdmin(): boolean {
     return this.getRol() === 'ADMINISTRADOR_SISTEMA';
   }
  
@@ -76,7 +87,6 @@ export class AuthService {
     return ['COORDINADORA', 'PSICOLOGO', 'MAESTRA', 'ASISTENTE_SOCIAL'].includes(rol ?? '');
   }
 
- 
   logout() {
     localStorage.clear();
     this.router.navigate(['/iniciarSesion']);

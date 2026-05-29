@@ -51,7 +51,7 @@ export class LoginComponent {
   seleccionarTipo(tipo: 'funcionario' | 'responsable') { this.tipoUsuario = tipo; this.error = ''; }
   togglePassword() { this.mostrarPassword = !this.mostrarPassword; }
 
- iniciarSesion() {
+  iniciarSesion() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.cargando = true;
     this.error = '';
@@ -66,7 +66,6 @@ export class LoginComponent {
 
         const esResponsable = res.rol === 'RESPONSABLE';
 
-        // Validar que el tipo seleccionado coincida con el rol recibido
         if (this.tipoUsuario === 'responsable' && !esResponsable) {
           this.authService.logout();
           this.error = 'Esta cuenta no es de responsable. Usá la pestaña Funcionario.';
@@ -79,11 +78,18 @@ export class LoginComponent {
         }
 
         this.toast.success('¡Bienvenido/a, ' + res.nombreCompleto + '!');
+
+        // Si debe cambiar contraseña, redirigir al perfil
+        if (res.mustChangePassword) {
+          setTimeout(() => this.router.navigate(['/perfil']), 0);
+          return;
+        }
+
         setTimeout(() => this.redirect(res.rol), 0);
       },
       error: (err) => {
         this.cargando = false;
-        this.error = err.error?.error || 'Credenciales incorrectas. Intentá de nuevo.';
+        this.error = err.error?.error || err.error?.message || 'Credenciales incorrectas. Intentá de nuevo.';
       }
     });
   }

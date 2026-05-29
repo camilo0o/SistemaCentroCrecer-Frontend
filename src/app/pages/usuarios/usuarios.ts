@@ -21,7 +21,8 @@ import { FuncionarioService } from '../../services/funcionario.service';
 import { RolService } from '../../services/rol.service';
 import { ToastService } from '../../services/toast.service';
 import { FuncionarioResponse, FuncionarioRequest, Rol, ROL_DISPLAY } from '../../models/models';
-import { finalize } from 'rxjs/operators';
+import { finalize, catchError } from 'rxjs/operators';
+import { of, forkJoin } from 'rxjs';
 
 // Dialog Funcionario
 @Component({
@@ -78,6 +79,9 @@ import { finalize } from 'rxjs/operators';
         <mat-form-field appearance="outline" class="full">
           <mat-label>Rol</mat-label>
           <mat-select formControlName="rolId">
+            @if(roles.length === 0){
+              <mat-option disabled>Cargando roles...</mat-option>
+            }
             @for(rol of roles; track rol.id){
               <mat-option [value]="rol.id">{{ getRolDisplay(rol.nombre) }}</mat-option>
             }
@@ -104,7 +108,7 @@ import { finalize } from 'rxjs/operators';
               <mat-icon>{{ showPass ? 'visibility_off' : 'visibility' }}</mat-icon>
             </button>
             @if(form.get('contrasenia')?.invalid && form.get('contrasenia')?.touched){
-              <mat-error>Mínimo 8 caracteres</mat-error>
+              <mat-error>Mínimo 10 caracteres</mat-error>
             }
           </mat-form-field>
         }
@@ -135,7 +139,7 @@ export class FuncionarioDialogComponent {
     private toast: ToastService
   ) {
     // Filtrar ADMINISTRADOR_SISTEMA de la lista de roles disponibles para asignar
-    this.roles = data.roles.filter(r => r.nombre !== 'ADMINISTRADOR_SISTEMA');
+    this.roles = (data.roles ?? []).filter(r => r.nombre !== 'ADMINISTRADOR_SISTEMA');
     const f = data.funcionario;
     const esAdminSistema = f?.rol?.nombre === 'ADMINISTRADOR_SISTEMA';
 
@@ -147,7 +151,7 @@ export class FuncionarioDialogComponent {
       telefono:    [f?.telefono ?? ''],
       fechaNacimiento: [f?.fechaNacimiento ? new Date(f.fechaNacimiento) : null],
       rolId:       [{ value: f?.rol?.id ?? null, disabled: esAdminSistema }, Validators.required],
-      contrasenia: ['', data.modo === 'crear' ? [Validators.required, Validators.minLength(8)] : []]
+      contrasenia: ['', data.modo === 'crear' ? [Validators.required, Validators.minLength(10)] : []]
     });
   }
 
@@ -168,7 +172,7 @@ export class FuncionarioDialogComponent {
       : this.funcionarioService.actualizar(this.data.funcionario!.id, payload);
     op.subscribe({
       next: (res) => { this.guardando = false; this.ref.close(res); },
-      error: (err) => { this.guardando = false; this.toast.error(err.error?.error ?? 'Error al guardar'); }
+      error: (err) => { this.guardando = false; this.toast.error(err.error?.error ?? err.error?.message ?? 'Error al guardar'); }
     });
   }
 }
@@ -280,8 +284,37 @@ export class UsuariosComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.rolService.listarActivos().subscribe(r => this.roles = r);
-    this.cargarFuncionarios();
+    this.cargarDatos();
+  }
+
+  /** Carga roles y funcionarios en paralelo, con fallback si /roles/activos falla */
+  cargarDatos() {
+    this.cargando = true;
+
+    const roles$ = this.rolService.listarActivos().pipe(
+      catchError(() =>
+        // Fallback: intentar con el endpoint general de roles
+        this.rolService.listarTodos().pipe(
+          catchError(() => {
+            this.toast.error('No se pudieron cargar los roles');
+            return of([] as Rol[]);
+          })
+        )
+      )
+    );
+
+    forkJoin({ roles: roles$, funcionarios: this.funcionarioService.listarTodos().pipe(catchError(() => of([]))) })
+      .pipe(finalize(() => { this.cargando = false; this.cdr.detectChanges(); }))
+      .subscribe({
+        next: ({ roles, funcionarios }) => {
+          this.roles = roles;
+          this.funcionarios = funcionarios as FuncionarioResponse[];
+          this.aplicarFiltros();
+        },
+        error: () => {
+          this.toast.error('Error al cargar datos');
+        }
+      });
   }
 
   cargarFuncionarios() {
@@ -324,6 +357,10 @@ export class UsuariosComponent implements OnInit {
   }
 
   abrirCrear() {
+    if (this.roles.length === 0) {
+      this.toast.error('No hay roles disponibles. Recargá la página e intentá de nuevo.');
+      return;
+    }
     this.dialog.open(FuncionarioDialogComponent, { data: { modo: 'crear', roles: this.roles } })
       .afterClosed().subscribe(r => { if (r) { this.toast.success('Funcionario creado'); this.cargarFuncionarios(); } });
   }

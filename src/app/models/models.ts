@@ -12,6 +12,8 @@ export interface LoginResponse {
   nombreCompleto: string;
   email: string;
   expiracion: number;
+  // BUG CORREGIDO: campo agregado — el backend ahora lo envía
+  mustChangePassword?: boolean | null;
 }
 
 // Rol model
@@ -103,10 +105,8 @@ export interface GrupoRequest {
 }
 
 // Turno models
-/** Valores ISO que devuelve Java DayOfWeek serializado por Jackson */
 export type DiaSemana = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
 
-/** Mapeo de DayOfWeek → etiquetas en español */
 export const DIAS_SEMANA: { valor: DiaSemana; etiqueta: string; abrev: string }[] = [
   { valor: 'MONDAY',    etiqueta: 'Lunes',     abrev: 'Lun' },
   { valor: 'TUESDAY',   etiqueta: 'Martes',    abrev: 'Mar' },
@@ -243,7 +243,6 @@ export interface ParticipanteResponse {
   grupoNombre?: string;
 }
 
-// Labels para estados de actividad
 export const ESTADO_ACTIVIDAD_DISPLAY: Record<EstadoActividad, string> = {
   PLANIFICADA: 'Planificada',
   EN_CURSO:    'En curso',
@@ -251,11 +250,11 @@ export const ESTADO_ACTIVIDAD_DISPLAY: Record<EstadoActividad, string> = {
   CANCELADA:   'Cancelada',
 }
 
-// Agenda — anotaciones personales del funcionario
+// Agenda
 export interface AgendaResponse {
   id: number;
-  fecha: string;           // 'YYYY-MM-DD'
-  horaInicio: string;      // 'HH:mm'
+  fecha: string;
+  horaInicio: string;
   horaFin?: string;
   descripcion: string;
   funcionarioId: number;

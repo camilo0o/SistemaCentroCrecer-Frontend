@@ -15,100 +15,148 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatDividerModule } from '@angular/material/divider';
 import { GrupoService } from '../../services/grupo.service';
+import { FuncionarioService } from '../../services/funcionario.service';
 import { ToastService } from '../../services/toast.service';
-import { GrupoResponse, GrupoRequest, NinioResponse } from '../../models/models';
+import { GrupoResponse, GrupoRequest, NinioResponse, FuncionarioResponse, ROL_DISPLAY } from '../../models/models';
 import { finalize } from 'rxjs/operators';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-grupo-dialog',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule,
+    CommonModule, ReactiveFormsModule, FormsModule,
     MatFormFieldModule, MatInputModule, MatSelectModule,
-    MatButtonModule, MatIconModule, MatDialogModule, MatProgressSpinnerModule
+    MatButtonModule, MatIconModule, MatDialogModule, MatProgressSpinnerModule,
+    MatChipsModule
   ],
+  styles: [`
+    .section-label { font-size:12px;font-weight:600;color:#5C6680;text-transform:uppercase;letter-spacing:.5px;margin:4px 0 6px;display:flex;align-items:center;gap:4px }
+    .chips-row { display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;min-height:28px }
+    .chip-func { background:#E3F2FD;color:#1565C0;border-radius:16px;padding:4px 10px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:4px;cursor:default }
+    .chip-func mat-icon { font-size:14px;width:14px;height:14px;cursor:pointer;color:#1565C0 }
+    .empty-sel { font-size:12px;color:#9AA0B9;font-style:italic }
+  `],
   template: `
-    <div class="dlg-header">
-      <h2 class="dlg-title">{{ data.modo === 'crear' ? 'Nuevo Grupo' : 'Editar Grupo' }}</h2>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:20px 24px 0">
+      <h2 style="margin:0;font-size:18px;font-weight:600;color:#1565C0">{{ data.modo === 'crear' ? 'Nuevo Grupo' : 'Editar Grupo' }}</h2>
       <button mat-icon-button (click)="ref.close()"><mat-icon>close</mat-icon></button>
     </div>
 
-    <mat-dialog-content style="padding:24px;min-width:460px">
-      <form [formGroup]="form" style="display:flex;flex-direction:column;gap:16px">
-
-        <mat-form-field appearance="outline">
-          <mat-label>Nombre del grupo</mat-label>
-          <input matInput formControlName="nombre" placeholder="Ej: Sala Azul">
-          @if(form.get('nombre')?.invalid && form.get('nombre')?.touched){
-            <mat-error>Requerido (2–100 caracteres)</mat-error>
-          }
-        </mat-form-field>
-
-        <!-- Rango de edad:
-             - Editar: selector editable
-             - Crear con rango pre-fijado (desde seccion): banner informativo, sin selector
-             - Crear sin rango (desde boton global): selector opcional -->
-        @if(data.modo === 'editar'){
-          <mat-form-field appearance="outline">
-            <mat-label>Rango de edad</mat-label>
-            <mat-select formControlName="rangoEdad">
-              @for(r of rangos; track r.valor){
-                <mat-option [value]="r.valor">{{ r.label }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-        } @else if(rangoSeleccionado){
-          <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;
-                      background:#E3F2FD;border-radius:8px;border:1px solid #BBDEFB">
-            <mat-icon style="color:#1565C0;font-size:20px">info_outline</mat-icon>
-            <span style="font-size:14px;color:#1565C0">
-              El grupo se creara en el rango <strong>{{ rangoSeleccionado.label }}</strong>
-            </span>
-          </div>
-        } @else {
-          <mat-form-field appearance="outline">
-            <mat-label>Rango de edad</mat-label>
-            <mat-select formControlName="rangoEdad">
-              @for(r of rangos; track r.valor){
-                <mat-option [value]="r.valor">{{ r.label }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-        }
-
-        <div style="display:flex;gap:12px">
-          <mat-form-field appearance="outline" style="flex:1">
-            <mat-label>Hora inicio</mat-label>
-            <input matInput formControlName="horaInicio" type="time">
-            @if(form.get('horaInicio')?.invalid && form.get('horaInicio')?.touched){
-              <mat-error>Requerido</mat-error>
-            }
-          </mat-form-field>
-          <mat-form-field appearance="outline" style="flex:1">
-            <mat-label>Hora fin</mat-label>
-            <input matInput formControlName="horaFin" type="time">
-            @if(form.get('horaFin')?.invalid && form.get('horaFin')?.touched){
-              <mat-error>Requerido</mat-error>
-            }
-          </mat-form-field>
+    <mat-dialog-content style="padding:16px 24px;min-width:500px;max-height:72vh;overflow-y:auto">
+      @if(cargandoDatos){
+        <div style="display:flex;justify-content:center;padding:32px">
+          <mat-spinner diameter="36"></mat-spinner>
         </div>
+      } @else {
+        <form [formGroup]="form" style="display:flex;flex-direction:column;gap:14px">
 
-      </form>
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre del grupo</mat-label>
+            <input matInput formControlName="nombre" placeholder="Ej: Sala Azul">
+            @if(form.get('nombre')?.invalid && form.get('nombre')?.touched){
+              <mat-error>Requerido (2–100 caracteres)</mat-error>
+            }
+          </mat-form-field>
+
+          @if(data.modo === 'editar'){
+            <mat-form-field appearance="outline">
+              <mat-label>Rango de edad</mat-label>
+              <mat-select formControlName="rangoEdad">
+                @for(r of rangos; track r.valor){
+                  <mat-option [value]="r.valor">{{ r.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          } @else if(rangoSeleccionado){
+            <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;
+                        background:#E3F2FD;border-radius:8px;border:1px solid #BBDEFB">
+              <mat-icon style="color:#1565C0;font-size:20px">info_outline</mat-icon>
+              <span style="font-size:14px;color:#1565C0">
+                El grupo se creará en el rango <strong>{{ rangoSeleccionado.label }}</strong>
+              </span>
+            </div>
+          } @else {
+            <mat-form-field appearance="outline">
+              <mat-label>Rango de edad</mat-label>
+              <mat-select formControlName="rangoEdad">
+                @for(r of rangos; track r.valor){
+                  <mat-option [value]="r.valor">{{ r.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          }
+
+          <div style="display:flex;gap:12px">
+            <mat-form-field appearance="outline" style="flex:1">
+              <mat-label>Hora inicio</mat-label>
+              <input matInput formControlName="horaInicio" type="time">
+              @if(form.get('horaInicio')?.invalid && form.get('horaInicio')?.touched){
+                <mat-error>Requerido</mat-error>
+              }
+            </mat-form-field>
+            <mat-form-field appearance="outline" style="flex:1">
+              <mat-label>Hora fin</mat-label>
+              <input matInput formControlName="horaFin" type="time">
+              @if(form.get('horaFin')?.invalid && form.get('horaFin')?.touched){
+                <mat-error>Requerido</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <!-- Selección de funcionarios responsables -->
+          <div>
+            <div class="section-label">
+              <mat-icon style="font-size:15px">person_pin</mat-icon>
+              Funcionarios responsables
+            </div>
+            <mat-form-field appearance="outline" style="width:100%">
+              <mat-label>Seleccionar funcionarios</mat-label>
+              <mat-select multiple [(ngModel)]="funcionariosSeleccionados" [ngModelOptions]="{standalone:true}">
+                @for(f of funcionarios; track f.id){
+                  <mat-option [value]="f.id">
+                    {{ f.nombre }} {{ f.apellido }}
+                    <span style="font-size:11px;color:#9AA0B9;margin-left:4px">· {{ getRolDisplay(f.rol?.nombre) }}</span>
+                  </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            @if(funcionariosSeleccionados.length > 0){
+              <div class="chips-row">
+                @for(fId of funcionariosSeleccionados; track fId){
+                  <span class="chip-func">
+                    <mat-icon>person</mat-icon>
+                    {{ getFuncionarioNombre(fId) }}
+                    <mat-icon (click)="quitarFuncionario(fId)">close</mat-icon>
+                  </span>
+                }
+              </div>
+            } @else {
+              <p class="empty-sel">Sin funcionarios seleccionados</p>
+            }
+          </div>
+
+        </form>
+      }
     </mat-dialog-content>
 
     <div style="display:flex;justify-content:flex-end;gap:12px;padding:16px 24px">
       <button mat-stroked-button (click)="ref.close()">Cancelar</button>
       <button mat-flat-button style="background:#1565C0;color:white"
-              (click)="guardar()" [disabled]="guardando">
+              (click)="guardar()" [disabled]="guardando || cargandoDatos">
         @if(guardando){ <mat-spinner diameter="18" color="accent"></mat-spinner> }
         @else { {{ data.modo === 'crear' ? 'Crear Grupo' : 'Guardar Cambios' }} }
       </button>
     </div>
   `
 })
-export class GrupoDialogComponent {
+export class GrupoDialogComponent implements OnInit {
   form: FormGroup;
   guardando = false;
+  cargandoDatos = true;
+  funcionarios: FuncionarioResponse[] = [];
+  funcionariosSeleccionados: number[] = [];
 
   rangos = [
     { valor: '0-1',  label: '0 a 1 año' },
@@ -119,7 +167,6 @@ export class GrupoDialogComponent {
     { valor: '5-12', label: '5 a 12 años' },
   ];
 
-  /** Rango pre-asignado al crear desde una sección específica */
   rangoSeleccionado: { valor: string; label: string } | undefined;
 
   constructor(
@@ -127,16 +174,12 @@ export class GrupoDialogComponent {
     public ref: MatDialogRef<GrupoDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { modo: 'crear' | 'editar'; grupo?: GrupoResponse; rangoEdad?: string },
     private grupoService: GrupoService,
-    private toast: ToastService
+    private funcionarioService: FuncionarioService,
+    private toast: ToastService,
+    private cdr: ChangeDetectorRef
   ) {
     const g = data.grupo;
-
-    // Al crear, el rango viene pre-fijado desde la sección; al editar, se toma del grupo existente
-    const rangoInicial = data.modo === 'crear'
-      ? (data.rangoEdad ?? '')
-      : (g?.rangoEdad ?? '');
-
-    // Guardamos el objeto rango para mostrarlo en el banner informativo
+    const rangoInicial = data.modo === 'crear' ? (data.rangoEdad ?? '') : (g?.rangoEdad ?? '');
     this.rangoSeleccionado = this.rangos.find(r => r.valor === rangoInicial);
 
     this.form = this.fb.group({
@@ -147,22 +190,56 @@ export class GrupoDialogComponent {
     });
   }
 
+  ngOnInit() {
+    this.funcionarioService.listarActivos().pipe(
+      finalize(() => { this.cargandoDatos = false; this.cdr.detectChanges(); })
+    ).subscribe({
+      next: (fs) => {
+        this.funcionarios = fs;
+        // Pre-cargar funcionarios seleccionados al editar
+        if (this.data.modo === 'editar' && this.data.grupo?.funcionarios) {
+          this.funcionariosSeleccionados = this.data.grupo.funcionarios.map(f => f.id);
+        }
+      },
+      error: () => this.toast.error('Error al cargar funcionarios')
+    });
+  }
+
+  getRolDisplay(nombre?: string): string {
+    return nombre ? (ROL_DISPLAY[nombre] ?? nombre) : '';
+  }
+
+  getFuncionarioNombre(id: number): string {
+    const f = this.funcionarios.find(f => f.id === id);
+    return f ? `${f.nombre} ${f.apellido}` : String(id);
+  }
+
+  quitarFuncionario(id: number) {
+    this.funcionariosSeleccionados = this.funcionariosSeleccionados.filter(f => f !== id);
+  }
+
   guardar() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.guardando = true;
-    const payload: GrupoRequest = this.form.value;
+
+    const payload: GrupoRequest = {
+      ...this.form.value,
+      funcionariosIds: this.funcionariosSeleccionados,
+    };
 
     const op$ = this.data.modo === 'crear'
       ? this.grupoService.crear(payload)
       : this.grupoService.actualizar(this.data.grupo!.id, payload);
 
-    op$.subscribe({
-      next: (g) => { this.guardando = false; this.ref.close(g); },
-      error: (err) => {
-        this.guardando = false;
-        this.toast.error(err.error?.error ?? 'Error al guardar grupo');
-      }
-    });
+    // FIX: finalize garantiza que guardando vuelva a false siempre,
+    // incluso si ocurre un error inesperado (timeout, red, etc.)
+    op$.pipe(finalize(() => { this.guardando = false; }))
+      .subscribe({
+        next: (g) => { this.ref.close(g); },
+        error: (err) => {
+          this.toast.error(err.error?.mensaje ?? err.error?.error ?? 'Error al guardar grupo');
+        }
+      });
   }
 }
 
@@ -184,7 +261,6 @@ export class GruposComponent implements OnInit {
   cargando = true;
   busqueda = '';
 
-  /** Rangos fijos con ícono y color */
   readonly RANGOS = [
     { valor: '0-1',  label: '0 – 1 año',   icon: 'baby_changing_station', color: '#FF6F00', bg: '#FFF3E0' },
     { valor: '1-2',  label: '1 – 2 años',   icon: 'child_friendly',        color: '#7B1FA2', bg: '#F3E5F5' },
@@ -241,17 +317,19 @@ export class GruposComponent implements OnInit {
   }
 
   abrirCrear(rangoEdad?: string) {
-    const ref = this.dialog.open(GrupoDialogComponent, {
-      data: { modo: 'crear', rangoEdad: rangoEdad ?? '' }
-    });
-    ref.afterClosed().subscribe(g => {
+    this.dialog.open(GrupoDialogComponent, {
+      data: { modo: 'crear', rangoEdad: rangoEdad ?? '' },
+      maxWidth: '580px', width: '100%'
+    }).afterClosed().subscribe(g => {
       if (g) { this.toast.success('Grupo creado'); this.cargarGrupos(); }
     });
   }
 
   abrirEditar(grupo: GrupoResponse) {
-    const ref = this.dialog.open(GrupoDialogComponent, { data: { modo: 'editar', grupo } });
-    ref.afterClosed().subscribe(g => {
+    this.dialog.open(GrupoDialogComponent, {
+      data: { modo: 'editar', grupo },
+      maxWidth: '580px', width: '100%'
+    }).afterClosed().subscribe(g => {
       if (g) { this.toast.success('Grupo actualizado'); this.cargarGrupos(); }
     });
   }
@@ -260,7 +338,7 @@ export class GruposComponent implements OnInit {
     if (!confirm(`¿Dar de baja el grupo "${grupo.nombre}"?`)) return;
     this.grupoService.darDeBaja(grupo.id).subscribe({
       next: () => { this.toast.success('Grupo dado de baja'); this.cargarGrupos(); },
-      error: (err) => this.toast.error(err.error?.error ?? 'Error')
+      error: (err) => this.toast.error(err.error?.mensaje ?? err.error?.error ?? 'Error')
     });
   }
 
@@ -276,5 +354,13 @@ export class GruposComponent implements OnInit {
   formatFechaNacimiento(f?: string) {
     if (!f) return '—';
     return new Date(f).toLocaleDateString('es-UY', { day:'2-digit', month:'2-digit', year:'numeric' });
+  }
+
+  iniciales(f: { nombre: string; apellido: string }): string {
+    return ((f.nombre[0] ?? '') + (f.apellido[0] ?? '')).toUpperCase();
+  }
+
+  getRolDisplay(nombre?: string): string {
+    return nombre ? (ROL_DISPLAY[nombre] ?? nombre) : '';
   }
 }

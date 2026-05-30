@@ -180,7 +180,10 @@ export interface ReporteResponse {
   fechaGeneracion: string;
   visto: boolean;
   activo: boolean;
+  funcionario?: FuncionarioResponse;
+  /** @deprecated usar funcionario.id */
   funcionarioId?: number;
+  /** @deprecated usar funcionario.nombre + funcionario.apellido */
   funcionarioNombre?: string;
   grupos?: ReporteGrupoResponse[];
   ninios?: ReporteNinioResponse[];

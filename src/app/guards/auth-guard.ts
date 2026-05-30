@@ -21,17 +21,26 @@ export const authGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
  
-  if (authService.isLoggedIn()) {
-    return true;
+  if (!authService.isLoggedIn()) {
+    router.navigate(['/iniciarSesion']);
+    return false;
   }
-  router.navigate(['/iniciarSesion']);
-  return false;
+
+  // Si el funcionario tiene pendiente un cambio obligatorio de contraseña,
+  // sólo puede acceder a /perfil
+  if (authService.mustChangePassword() && state.url !== '/perfil') {
+    router.navigate(['/perfil']);
+    return false;
+  }
+
+  return true;
 };
 
-export const adminGuard: CanActivateFn = () => {
+export const adminGuard: CanActivateFn = (route, state) => {
   const auth = inject(AuthService);
   const router = inject(Router);
   if (!auth.isLoggedIn()) { router.navigate(['/iniciarSesion']); return false; }
+  if (auth.mustChangePassword()) { router.navigate(['/perfil']); return false; }
   if (auth.isAdmin()) return true;
   return redirectSegunRol(auth, router);
 };
@@ -40,6 +49,7 @@ export const funcionarioGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
   if (!auth.isLoggedIn()) { router.navigate(['/iniciarSesion']); return false; }
+  if (auth.mustChangePassword()) { router.navigate(['/perfil']); return false; }
   const rol = auth.getRol();
   if (rol && ROLES_FUNCIONARIO.includes(rol)) return true;
   return redirectSegunRol(auth, router);

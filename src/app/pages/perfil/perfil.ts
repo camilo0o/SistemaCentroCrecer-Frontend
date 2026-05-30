@@ -47,6 +47,9 @@ export class PerfilComponent implements OnInit {
   showNewPassword = false;
   showConfirmPassword = false;
 
+  /** true cuando el admin blanqueó la contraseña y el funcionario debe cambiarla obligatoriamente */
+  mustChangePasswordPendiente = false;
+
   CLOUDINARY_CLOUD_NAME = environment.cloudinaryCloudName;
   CLOUDINARY_UPLOAD_PRESET = environment.cloudinaryUploadPreset;
 
@@ -79,6 +82,11 @@ export class PerfilComponent implements OnInit {
   ngOnInit() {
     this.initForms();
     this.loadProfile();
+    // Si el admin blanqueó la contraseña, forzar la pestaña de seguridad
+    if (this.auth.mustChangePassword()) {
+      this.mustChangePasswordPendiente = true;
+      this.activeTab = 'seguridad';
+    }
   }
 
   private initForms() {
@@ -178,9 +186,12 @@ export class PerfilComponent implements OnInit {
       next: () => {
         this.toast.success('Contraseña actualizada correctamente');
         this.passwordForm.reset();
+        // Limpiar el flag de cambio obligatorio en la sesión local
+        this.auth.clearMustChangePassword();
+        this.mustChangePasswordPendiente = false;
       },
       error: (err) => {
-        this.toast.error(err?.error?.message ?? 'Error al cambiar la contraseña');
+        this.toast.error(err?.error?.message ?? err?.error?.error ?? 'Error al cambiar la contraseña');
       }
     });
   }

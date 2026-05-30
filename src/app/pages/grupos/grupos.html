@@ -56,7 +56,6 @@
             </button>
           </div>
 
-          <!-- Grupos de este rango -->
           @if(gruposPorRango(rango.valor).length === 0){
             <div class="empty-rango">
               <mat-icon>inbox</mat-icon>
@@ -90,28 +89,60 @@
                       <mat-icon style="font-size:14px">child_care</mat-icon>
                       {{ grupo.cantidadNinios ?? grupo.ninios?.length ?? 0 }} niños
                     </span>
+                    <span class="gc-badge secondary">
+                      <mat-icon style="font-size:14px">person_pin</mat-icon>
+                      {{ grupo.funcionarios?.length ?? 0 }} responsable(s)
+                    </span>
                   </div>
                 </div>
 
                 <mat-card-content class="gc-content">
 
+                  <!-- Funcionarios responsables -->
+                  @if((grupo.funcionarios?.length ?? 0) > 0){
+                    <div class="section-block">
+                      <div class="section-block-title">
+                        <mat-icon style="font-size:15px;color:#1565C0">person_pin</mat-icon>
+                        Responsables
+                      </div>
+                      <div class="funcionarios-list">
+                        @for(f of grupo.funcionarios; track f.id){
+                          <div class="func-row">
+                            <div class="func-avatar">{{ iniciales(f) }}</div>
+                            <div class="func-info">
+                              <span class="func-nombre">{{ f.nombre }} {{ f.apellido }}</span>
+                              <span class="func-rol">{{ getRolDisplay(f.rol?.nombre) }}</span>
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                    <div class="section-divider"></div>
+                  }
+
                   <!-- Lista de niños -->
                   @if((grupo.ninios?.length ?? 0) > 0){
-                    <div class="ninios-list">
-                      @for(ninio of grupo.ninios; track ninio.id){
-                        <div class="ninio-row">
-                          <div class="ninio-avatar" [style.background]="rango.bg" [style.color]="rango.color">
-                            {{ ninio.nombre[0] }}{{ ninio.apellido?.[0] ?? '' }}
+                    <div class="section-block">
+                      <div class="section-block-title">
+                        <mat-icon style="font-size:15px;color:#2E7D32">child_care</mat-icon>
+                        Niños
+                      </div>
+                      <div class="ninios-list">
+                        @for(ninio of grupo.ninios; track ninio.id){
+                          <div class="ninio-row">
+                            <div class="ninio-avatar" [style.background]="rango.bg" [style.color]="rango.color">
+                              {{ ninio.nombre[0] }}{{ ninio.apellido?.[0] ?? '' }}
+                            </div>
+                            <div class="ninio-info">
+                              <span class="ninio-nombre">{{ ninio.nombre }} {{ ninio.apellido }}</span>
+                              <span class="ninio-sub">{{ formatFechaNacimiento(ninio.fechaNacimiento) }} · {{ ninio.cedula }}</span>
+                            </div>
+                            <mat-chip class="ninio-status" [class.inactivo]="!ninio.activo">
+                              {{ ninio.activo ? 'Activo' : 'Inactivo' }}
+                            </mat-chip>
                           </div>
-                          <div class="ninio-info">
-                            <span class="ninio-nombre">{{ ninio.nombre }} {{ ninio.apellido }}</span>
-                            <span class="ninio-sub">{{ formatFechaNacimiento(ninio.fechaNacimiento) }} · {{ ninio.cedula }}</span>
-                          </div>
-                          <mat-chip class="ninio-status" [class.inactivo]="!ninio.activo">
-                            {{ ninio.activo ? 'Activo' : 'Inactivo' }}
-                          </mat-chip>
-                        </div>
-                      }
+                        }
+                      </div>
                     </div>
                   } @else {
                     <div class="ninios-empty">
@@ -159,9 +190,33 @@
                     <span class="gc-badge secondary">
                       {{ formatHora(grupo.horaInicio) }} – {{ formatHora(grupo.horaFin) }}
                     </span>
+                    <span class="gc-badge secondary">
+                      <mat-icon style="font-size:14px">person_pin</mat-icon>
+                      {{ grupo.funcionarios?.length ?? 0 }} responsable(s)
+                    </span>
                   </div>
                 </div>
                 <mat-card-content class="gc-content">
+                  @if((grupo.funcionarios?.length ?? 0) > 0){
+                    <div class="section-block">
+                      <div class="section-block-title">
+                        <mat-icon style="font-size:15px;color:#1565C0">person_pin</mat-icon>
+                        Responsables
+                      </div>
+                      <div class="funcionarios-list">
+                        @for(f of grupo.funcionarios; track f.id){
+                          <div class="func-row">
+                            <div class="func-avatar">{{ iniciales(f) }}</div>
+                            <div class="func-info">
+                              <span class="func-nombre">{{ f.nombre }} {{ f.apellido }}</span>
+                              <span class="func-rol">{{ getRolDisplay(f.rol?.nombre) }}</span>
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                    <div class="section-divider"></div>
+                  }
                   <div class="ninios-empty">
                     <mat-icon>child_care</mat-icon>
                     <span>Sin niños asignados</span>

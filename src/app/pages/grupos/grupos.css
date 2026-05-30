@@ -255,3 +255,75 @@
   margin-top: 4px;
 }
 .btn-agregar mat-icon { font-size: 18px; margin-right: 4px; }
+/* ─── Funcionarios responsables en card ─── */
+.section-block {
+  margin-bottom: 10px;
+}
+.section-block-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: #5C6680;
+  margin-bottom: 8px;
+}
+.section-divider {
+  height: 1px;
+  background: #F0F2F7;
+  margin: 10px 0 12px;
+}
+
+.funcionarios-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 140px;
+  overflow-y: auto;
+}
+.func-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  transition: background 120ms;
+}
+.func-row:hover { background: #F0F4FF; }
+
+.func-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #DBEAFE;
+  color: #1565C0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.func-info {
+  flex: 1;
+  min-width: 0;
+}
+.func-nombre {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1A1F36;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.func-rol {
+  display: block;
+  font-size: 11px;
+  color: #9AA0B9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -245,7 +245,7 @@ export class ReporteDialogComponent implements OnInit {
         <mat-icon>account_circle</mat-icon>
         <div>
           <div class="generado-por-label">Generado por</div>
-          <div class="generado-por-nombre">{{ data.reporte.funcionarioNombre ?? '—' }}</div>
+          <div class="generado-por-nombre">{{ data.reporte.funcionario ? (data.reporte.funcionario.nombre + ' ' + data.reporte.funcionario.apellido) : (data.reporte.funcionarioNombre ?? '—') }}</div>
         </div>
       </div>
 
@@ -367,7 +367,9 @@ export class ReportesComponent implements OnInit {
         (r.ninios ?? []).some(n => `${n.ninioNombre} ${n.ninioApellido}`.toLowerCase().includes(b))
       );
     }
-    if (this.filtroFuncionario) res = res.filter(r => String(r.funcionarioId) === this.filtroFuncionario);
+    if (this.filtroFuncionario) res = res.filter(r =>
+      String(r.funcionario?.id ?? r.funcionarioId) === this.filtroFuncionario
+    );
     this.filtrados = res;
     this.pageIndex = 0;
     this.actualizarPagina();
@@ -428,9 +430,14 @@ export class ReportesComponent implements OnInit {
     return new Date(f).toLocaleDateString('es-UY', { day: '2-digit', month: '2-digit', year: 'numeric' });
   }
 
-  getFuncionarioNombre(id: number): string {
-    const f = this.funcionarios.find(fu => fu.id === id);
-    return f ? `${f.nombre} ${f.apellido}` : '—';
+  getFuncionarioNombre(r: ReporteResponse): string {
+    if (r.funcionario) return `${r.funcionario.nombre} ${r.funcionario.apellido}`;
+    if (r.funcionarioNombre) return r.funcionarioNombre;
+    if (r.funcionarioId) {
+      const f = this.funcionarios.find(fu => fu.id === r.funcionarioId);
+      return f ? `${f.nombre} ${f.apellido}` : '—';
+    }
+    return '—';
   }
 
   getGruposResumen(r: ReporteResponse): string {

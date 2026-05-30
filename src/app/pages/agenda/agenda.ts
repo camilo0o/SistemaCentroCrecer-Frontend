@@ -12,6 +12,8 @@ import { MatDialogModule, MatDialog, MAT_DIALOG_DATA, MatDialogRef } from '@angu
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { finalize } from 'rxjs/operators';
 import { Sidebar } from '../../shared/components/sidebar/sidebar';
@@ -27,7 +29,7 @@ import { AgendaRequest, AgendaResponse, TipoAgendaResponse } from '../../models/
   imports: [
     CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatButtonModule, MatIconModule, MatDialogModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule, MatDatepickerModule, MatNativeDateModule
   ],
   template: `
     <div class="dialog-header">
@@ -60,7 +62,9 @@ import { AgendaRequest, AgendaResponse, TipoAgendaResponse } from '../../models/
 
         <mat-form-field appearance="outline">
           <mat-label>Fecha</mat-label>
-          <input matInput type="date" formControlName="fecha">
+          <input matInput [matDatepicker]="pickerFecha" formControlName="fecha" placeholder="dd/mm/aaaa" readonly>
+          <mat-datepicker-toggle matIconSuffix [for]="pickerFecha"></mat-datepicker-toggle>
+          <mat-datepicker #pickerFecha></mat-datepicker>
           @if(form.get('fecha')?.invalid && form.get('fecha')?.touched){
             <mat-error>La fecha es obligatoria</mat-error>
           }
@@ -115,7 +119,7 @@ export class AgendaDialogComponent {
     this.form = this.fb.group({
       descripcion: [a?.descripcion ?? '', Validators.required],
       tipoId:      [a?.tipoId ?? null,    Validators.required],
-      fecha:       [a?.fecha ?? '',        Validators.required],
+      fecha:       [a?.fecha ? new Date(a.fecha + 'T00:00:00') : null, Validators.required],
       horaInicio:  [a?.horaInicio ?? '',   Validators.required],
       horaFin:     [a?.horaFin ?? '',      Validators.required],
     });
@@ -124,8 +128,10 @@ export class AgendaDialogComponent {
   guardar() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.guardando = true;
+    const v = this.form.value;
     const payload: AgendaRequest = {
-      ...this.form.value,
+      ...v,
+      fecha: v.fecha instanceof Date ? v.fecha.toISOString().split('T')[0] : v.fecha,
       funcionarioId: this.data.funcionarioId,
     };
     const op = this.data.modo === 'crear'
@@ -149,7 +155,7 @@ export class AgendaDialogComponent {
     CommonModule, FormsModule, Sidebar,
     MatTableModule, MatButtonModule, MatIconModule, MatFormFieldModule,
     MatInputModule, MatSelectModule, MatDialogModule, MatTooltipModule,
-    MatProgressSpinnerModule, MatChipsModule, MatPaginatorModule
+    MatProgressSpinnerModule, MatChipsModule, MatDatepickerModule, MatNativeDateModule, MatPaginatorModule
   ],
   templateUrl: './agenda.html',
   styleUrl: './agenda.css'
@@ -261,4 +267,9 @@ export class AgendaComponent implements OnInit {
 
   get totalActivas()   { return this.anotaciones.filter(a => a.activo).length; }
   get totalInactivas() { return this.anotaciones.filter(a => !a.activo).length; }
+
+  formatFecha(f?: string): string {
+    if (!f) return '—';
+    return new Date(f + 'T00:00:00').toLocaleDateString('es-UY', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
 }

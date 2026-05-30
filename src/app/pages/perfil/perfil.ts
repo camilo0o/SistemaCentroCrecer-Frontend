@@ -4,6 +4,10 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, A
 import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { AuthService } from '../../services/auth.service';
 import { PerfilService } from '../../services/perfil.service';
 import { ToastService } from '../../services/toast.service';
@@ -21,7 +25,7 @@ import { finalize } from 'rxjs/operators';
     ReactiveFormsModule,
     RouterModule,
     MatIconModule,
-    MatProgressSpinnerModule,
+    MatProgressSpinnerModule, MatDatepickerModule, MatNativeDateModule, MatFormFieldModule, MatInputModule,
     Sidebar
   ],
   templateUrl: './perfil.html',
@@ -115,7 +119,7 @@ export class PerfilComponent implements OnInit {
           apellido: data.apellido,
           email: data.email,
           telefono: data.telefono ?? '',
-          fechaNacimiento: data.fechaNacimiento ?? ''
+          fechaNacimiento: data.fechaNacimiento ? new Date(data.fechaNacimiento + 'T00:00:00') : null
         });
       },
       error: () => {
@@ -206,7 +210,10 @@ export class PerfilComponent implements OnInit {
         apellido: this.userData.apellido,
         email: this.userData.email,
         telefono: this.userData.telefono,
-        fechaNacimiento: this.userData.fechaNacimiento,
+        fechaNacimiento: (() => {
+          const fn = this.perfilForm.get('fechaNacimiento')?.value;
+          return fn instanceof Date ? fn.toISOString().split('T')[0] : (fn ?? this.userData.fechaNacimiento);
+        })(),
         fotoPerfil: url
       };
 
@@ -217,6 +224,7 @@ export class PerfilComponent implements OnInit {
       req.subscribe({
         next: () => {
           localStorage.setItem('fotoPerfil', url);
+          window.dispatchEvent(new Event('storage-foto-updated'));
           this.toast.success('Foto de perfil actualizada');
           this.uploadingPhoto = false;
           this.cdr.detectChanges();

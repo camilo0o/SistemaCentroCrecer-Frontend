@@ -27,22 +27,9 @@
 
       <mat-card-header class="login-header">
         <mat-card-title>Iniciar Sesión</mat-card-title>
-        <mat-card-subtitle>Seleccioná tu tipo de acceso para continuar</mat-card-subtitle>
       </mat-card-header>
 
       <mat-card-content>
-
-        <div class="tipo-tabs">
-          <button class="tipo-tab" [class.active]="tipoUsuario==='funcionario'"
-            (click)="seleccionarTipo('funcionario')" type="button">
-            <mat-icon>badge</mat-icon> Funcionario
-          </button>
-          <button class="tipo-tab" [class.active]="tipoUsuario==='responsable'"
-            (click)="seleccionarTipo('responsable')" type="button">
-            <mat-icon>family_restroom</mat-icon> Responsable
-          </button>
-        </div>
-
         @if(error){
           <div class="error-alert">
             <mat-icon>error_outline</mat-icon>

@@ -13,6 +13,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 import { MatTabsModule } from '@angular/material/tabs';
 import { finalize } from 'rxjs/operators';
 import { Sidebar } from '../../shared/components/sidebar/sidebar';
@@ -34,7 +36,7 @@ type Vista = 'tabla' | 'calendario';
   imports: [
     CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatButtonModule, MatIconModule, MatDialogModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule, MatDatepickerModule, MatNativeDateModule
   ],
   template: `
     <div class="dialog-header">
@@ -57,12 +59,16 @@ type Vista = 'tabla' | 'calendario';
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
           <mat-form-field appearance="outline">
             <mat-label>Fecha inicio</mat-label>
-            <input matInput type="date" formControlName="fechaDesde">
+            <input matInput [matDatepicker]="pickerDesde" formControlName="fechaDesde" placeholder="dd/mm/aaaa" readonly>
+            <mat-datepicker-toggle matIconSuffix [for]="pickerDesde"></mat-datepicker-toggle>
+            <mat-datepicker #pickerDesde></mat-datepicker>
             @if(form.get('fechaDesde')?.invalid && form.get('fechaDesde')?.touched){<mat-error>Requerida</mat-error>}
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>Fecha fin</mat-label>
-            <input matInput type="date" formControlName="fechaHasta">
+            <input matInput [matDatepicker]="pickerHasta" formControlName="fechaHasta" placeholder="dd/mm/aaaa" readonly>
+            <mat-datepicker-toggle matIconSuffix [for]="pickerHasta"></mat-datepicker-toggle>
+            <mat-datepicker #pickerHasta></mat-datepicker>
           </mat-form-field>
         </div>
 
@@ -113,8 +119,8 @@ export class ActividadDialogComponent {
     this.form = this.fb.group({
       nombre:      [a?.nombre ?? '',      Validators.required],
       descripcion: [a?.descripcion ?? ''],
-      fechaDesde:  [a?.fechaDesde ?? '',  Validators.required],
-      fechaHasta:  [a?.fechaHasta ?? ''],
+      fechaDesde:  [a?.fechaDesde ? new Date(a.fechaDesde + 'T00:00:00') : null, Validators.required],
+      fechaHasta:  [a?.fechaHasta ? new Date(a.fechaHasta + 'T00:00:00') : null],
       horaInicio:  [a?.horaInicio ?? '',  Validators.required],
       horaSalida:  [a?.horaSalida ?? ''],
       lugar:       [a?.lugar ?? '',       Validators.required],
@@ -124,7 +130,13 @@ export class ActividadDialogComponent {
   guardar() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.guardando = true;
-    const payload: ActividadRequest = this.form.value;
+    const v = this.form.value;
+    const toISO = (d: any) => d instanceof Date ? d.toISOString().split('T')[0] : (d ?? '');
+    const payload: ActividadRequest = {
+      ...v,
+      fechaDesde: toISO(v.fechaDesde),
+      fechaHasta: v.fechaHasta ? toISO(v.fechaHasta) : '',
+    };
     const op = this.data.modo === 'crear'
       ? this.actividadService.crear(payload)
       : this.actividadService.actualizar(this.data.actividad!.id, payload);
@@ -201,7 +213,7 @@ export class ActividadDialogComponent {
             }
             <div class="info-row">
               <mat-icon>event</mat-icon>
-              <span>{{ data.actividad.fechaDesde }}{{ data.actividad.fechaHasta ? ' → ' + data.actividad.fechaHasta : '' }}</span>
+              <span>{{ formatFechaEs(data.actividad.fechaDesde) }}{{ data.actividad.fechaHasta ? ' → ' + formatFechaEs(data.actividad.fechaHasta) : '' }}</span>
             </div>
             <div class="info-row">
               <mat-icon>access_time</mat-icon>
@@ -240,6 +252,11 @@ export class ActividadDetalleDialogComponent {
     public ref: MatDialogRef<ActividadDetalleDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { actividad: ActividadResponse }
   ) {}
+
+  formatFechaEs(f?: string): string {
+    if (!f) return '—';
+    return new Date(f + 'T00:00:00').toLocaleDateString('es-UY', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
 }
 
 // ─── Componente principal ────────────────────────────────────────────────────
@@ -368,6 +385,11 @@ export class ActividadesComponent implements OnInit {
   }
 
   irHoy() { this.fechaActual = new Date(); }
+
+  formatFecha(f?: string): string {
+    if (!f) return '—';
+    return new Date(f + 'T00:00:00').toLocaleDateString('es-UY', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
 
   esHoy(fecha: Date): boolean {
     return fecha.toDateString() === new Date().toDateString();

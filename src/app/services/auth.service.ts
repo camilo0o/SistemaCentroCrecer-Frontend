@@ -24,22 +24,29 @@ export class AuthService {
     );
   }
  
-  private saveSession(res: LoginResponse) {
-    if (res.token) {
-      localStorage.setItem('token', res.token);
-    }
-    localStorage.setItem('rol', res.rol);
-    localStorage.setItem('nombre', res.nombreCompleto);
-    localStorage.setItem('email', res.email);
-    localStorage.setItem('userId', res.id.toString());
-
-    // Guardar flag de cambio de contraseña obligatorio
-    if (res.mustChangePassword) {
-      localStorage.setItem('mustChangePassword', 'true');
-    } else {
-      localStorage.removeItem('mustChangePassword');
-    }
+ private saveSession(res: LoginResponse) {
+  if (res.token) {
+    localStorage.setItem('token', res.token);
   }
+  localStorage.setItem('rol', res.rol);
+  localStorage.setItem('nombre', res.nombreCompleto);
+  localStorage.setItem('email', res.email);
+  localStorage.setItem('userId', res.id.toString());
+
+  // Guardar foto de perfil si viene en el login
+  if (res.fotoPerfil) {
+    localStorage.setItem('fotoPerfil', res.fotoPerfil);
+  } else {
+    localStorage.removeItem('fotoPerfil');
+  }
+
+  if (res.mustChangePassword) {
+    localStorage.setItem('mustChangePassword', 'true');
+  } else {
+    localStorage.removeItem('mustChangePassword');
+  }
+}
+
    
   getToken(): string | null {
     return localStorage.getItem('token'); 

@@ -52,47 +52,35 @@ export class LoginComponent {
   togglePassword() { this.mostrarPassword = !this.mostrarPassword; }
 
   iniciarSesion() {
-    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
-    this.cargando = true;
-    this.error = '';
+  if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+  this.cargando = true;
+  this.error = '';
 
-    const peticion = this.tipoUsuario === 'funcionario'
-      ? this.authService.loginFuncionario(this.form.value)
-      : this.authService.loginResponsable(this.form.value);
-
-    peticion.subscribe({
-      next: (res) => {
-        this.cargando = false;
-
-        const esResponsable = res.rol === 'RESPONSABLE';
-
-        if (this.tipoUsuario === 'responsable' && !esResponsable) {
-          this.authService.logout();
-          this.error = 'Esta cuenta no es de responsable. Usá la pestaña Funcionario.';
-          return;
-        }
-        if (this.tipoUsuario === 'funcionario' && esResponsable) {
-          this.authService.logout();
-          this.error = 'Esta cuenta no es de funcionario. Usá la pestaña Responsable.';
-          return;
-        }
-
-        this.toast.success('¡Bienvenido/a, ' + res.nombreCompleto + '!');
-
-        // Si debe cambiar contraseña, redirigir al perfil
-        if (res.mustChangePassword) {
-          setTimeout(() => this.router.navigate(['/perfil']), 0);
-          return;
-        }
-
-        setTimeout(() => this.redirect(res.rol), 0);
-      },
-      error: (err) => {
-        this.cargando = false;
-        this.error = err.error?.error || err.error?.message || 'Credenciales incorrectas. Intentá de nuevo.';
+  this.authService.loginFuncionario(this.form.value).subscribe({
+    next: (res) => {
+      this.cargando = false;
+      this.toast.success('¡Bienvenido/a, ' + res.nombreCompleto + '!');
+      if (res.mustChangePassword) {
+        setTimeout(() => this.router.navigate(['/perfil']), 0);
+        return;
       }
-    });
-  }
+      setTimeout(() => this.redirect(res.rol), 0);
+    },
+    error: () => {
+      this.authService.loginResponsable(this.form.value).subscribe({
+        next: (res) => {
+          this.cargando = false;
+          this.toast.success('¡Bienvenido/a, ' + res.nombreCompleto + '!');
+          setTimeout(() => this.redirect(res.rol), 0);
+        },
+        error: () => {
+          this.cargando = false;
+          this.error = 'Credenciales incorrectas. Intentá de nuevo.';
+        }
+      });
+    }
+  });
+}
 
   private redirect(rol: string | null) {
     if (rol === 'ADMINISTRADOR_SISTEMA') this.router.navigate(['/admin/dashboard']);

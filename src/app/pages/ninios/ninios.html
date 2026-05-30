@@ -1,8 +1,13 @@
 <mat-toolbar color="primary" class="toolbar">
   <span>Niños registrados</span>
+  <button mat-flat-button class="btn-nuevo" (click)="abrirCrear()">
+    <mat-icon>add</mat-icon> Nuevo Niño
+  </button>
 </mat-toolbar>
 
 <div class="page-content">
+
+  <!-- Strip de resumen + buscador -->
   <div class="top-panel">
     <mat-card class="summary-card">
       <div class="summary-row">
@@ -21,66 +26,107 @@
       </div>
     </mat-card>
 
-    <mat-form-field appearance="outline" class="search-field">
+    <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
       <mat-label>Buscar</mat-label>
-      <input matInput [(ngModel)]="busqueda" (ngModelChange)="aplicarFiltros()" placeholder="Nombre, cédula, grupo, dirección...">
-      <button mat-icon-button matSuffix *ngIf="busqueda" type="button" (click)="busqueda=''; aplicarFiltros()">
-        <mat-icon>close</mat-icon>
-      </button>
+      <input matInput [(ngModel)]="busqueda" (ngModelChange)="aplicarFiltros()"
+             placeholder="Nombre, cédula, grupo...">
+      <mat-icon matPrefix>search</mat-icon>
+      @if(busqueda){
+        <button mat-icon-button matSuffix type="button" (click)="busqueda=''; aplicarFiltros()">
+          <mat-icon>close</mat-icon>
+        </button>
+      }
     </mat-form-field>
   </div>
 
-  <div *ngIf="cargando" class="loading-wrap">
-    <mat-spinner diameter="40"></mat-spinner>
-    <span>Cargando niños...</span>
-  </div>
+  <!-- Loading -->
+  @if(cargando){
+    <div class="loading-wrap">
+      <mat-spinner diameter="40"></mat-spinner>
+      <span>Cargando niños...</span>
+    </div>
+  }
 
-  <div *ngIf="!cargando && filtrados.length === 0" class="empty-wrap">
-    <mat-icon class="empty-icon">child_care</mat-icon>
-    <p>No se encontraron niños</p>
-  </div>
+  <!-- Sin resultados -->
+  @if(!cargando && filtrados.length === 0){
+    <div class="empty-wrap">
+      <mat-icon class="empty-icon">child_care</mat-icon>
+      <p>No se encontraron niños</p>
+      @if(!busqueda){
+        <button mat-flat-button style="background:#1565C0;color:white" (click)="abrirCrear()">
+          <mat-icon>add</mat-icon> Registrar primer niño
+        </button>
+      }
+    </div>
+  }
 
-  <div class="cards-grid" *ngIf="!cargando && filtrados.length > 0">
-    <mat-card *ngFor="let ninio of filtrados" class="ninio-card" [class.inactivo]="!ninio.activo">
-      <div class="card-header">
-        <div class="card-title">
-          <mat-icon>child_care</mat-icon>
-          <div>
-            <div class="title">{{ getNombreCompleto(ninio) }}</div>
-            <div class="subtitle">{{ ninio.grupo?.nombre || 'Grupo no asignado' }}</div>
+  <!-- Grid de tarjetas -->
+  @if(!cargando && filtrados.length > 0){
+    <div class="cards-grid">
+      @for(ninio of filtrados; track ninio.id){
+        <mat-card class="ninio-card" [class.inactivo]="!ninio.activo">
+
+          <!-- Cabecera de la tarjeta -->
+          <div class="card-header">
+            <div class="card-title">
+              <mat-icon>child_care</mat-icon>
+              <div>
+                <div class="title">{{ getNombreCompleto(ninio) }}</div>
+                <div class="subtitle">{{ ninio.grupo?.nombre || 'Sin grupo asignado' }}</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px">
+              <mat-chip class="status-chip" [class.status-inactivo]="!ninio.activo">
+                {{ ninio.activo ? 'Activo' : 'Inactivo' }}
+              </mat-chip>
+              @if(ninio.activo){
+                <button mat-icon-button matTooltip="Editar" (click)="abrirEditar(ninio)">
+                  <mat-icon style="font-size:18px">edit</mat-icon>
+                </button>
+                <button mat-icon-button matTooltip="Dar de baja" (click)="darDeBaja(ninio)">
+                  <mat-icon style="font-size:18px;color:#C62828">delete_outline</mat-icon>
+                </button>
+              }
+            </div>
           </div>
-        </div>
-        <mat-chip class="status-chip" [class.status-inactivo]="!ninio.activo">
-          {{ ninio.activo ? 'Activo' : 'Inactivo' }}
-        </mat-chip>
-      </div>
 
-      <mat-card-content>
-        <div class="field-row">
-          <span class="field-label">Cédula</span>
-          <span>{{ ninio.cedula }}</span>
-        </div>
-        <div class="field-row">
-          <span class="field-label">Sexo</span>
-          <span>{{ displaySexo(ninio.sexo) }}</span>
-        </div>
-        <div class="field-row">
-          <span class="field-label">Fecha de nacimiento</span>
-          <span>{{ formatDate(ninio.fechaNacimiento) }}</span>
-        </div>
-        <div class="field-row">
-          <span class="field-label">Rango de edad</span>
-          <span>{{ ninio.grupo?.rangoEdad || '—' }}</span>
-        </div>
-        <div class="field-row">
-          <span class="field-label">Dirección</span>
-          <span>{{ ninio.direccion || '—' }}</span>
-        </div>
-        <div class="field-row">
-          <span class="field-label">Observaciones</span>
-          <span>{{ ninio.observaciones || '—' }}</span>
-        </div>
-      </mat-card-content>
-    </mat-card>
-  </div>
+          <!-- Datos del niño -->
+          <mat-card-content>
+            <div class="field-row">
+              <span class="field-label">Cédula</span>
+              <span>{{ ninio.cedula }}</span>
+            </div>
+            <div class="field-row">
+              <span class="field-label">Sexo</span>
+              <span>{{ displaySexo(ninio.sexo) }}</span>
+            </div>
+            <div class="field-row">
+              <span class="field-label">Fecha de nacimiento</span>
+              <span>{{ formatDate(ninio.fechaNacimiento) }}</span>
+            </div>
+            <div class="field-row">
+              <span class="field-label">Edad</span>
+              <span class="edad-badge">
+                <mat-icon style="font-size:14px;width:14px;height:14px;vertical-align:middle">cake</mat-icon>
+                {{ calcularEdad(ninio.fechaNacimiento) }}
+                @if(ninio.grupo?.rangoEdad){
+                  <span class="rango-tag">{{ ninio.grupo!.rangoEdad }} años</span>
+                }
+              </span>
+            </div>
+            <div class="field-row">
+              <span class="field-label">Dirección</span>
+              <span>{{ ninio.direccion || '—' }}</span>
+            </div>
+            <div class="field-row">
+              <span class="field-label">Observaciones</span>
+              <span>{{ ninio.observaciones || '—' }}</span>
+            </div>
+          </mat-card-content>
+
+        </mat-card>
+      }
+    </div>
+  }
+
 </div>

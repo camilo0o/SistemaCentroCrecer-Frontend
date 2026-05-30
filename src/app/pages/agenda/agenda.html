@@ -97,7 +97,7 @@
               <td mat-cell *matCellDef="let a">
                 <span class="fecha-chip">
                   <mat-icon>calendar_today</mat-icon>
-                  {{ a.fecha ?? '—' }}
+                  {{ formatFecha(a.fecha) }}
                 </span>
               </td>
             </ng-container>

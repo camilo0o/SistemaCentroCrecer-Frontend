@@ -50,13 +50,17 @@
               <span class="rango-count">{{ gruposPorRango(rango.valor).length }} grupo(s)</span>
             </div>
             <div class="rango-spacer"></div>
+            <button mat-stroked-button [style.color]="rango.color" [style.border-color]="rango.color"
+                    style="font-size:13px" (click)="abrirCrear(rango.valor)">
+              <mat-icon>add</mat-icon> Nuevo grupo
+            </button>
           </div>
 
           <!-- Grupos de este rango -->
           @if(gruposPorRango(rango.valor).length === 0){
             <div class="empty-rango">
               <mat-icon>inbox</mat-icon>
-              <span>Sin grupos en este rango. <button class="link-btn" (click)="abrirCrear()">Crear uno</button></span>
+              <span>Sin grupos en este rango. <button class="link-btn" (click)="abrirCrear(rango.valor)">Crear uno</button></span>
             </div>
           }
 
@@ -112,15 +116,9 @@
                   } @else {
                     <div class="ninios-empty">
                       <mat-icon>child_care</mat-icon>
-                      <span>Sin niños aún</span>
+                      <span>Sin niños asignados</span>
                     </div>
                   }
-
-                  <!-- Botón agregar niño -->
-                  <button mat-stroked-button class="btn-agregar" [style.color]="rango.color"
-                          [style.border-color]="rango.color" (click)="abrirAgregarNinio(grupo)">
-                    <mat-icon>person_add</mat-icon> Agregar Niño
-                  </button>
 
                 </mat-card-content>
               </mat-card>
@@ -164,9 +162,10 @@
                   </div>
                 </div>
                 <mat-card-content class="gc-content">
-                  <button mat-stroked-button class="btn-agregar" (click)="abrirAgregarNinio(grupo)">
-                    <mat-icon>person_add</mat-icon> Agregar Niño
-                  </button>
+                  <div class="ninios-empty">
+                    <mat-icon>child_care</mat-icon>
+                    <span>Sin niños asignados</span>
+                  </div>
                 </mat-card-content>
               </mat-card>
             }

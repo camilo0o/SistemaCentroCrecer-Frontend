@@ -12,8 +12,9 @@ export interface LoginResponse {
   nombreCompleto: string;
   email: string;
   expiracion: number;
-  // BUG CORREGIDO: campo agregado — el backend ahora lo envía
   mustChangePassword?: boolean | null;
+  fotoPerfil?: string | null;
+
 }
 
 // Rol model
@@ -155,6 +156,23 @@ export interface ReporteRequest {
   niniosIds?: number[];
 }
 
+export interface ReporteNinioResponse {
+  id: number;
+  reporteId: number;
+  reporteTitulo: string;
+  ninioId: number;
+  ninioNombre: string;
+  ninioApellido: string;
+}
+
+export interface ReporteGrupoResponse {
+  id: number;
+  reporteId: number;
+  reporteTitulo: string;
+  grupoId: number;
+  grupoNombre: string;
+}
+
 export interface ReporteResponse {
   id: number;
   titulo: string;
@@ -164,6 +182,8 @@ export interface ReporteResponse {
   activo: boolean;
   funcionarioId?: number;
   funcionarioNombre?: string;
+  grupos?: ReporteGrupoResponse[];
+  ninios?: ReporteNinioResponse[];
 }
 
 // Role display names mapping

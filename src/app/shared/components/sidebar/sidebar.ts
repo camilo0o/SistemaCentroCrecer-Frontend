@@ -42,6 +42,7 @@ export class Sidebar implements OnInit {
     { label: 'Reportes',   icon: 'analytics',       route: '/funcionario/reportes' },
     { label: 'Actividades',icon: 'event',            route: '/funcionario/actividades' },
     { label: 'Agenda',     icon: 'calendar_month',  route: '/funcionario/agenda' },
+    { label: 'Asistencia',  icon: 'how_to_reg',      route: '/funcionario/asistencia' },
   ];
 
   responsableItems: NavItem[] = [

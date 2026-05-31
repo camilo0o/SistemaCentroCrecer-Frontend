@@ -84,6 +84,8 @@ export const routes: Routes = [
           import('./pages/actividades/actividades').then(m => m.ActividadesComponent) },
       { path: 'agenda', loadComponent: () =>
           import('./pages/agenda/agenda').then(m => m.AgendaComponent) },
+      { path: 'asistencia', loadComponent: () =>
+          import('./pages/asistencia/asistencia').then(m => m.AsistenciaComponent) },
     ]
   },
 

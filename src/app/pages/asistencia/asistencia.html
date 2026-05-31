@@ -1,0 +1,286 @@
+<div class="asistencia-page">
+
+  <!-- Header -->
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">Asistencia</h1>
+      <p class="page-subtitle">Registro de asistencia diaria</p>
+    </div>
+  </header>
+
+  <!-- Selector de Fecha -->
+  <div class="fecha-strip">
+    <button class="fecha-nav-btn" (click)="cambiarFecha(-1)" matTooltip="Día anterior">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+
+    <div class="fecha-center">
+      <mat-icon class="fecha-icon">calendar_today</mat-icon>
+      <span class="fecha-label">{{ fechaLabel() }}</span>
+      <span class="fecha-valor">{{ fechaSeleccionada }}</span>
+    </div>
+
+    <button class="fecha-nav-btn"
+            (click)="cambiarFecha(1)"
+            [disabled]="esHoy"
+            [class.disabled]="esHoy"
+            matTooltip="Día siguiente">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+  </div>
+
+  <div class="content-grid">
+
+    <!-- ── Panel izquierdo: Mi Registro ─────────────────────────────────── -->
+    <section class="panel mi-registro-panel">
+
+      <div class="panel-header">
+        <mat-icon class="panel-icon blue">badge</mat-icon>
+        <h2 class="panel-title">Mi registro del día</h2>
+      </div>
+
+      @if (cargandoMiRegistro) {
+        <div class="loading-center">
+          <mat-spinner diameter="36"></mat-spinner>
+        </div>
+      }
+
+      @if (!cargandoMiRegistro && !miRegistro && !modoEntrada) {
+        <div class="empty-registro">
+          <mat-icon class="empty-icon">login</mat-icon>
+          <p>No has registrado tu entrada hoy.</p>
+          @if (esHoy) {
+            <button mat-flat-button class="btn-primary" (click)="abrirFormEntrada()">
+              <mat-icon>add</mat-icon> Registrar entrada
+            </button>
+          }
+        </div>
+      }
+
+      @if (!cargandoMiRegistro && modoEntrada) {
+        <div class="form-entrada">
+          <p class="form-title">Nueva entrada</p>
+
+          <div class="hora-row">
+            <div class="hora-field">
+              <label>Hora de entrada *</label>
+              <input type="time" [(ngModel)]="horaEntradaInput" class="time-input">
+            </div>
+            <div class="hora-field">
+              <label>Hora de salida</label>
+              <input type="time" [(ngModel)]="horaSalidaInput" class="time-input">
+            </div>
+          </div>
+
+          <div class="obs-field">
+            <label>Observaciones</label>
+            <textarea [(ngModel)]="observacionesInput" rows="2"
+                      placeholder="Opcional..." class="obs-input"></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button mat-stroked-button (click)="cancelarEntrada()">Cancelar</button>
+            <button mat-flat-button class="btn-primary" (click)="registrarEntrada()">
+              <mat-icon>check</mat-icon> Confirmar
+            </button>
+          </div>
+        </div>
+      }
+
+      @if (!cargandoMiRegistro && miRegistro) {
+        <div class="registro-card">
+          <div class="registro-row">
+            <div class="registro-item entrada">
+              <mat-icon>login</mat-icon>
+              <span class="registro-label">Entrada</span>
+              <span class="registro-hora">{{ miRegistro.horaEntrada }}</span>
+            </div>
+            <div class="registro-divider"></div>
+            <div class="registro-item salida" [class.pendiente]="!miRegistro.horaSalida">
+              <mat-icon>logout</mat-icon>
+              <span class="registro-label">Salida</span>
+              <span class="registro-hora">{{ miRegistro.horaSalida || '—' }}</span>
+            </div>
+          </div>
+
+          @if (miRegistro.observaciones) {
+            <p class="registro-obs">
+              <mat-icon style="font-size:14px;vertical-align:middle">notes</mat-icon>
+              {{ miRegistro.observaciones }}
+            </p>
+          }
+
+          @if (!miRegistro.horaSalida && esHoy) {
+            @if (!horaSalidaInput) {
+              <button mat-stroked-button class="btn-salida" (click)="abrirFormSalida()">
+                <mat-icon>logout</mat-icon> Registrar mi salida
+              </button>
+            } @else {
+              <div class="salida-row">
+                <input type="time" [(ngModel)]="horaSalidaInput" class="time-input small">
+                <button mat-flat-button class="btn-primary small" (click)="registrarSalida()">
+                  <mat-icon>check</mat-icon> Confirmar
+                </button>
+                <button mat-icon-button (click)="horaSalidaInput = ''">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+            }
+          }
+        </div>
+      }
+
+    </section>
+
+    <!-- ── Panel derecho: Asistencia Niños ──────────────────────────────── -->
+    <section class="panel ninios-panel">
+
+      <div class="panel-header">
+        <mat-icon class="panel-icon green">child_care</mat-icon>
+        <h2 class="panel-title">Asistencia de niños</h2>
+        <div class="stats-chips">
+          <span class="chip presente">
+            <mat-icon>check_circle</mat-icon> {{ presentesCount }} presentes
+          </span>
+          <span class="chip ausente">
+            <mat-icon>cancel</mat-icon> {{ ausentesCount }} ausentes
+          </span>
+        </div>
+      </div>
+
+      @if (cargandoNinios) {
+        <div class="loading-center">
+          <mat-spinner diameter="36"></mat-spinner>
+          <p>Cargando niños...</p>
+        </div>
+      }
+
+      @if (!cargandoNinios && totalNinios === 0) {
+        <div class="empty-ninios">
+          <mat-icon class="empty-icon">group_off</mat-icon>
+          <p>No hay niños asignados a tus grupos, o no estás asignado a ningún grupo activo.</p>
+        </div>
+      }
+
+      @if (!cargandoNinios && totalNinios > 0) {
+        <div class="grupos-list">
+
+          <!-- ── Selector de grupo ── -->
+          <div class="grupo-selector-wrapper">
+            <mat-form-field appearance="outline" class="grupo-select-field">
+              <mat-label>
+                <mat-icon style="font-size:16px;vertical-align:middle;margin-right:4px">groups</mat-icon>
+                Seleccionar grupo
+              </mat-label>
+              <mat-select [(ngModel)]="grupoSeleccionado">
+                @for (g of gruposConNinios; track g.nombre) {
+                  <mat-option [value]="g.nombre">
+                    {{ g.nombre }}
+                    <span class="option-count">({{ g.ninios | getPresentes }}/{{ g.ninios.length }})</span>
+                  </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            @if (grupoActual) {
+              <div class="grupo-stats-bar">
+                <span class="stat-item presente-stat">
+                  <mat-icon>check_circle</mat-icon>
+                  {{ presentesEnGrupoActual }} presentes
+                </span>
+                <span class="stat-sep">·</span>
+                <span class="stat-item ausente-stat">
+                  <mat-icon>cancel</mat-icon>
+                  {{ totalEnGrupoActual - presentesEnGrupoActual }} ausentes
+                </span>
+                <span class="stat-sep">·</span>
+                <span class="stat-item total-stat">
+                  {{ totalEnGrupoActual }} total
+                </span>
+              </div>
+            }
+          </div>
+
+          <!-- ── Niños del grupo seleccionado ── -->
+          @if (grupoActual) {
+            <div class="ninios-grid">
+              @for (ninio of grupoActual.ninios; track ninio.id) {
+                <div class="ninio-card" [class.presente]="ninio.presente" [class.ausente]="!ninio.presente">
+
+                  <div class="ninio-info">
+                    <div class="ninio-avatar" [class.verde]="ninio.presente">
+                      @if (ninio.presente) {
+                        <mat-icon style="font-size:18px">check</mat-icon>
+                      } @else {
+                        <span>{{ ninio.nombre[0] }}</span>
+                      }
+                    </div>
+                    <div class="ninio-datos">
+                      <span class="ninio-nombre">{{ ninio.nombre }} {{ ninio.apellido }}</span>
+                      <span class="ninio-cedula">CI: {{ ninio.cedula }}</span>
+                      @if (ninio.presente) {
+                        <span class="ninio-horas">
+                          <mat-icon style="font-size:12px">login</mat-icon> {{ ninio.horaEntrada }}
+                          @if (ninio.horaSalida) {
+                            &nbsp;<mat-icon style="font-size:12px">logout</mat-icon> {{ ninio.horaSalida }}
+                          }
+                        </span>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="ninio-actions">
+                    @if (ninio.cargando) {
+                      <mat-spinner diameter="20"></mat-spinner>
+                    }
+
+                    @if (!ninio.cargando && !ninio.presente) {
+                      <button mat-flat-button class="btn-marcar"
+                              (click)="marcarPresente(ninio)"
+                              matTooltip="Marcar asistencia">
+                        <mat-icon>how_to_reg</mat-icon> Presente
+                      </button>
+                    }
+
+                    @if (!ninio.cargando && ninio.presente && !ninio.horaSalida && esHoy) {
+                      @if (ninioConSalidaAbierta === ninio.id) {
+                        <div class="salida-inline">
+                          <input type="time" [(ngModel)]="horaSalidaNinioInput" class="time-input small">
+                          <button mat-icon-button color="primary"
+                                  (click)="registrarSalidaNinio(ninio)"
+                                  matTooltip="Confirmar salida">
+                            <mat-icon>check</mat-icon>
+                          </button>
+                          <button mat-icon-button (click)="cancelarSalidaNinio()">
+                            <mat-icon>close</mat-icon>
+                          </button>
+                        </div>
+                      } @else {
+                        <button mat-stroked-button class="btn-salida-ninio"
+                                (click)="abrirSalidaNinio(ninio)"
+                                matTooltip="Registrar salida">
+                          <mat-icon>logout</mat-icon> Salida
+                        </button>
+                      }
+                    }
+
+                    @if (!ninio.cargando && ninio.presente && ninio.horaSalida) {
+                      <span class="badge-completo">
+                        <mat-icon>task_alt</mat-icon> Completo
+                      </span>
+                    }
+                  </div>
+
+                </div>
+              }
+            </div>
+          }
+
+        </div>
+      }
+
+    </section>
+
+  </div>
+
+</div>

@@ -2,11 +2,12 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { NinioResponse } from '../models/models';
+import { CondicionMedicaResponse, NinioResponse } from '../models/models';
 
 @Injectable({ providedIn: 'root' })
 export class NinioService {
   private apiUrl = `${environment.apiUrl}/ninios`;
+  private condicionesUrl = `${environment.apiUrl}/condiciones-medicas`;
 
   constructor(private http: HttpClient) {}
 
@@ -24,5 +25,11 @@ export class NinioService {
 
   darDeBaja(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}/baja`);
+  }
+
+  obtenerCondiciones(ninioId: number): Observable<CondicionMedicaResponse[]> {
+    return this.http.get<CondicionMedicaResponse[]>(
+      `${this.condicionesUrl}?ninioId=${ninioId}`
+    );
   }
 }

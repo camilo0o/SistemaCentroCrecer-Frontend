@@ -11,7 +11,7 @@
 .search-field { min-width: 260px; width: 320px; }
 .loading-wrap, .empty-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 0; gap: 16px; color: #5C6680; }
 .empty-icon { font-size: 46px; color: #1565C0; }
-.cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
+.cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
 .ninio-card { border-radius: var(--radius); box-shadow: var(--shadow); transition: transform 160ms ease, box-shadow 160ms ease; }
 .ninio-card:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(21,101,192,0.12); }
 .ninio-card.inactivo { opacity: 0.7; }
@@ -35,3 +35,93 @@
 .btn-nuevo mat-icon { margin-right: 4px; }
 .edad-badge { display: flex; align-items: center; gap: 6px; font-weight: 500; color: #1a2340; }
 .rango-tag { background: #E3F2FD; color: #1565C0; border-radius: 12px; padding: 2px 10px; font-size: 11px; font-weight: 600; }
+
+/* ── Condiciones médicas en tarjeta ── */
+.condiciones-section {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #F0F2F7;
+}
+.condiciones-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.condiciones-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  color: #1565C0;
+}
+.condiciones-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex: 1;
+}
+.condiciones-badge {
+  background: #1565C0;
+  color: white;
+  border-radius: 10px;
+  padding: 1px 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.sin-condiciones {
+  font-size: 0.82rem;
+  color: #9AA0B9;
+  margin: 0;
+  font-style: italic;
+}
+.condiciones-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.condicion-item {
+  background: #F7F9FF;
+  border: 1px solid #E8EAF0;
+  border-radius: 8px;
+  padding: 9px 12px;
+}
+.condicion-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+.condicion-nombre {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1a2340;
+}
+.condicion-obs {
+  font-size: 0.8rem;
+  color: #5C6680;
+  margin: 4px 0 0;
+  line-height: 1.4;
+}
+.tag-cronica {
+  background: #FFF3E0;
+  color: #E65100;
+  border-radius: 10px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.tag-aguda {
+  background: #E8F5E9;
+  color: #2E7D32;
+  border-radius: 10px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}

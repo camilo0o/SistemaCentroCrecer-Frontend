@@ -122,6 +122,37 @@
               <span class="field-label">Observaciones</span>
               <span>{{ ninio.observaciones || '—' }}</span>
             </div>
+
+            <div class="condiciones-section">
+              <div class="condiciones-header">
+                <mat-icon class="condiciones-icon">medical_services</mat-icon>
+                <span class="condiciones-title">Condiciones médicas</span>
+                @if(cantidadCondiciones(ninio) > 0){
+                  <span class="condiciones-badge">{{ cantidadCondiciones(ninio) }}</span>
+                }
+              </div>
+
+              @if(cantidadCondiciones(ninio) === 0){
+                <p class="sin-condiciones">Sin condiciones registradas</p>
+              } @else {
+                <div class="condiciones-list">
+                  @for(c of getCondiciones(ninio); track c.condicionId){
+                    <div class="condicion-item">
+                      <div class="condicion-top">
+                        <span class="condicion-nombre">{{ c.condicion }}</span>
+                        <span [class]="c.esCronica ? 'tag-cronica' : 'tag-aguda'">
+                          {{ c.esCronica ? 'Crónica' : 'Aguda' }}
+                        </span>
+                      </div>
+                      @if(c.observacion){
+                        <p class="condicion-obs">{{ c.observacion }}</p>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+
           </mat-card-content>
 
         </mat-card>

@@ -1,4 +1,3 @@
-// Auth models
 export interface LoginRequest {
   email: string;
   contrasenia: string;
@@ -17,7 +16,6 @@ export interface LoginResponse {
 
 }
 
-// Rol model
 export interface Rol {
   id: number;
   nombre: string;
@@ -27,7 +25,6 @@ export interface Rol {
   padreNombre?: string;
 }
 
-// Funcionario models
 export interface FuncionarioRequest {
   cedula: string;
   nombre: string;
@@ -55,7 +52,20 @@ export interface FuncionarioResponse {
   mustChangePassword: boolean | null;
 }
 
-// Niño models
+
+export interface CondicionMedicaInline {
+  condicion: string;
+  observacion?: string;
+  esCronica: boolean;
+}
+
+export interface CondicionMedicaResponse {
+  condicionId: number;
+  condicion: string;
+  observacion?: string;
+  esCronica: boolean;
+}
+
 export interface NinioRequest {
   id: number;
   cedula: string;
@@ -81,6 +91,9 @@ export interface NinioResponse {
   activo: boolean;
   fechaBaja?: string;
   grupo?: GrupoResponse;
+  grupoId?: number;
+  grupoNombre?: string;
+  condicionesMedicas?: CondicionMedicaResponse[];
 }
 
 // Grupo model
@@ -299,4 +312,36 @@ export interface AgendaRequest {
 export interface TipoAgendaResponse {
   id: number;
   tipo: string;
+}
+// Asistencia
+export interface AsistenciaResponse {
+  id: number;
+  fecha: string;
+  horaEntrada: string;
+  horaSalida?: string;
+  observaciones?: string;
+  activo: boolean;
+  ninioId?: number;
+  ninioNombre?: string;
+  ninioApellido?: string;
+  ninioCedula?: string;
+  grupoNombre?: string;
+  funcionarioId?: number;
+  funcionarioNombre?: string;
+  funcionarioCedula?: string;
+}
+
+export interface RegistroEntradaFuncionarioRequest {
+  fecha?: string;
+  horaEntrada?: string;
+  horaSalida?: string;
+  observaciones?: string;
+}
+
+export interface AsistenciaNinioRequest {
+  fecha?: string;
+  horaEntrada: string;
+  horaSalida?: string;
+  observaciones?: string;
+  ninioId: number;
 }

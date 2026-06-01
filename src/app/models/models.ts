@@ -96,7 +96,7 @@ export interface NinioResponse {
   condicionesMedicas?: CondicionMedicaResponse[];
 }
 
-// Grupo model
+
 export interface GrupoResponse {
   id: number;
   nombre: string;
@@ -118,7 +118,7 @@ export interface GrupoRequest {
   niniosIds?: number[];
 }
 
-// Turno models
+
 export type DiaSemana = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
 
 export const DIAS_SEMANA: { valor: DiaSemana; etiqueta: string; abrev: string }[] = [
@@ -149,7 +149,7 @@ export interface TurnoResponse {
   dias: DiaSemana[];
 }
 
-// Dashboard stats
+
 export interface AdminStats {
   funcionariosActivos: number;
   funcionariosTotales: number;
@@ -160,7 +160,7 @@ export interface AdminStats {
   coberturaPorcentaje: number;
 }
 
-// Reporte models
+
 export interface ReporteRequest {
   titulo: string;
   descripcion: string;
@@ -202,7 +202,7 @@ export interface ReporteResponse {
   ninios?: ReporteNinioResponse[];
 }
 
-// Role display names mapping
+
 export const ROL_DISPLAY: Record<string, string> = {
   'ADMINISTRADOR_SISTEMA': 'Administrador del Sistema',
   'COORDINADORA': 'Coordinadora',
@@ -219,7 +219,7 @@ export const ROL_DISPLAY: Record<string, string> = {
   'RESPONSABLE': 'Responsable (Familiar)'
 }
 
-// Empresa externa
+
 export interface EmpresaExternaResponse {
   id: number;
   nombre: string;
@@ -228,7 +228,7 @@ export interface EmpresaExternaResponse {
   activo: boolean;
 }
 
-// Permiso
+
 export interface PermisoRequest {
   ninioId: number;
   autorizado: boolean;
@@ -244,7 +244,7 @@ export interface PermisoResponse {
   fechaRegistro: string;
 }
 
-// Actividad
+
 export type EstadoActividad = 'PLANIFICADA' | 'EN_CURSO' | 'FINALIZADA' | 'CANCELADA';
 
 export interface ActividadRequest {
@@ -286,7 +286,7 @@ export const ESTADO_ACTIVIDAD_DISPLAY: Record<EstadoActividad, string> = {
   CANCELADA:   'Cancelada',
 }
 
-// Agenda
+
 export interface AgendaResponse {
   id: number;
   fecha: string;
@@ -313,7 +313,7 @@ export interface TipoAgendaResponse {
   id: number;
   tipo: string;
 }
-// Asistencia
+
 export interface AsistenciaResponse {
   id: number;
   fecha: string;
@@ -344,4 +344,44 @@ export interface AsistenciaNinioRequest {
   horaSalida?: string;
   observaciones?: string;
   ninioId: number;
+}
+
+export interface SubtipoAgendaResponse {
+  subtipoId: number;
+  subtipo: string;
+}
+
+export type EstadoLimpieza = 'PENDIENTE' | 'EN_PROCESO' | 'FINALIZADA' | 'CANCELADA';
+
+export const ESTADO_LIMPIEZA_DISPLAY: Record<EstadoLimpieza, string> = {
+  PENDIENTE:   'Pendiente',
+  EN_PROCESO:  'En proceso',
+  FINALIZADA:  'Finalizada',
+  CANCELADA:   'Cancelada',
+};
+
+export interface AgendaLimpiezaRequest {
+  descripcion: string;
+  zona: string;
+  frecuencia: number;
+  fecha: string;
+  horaInicio?: string;
+  horaFin?: string;
+  funcionarioId: number;
+  subtipoAgendaId: number;
+}
+
+export interface AgendaLimpiezaResponse {
+  id: number;
+  descripcion: string;
+  zona: string;
+  frecuencia: number;
+  fecha: string;
+  horaInicio?: string;
+  horaFin?: string;
+  estado: EstadoLimpieza;
+  funcionarioId: number;
+  funcionarioNombre?: string;
+  subtipoAgendaId: number;
+  subtipoAgendaNombre?: string;
 }

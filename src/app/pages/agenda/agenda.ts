@@ -22,7 +22,6 @@ import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 import { AgendaRequest, AgendaResponse, TipoAgendaResponse } from '../../models/models';
 
-// ─── Dialog Crear/Editar ─────────────────────────────────────────────────────
 @Component({
   selector: 'app-agenda-dialog',
   standalone: true,
@@ -147,7 +146,6 @@ export class AgendaDialogComponent {
   }
 }
 
-// ─── Componente principal ─────────────────────────────────────────────────────
 @Component({
   selector: 'app-agenda',
   standalone: true,

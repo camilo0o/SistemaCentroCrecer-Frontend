@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -39,7 +39,8 @@ export class LoginComponent {
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
-    private toast: ToastService
+    private toast: ToastService,
+    private cdr: ChangeDetectorRef
   ) {
     this.form = this.fb.group({
       email:      ['', [Validators.required, Validators.email]],
@@ -76,6 +77,7 @@ export class LoginComponent {
         error: () => {
           this.cargando = false;
           this.error = 'Credenciales incorrectas. Intentá de nuevo.';
+          this.cdr.detectChanges();
         }
       });
     }

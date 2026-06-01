@@ -5,15 +5,15 @@ import { Home } from './pages/home/home';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
- 
+
   {
     path: 'iniciarSesion',
     loadComponent: () =>
       import('./pages/login/login.component').then(m => m.LoginComponent)
   },
- 
- {
-    path: 'home', 
+
+  {
+    path: 'home',
     component: Home
   },
 
@@ -22,7 +22,7 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/registro/registro.component').then(m => m.RegistroComponent)
   },
- 
+
   // Redirect inteligente tras login
   {
     path: 'dashboard',
@@ -30,7 +30,7 @@ export const routes: Routes = [
       import('./pages/dashboard/dashboard').then(m => m.DashboardComponent),
     canActivate: [authGuard]
   },
- 
+
   // Dashboard para funcionarios (coordinador, educador, auxiliar, etc)
   {
     path: 'dashboard/funcionario',
@@ -38,7 +38,7 @@ export const routes: Routes = [
       import('./pages/dashboard-funcionario/dashboard-funcionario').then(m => m.DashboardFuncionarioComponent),
     canActivate: [funcionarioGuard]
   },
- 
+
   // Dashboard para responsables (padres/tutores)
   {
     path: 'dashboard/responsable',
@@ -58,9 +58,6 @@ export const routes: Routes = [
           import('./pages/dashboard-admin/dashboard-admin').then(m => m.DashboardAdminComponent) },
       { path: 'usuarios', loadComponent: () =>
           import('./pages/usuarios/usuarios').then(m => m.UsuariosComponent) },
-      // NOTA: ninios, grupos, turnos, reportes, actividades y agenda
-      // fueron removidos del área de administrador porque esas
-      // responsabilidades corresponden a los demás funcionarios.
     ]
   },
 
@@ -84,6 +81,8 @@ export const routes: Routes = [
           import('./pages/actividades/actividades').then(m => m.ActividadesComponent) },
       { path: 'agenda', loadComponent: () =>
           import('./pages/agenda/agenda').then(m => m.AgendaComponent) },
+      { path: 'agenda-limpieza', loadComponent: () =>
+          import('./pages/agenda-limpieza/agenda-limpieza').then(m => m.AgendaLimpiezaComponent) },
       { path: 'asistencia', loadComponent: () =>
           import('./pages/asistencia/asistencia').then(m => m.AsistenciaComponent) },
     ]
@@ -96,7 +95,4 @@ export const routes: Routes = [
       import('./pages/perfil/perfil').then(m => m.PerfilComponent),
     canActivate: [authGuard]
   }
-
-  
- 
 ];

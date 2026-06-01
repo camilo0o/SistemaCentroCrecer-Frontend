@@ -343,6 +343,14 @@ export class ActividadesComponent implements OnInit {
 
   onPage(e: PageEvent) { this.pageIndex = e.pageIndex; this.pageSize = e.pageSize; this.actualizarPagina(); }
 
+  limitarPalabras(texto?: string, maxPalabras = 40): string {
+    if (!texto) return '';
+    const palabras = texto.trim().split(/\s+/);
+    return palabras.length > maxPalabras
+      ? `${palabras.slice(0, maxPalabras).join(' ')}...`
+      : texto;
+  }
+
   // ── Calendario ─────────────────────────────────────────────────────────
   get diasDeSemana(): Date[] {
     const lunes = new Date(this.fechaActual);

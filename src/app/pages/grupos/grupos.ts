@@ -14,12 +14,17 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatDividerModule } from '@angular/material/divider';
+import { Router } from '@angular/router';
 import { GrupoService } from '../../services/grupo.service';
+import { NinioService } from '../../services/ninio.service';
 import { FuncionarioService } from '../../services/funcionario.service';
 import { ToastService } from '../../services/toast.service';
-import { GrupoResponse, GrupoRequest, NinioResponse, FuncionarioResponse, ROL_DISPLAY } from '../../models/models';
+import { CondicionMedicaResponse, GrupoResponse, GrupoRequest, NinioResponse, FuncionarioResponse, ROL_DISPLAY } from '../../models/models';
+import { NinioCrearDialogComponent, NinioEditarDialogComponent } from '../ninios/ninios';
 import { finalize } from 'rxjs/operators';
 import { forkJoin } from 'rxjs';
+
+type VistaGestion = 'grupos' | 'ninios';
 
 @Component({
   selector: 'app-grupo-dialog',
@@ -258,7 +263,11 @@ export class GrupoDialogComponent implements OnInit {
 })
 export class GruposComponent implements OnInit {
   grupos: GrupoResponse[] = [];
-  cargando = true;
+  ninios: NinioResponse[] = [];
+  niniosFiltrados: NinioResponse[] = [];
+  vista: VistaGestion = 'grupos';
+  cargandoGrupos = true;
+  cargandoNinios = true;
   busqueda = '';
 
   readonly RANGOS = [
@@ -272,20 +281,62 @@ export class GruposComponent implements OnInit {
 
   constructor(
     private grupoService: GrupoService,
+    private ninioService: NinioService,
     private dialog: MatDialog,
     private toast: ToastService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private router: Router
   ) {}
 
-  ngOnInit() { this.cargarGrupos(); }
+  ngOnInit() {
+    this.vista = this.router.url.includes('/ninios') ? 'ninios' : 'grupos';
+    this.cargarGrupos();
+    this.cargarNinios();
+  }
+
+  cambiarVista(vista: VistaGestion) {
+    this.vista = vista;
+    this.busqueda = '';
+    this.aplicarFiltrosNinios();
+  }
 
   cargarGrupos() {
-    this.cargando = true;
+    this.cargandoGrupos = true;
     this.grupoService.listarTodos().pipe(
-      finalize(() => { this.cargando = false; this.cdr.detectChanges(); })
+      finalize(() => { this.cargandoGrupos = false; this.cdr.detectChanges(); })
     ).subscribe({
       next: (g) => { this.grupos = g; },
       error: () => { this.toast.error('Error al cargar grupos'); }
+    });
+  }
+
+  cargarNinios() {
+    this.cargandoNinios = true;
+    this.ninioService.listarTodos().pipe(
+      finalize(() => { this.cargandoNinios = false; this.cdr.detectChanges(); })
+    ).subscribe({
+      next: (data) => { this.ninios = data; this.aplicarFiltrosNinios(); },
+      error: () => this.toast.error('Error al cargar los niños')
+    });
+  }
+
+  aplicarBusqueda() {
+    if (this.vista === 'ninios') this.aplicarFiltrosNinios();
+  }
+
+  aplicarFiltrosNinios() {
+    const texto = this.busqueda.trim().toLowerCase();
+    this.niniosFiltrados = this.ninios.filter(n => {
+      if (!texto) return true;
+      const target = [
+        `${n.nombre} ${n.apellido}`,
+        n.cedula,
+        n.direccion ?? '',
+        n.observaciones ?? '',
+        n.grupo?.nombre ?? '',
+        n.grupo?.rangoEdad ?? ''
+      ].join(' ').toLowerCase();
+      return target.includes(texto);
     });
   }
 
@@ -316,6 +367,22 @@ export class GruposComponent implements OnInit {
     return this.grupos.filter(g => g.activo).length;
   }
 
+  get totalNiniosActivos(): number {
+    return this.ninios.filter(n => n.activo).length;
+  }
+
+  get totalNiniosInactivos(): number {
+    return this.ninios.filter(n => !n.activo).length;
+  }
+
+  abrirCrearActual() {
+    if (this.vista === 'grupos') {
+      this.abrirCrear();
+      return;
+    }
+    this.abrirCrearNinio();
+  }
+
   abrirCrear(rangoEdad?: string) {
     this.dialog.open(GrupoDialogComponent, {
       data: { modo: 'crear', rangoEdad: rangoEdad ?? '' },
@@ -342,6 +409,45 @@ export class GruposComponent implements OnInit {
     });
   }
 
+  abrirCrearNinio() {
+    const ref = this.dialog.open(NinioCrearDialogComponent, {
+      disableClose: false
+    });
+    ref.afterClosed().subscribe(n => {
+      if (n) {
+        this.toast.success('Niño registrado correctamente');
+        this.cargarNinios();
+        this.cargarGrupos();
+      }
+    });
+  }
+
+  abrirEditarNinio(ninio: NinioResponse) {
+    const ref = this.dialog.open(NinioEditarDialogComponent, {
+      data: { ninio },
+      disableClose: false
+    });
+    ref.afterClosed().subscribe(n => {
+      if (n) {
+        this.toast.success('Niño actualizado correctamente');
+        this.cargarNinios();
+        this.cargarGrupos();
+      }
+    });
+  }
+
+  darDeBajaNinio(ninio: NinioResponse) {
+    if (!confirm(`¿Dar de baja a ${ninio.nombre} ${ninio.apellido}?`)) return;
+    this.ninioService.darDeBaja(ninio.id).subscribe({
+      next: () => {
+        this.toast.success('Niño dado de baja');
+        this.cargarNinios();
+        this.cargarGrupos();
+      },
+      error: (err) => this.toast.error(err.error?.error ?? 'Error al dar de baja')
+    });
+  }
+
   metaRango(rango: string) {
     return this.RANGOS.find(r => r.valor === rango);
   }
@@ -362,5 +468,38 @@ export class GruposComponent implements OnInit {
 
   getRolDisplay(nombre?: string): string {
     return nombre ? (ROL_DISPLAY[nombre] ?? nombre) : '';
+  }
+
+  getNombreCompleto(ninio: NinioResponse) {
+    return `${ninio.nombre} ${ninio.apellido}`;
+  }
+
+  displaySexo(sexo?: string) {
+    if (!sexo) return '—';
+    const s = sexo.toUpperCase();
+    return s === 'MASCULINO' ? 'Masculino' : s === 'FEMENINO' ? 'Femenino' : sexo;
+  }
+
+  calcularEdad(fechaNacimiento?: string): string {
+    if (!fechaNacimiento) return '—';
+    const hoy = new Date();
+    const nacimiento = new Date(fechaNacimiento + 'T00:00:00');
+    let anios = hoy.getFullYear() - nacimiento.getFullYear();
+    const meses = hoy.getMonth() - nacimiento.getMonth();
+    if (meses < 0 || (meses === 0 && hoy.getDate() < nacimiento.getDate())) {
+      anios--;
+    }
+    const mesesRestantes = ((hoy.getMonth() - nacimiento.getMonth()) + 12) % 12;
+    if (anios === 0) return `${mesesRestantes} mes${mesesRestantes !== 1 ? 'es' : ''}`;
+    if (mesesRestantes === 0) return `${anios} año${anios !== 1 ? 's' : ''}`;
+    return `${anios} año${anios !== 1 ? 's' : ''} y ${mesesRestantes} mes${mesesRestantes !== 1 ? 'es' : ''}`;
+  }
+
+  cantidadCondiciones(ninio: NinioResponse): number {
+    return ninio.condicionesMedicas?.length ?? 0;
+  }
+
+  getCondiciones(ninio: NinioResponse): CondicionMedicaResponse[] {
+    return ninio.condicionesMedicas ?? [];
   }
 }

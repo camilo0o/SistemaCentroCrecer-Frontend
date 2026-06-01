@@ -78,7 +78,7 @@
                     <div>
                       <div class="act-nombre">{{ a.nombre }}</div>
                       @if(a.descripcion){
-                        <div class="act-desc">{{ a.descripcion | slice:0:50 }}{{ a.descripcion.length > 30 ? '...' : '' }}</div>
+                        <div class="act-desc">{{ limitarPalabras(a.descripcion, 40) }}</div>
                       }
                     </div>
                   </div>

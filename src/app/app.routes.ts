@@ -72,10 +72,10 @@ export const routes: Routes = [
       import('./layouts/admin-layout/admin-layout').then(m => m.AdminLayoutComponent),
     canActivate: [funcionarioGuard],
     children: [
-      { path: 'ninios', loadComponent: () =>
-          import('./pages/ninios/ninios').then(m => m.NiniosComponent) },
-      { path: 'grupos', loadComponent: () =>
+      { path: 'gruposyninios', loadComponent: () =>
           import('./pages/grupos/grupos').then(m => m.GruposComponent) },
+      { path: 'ninios', redirectTo: 'gruposyninios', pathMatch: 'full' },
+      { path: 'grupos', redirectTo: 'gruposyninios', pathMatch: 'full' },
       { path: 'turnos', loadComponent: () =>
           import('./pages/turnos/turnos').then(m => m.TurnosComponent) },
       { path: 'reportes', loadComponent: () =>

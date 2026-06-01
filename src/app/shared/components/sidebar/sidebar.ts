@@ -36,8 +36,7 @@ export class Sidebar implements OnInit {
 
   funcionarioItems: NavItem[] = [
     { label: 'Dashboard',  icon: 'dashboard',      route: '/dashboard/funcionario' },
-    { label: 'Niños',      icon: 'child_care',      route: '/funcionario/ninios' },
-    { label: 'Grupos',     icon: 'category',        route: '/funcionario/grupos' },
+    { label: 'Grupos y Niños', icon: 'groups',      route: '/funcionario/gruposyninios' },
     { label: 'Turnos',     icon: 'calendar_month',  route: '/funcionario/turnos' },
     { label: 'Reportes',   icon: 'analytics',       route: '/funcionario/reportes' },
     { label: 'Actividades',icon: 'event',            route: '/funcionario/actividades' },

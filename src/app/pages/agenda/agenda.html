@@ -128,6 +128,9 @@
               <th mat-header-cell *matHeaderCellDef>Acciones</th>
               <td mat-cell *matCellDef="let a">
                 <div class="acciones-row">
+                  <button mat-icon-button matTooltip="Ver detalles" (click)="abrirDetalles(a)">
+                    <mat-icon class="icon-detalles">list_alt</mat-icon>
+                  </button>
                   <button mat-icon-button matTooltip="Editar" (click)="abrirEditar(a)" [disabled]="!a.activo">
                     <mat-icon class="icon-edit">edit</mat-icon>
                   </button>

@@ -385,3 +385,21 @@ export interface AgendaLimpiezaResponse {
   subtipoAgendaId: number;
   subtipoAgendaNombre?: string;
 }
+
+export interface DetalleAgendaRequest {
+  descripcionEspecifica: string;
+  requiereParticipantes: boolean;
+  agendaId: number;
+  subtipoAgendaId: number;
+}
+ 
+export interface DetalleAgendaResponse {
+  id: number;
+  descripcionEspecifica: string;
+  requiereParticipantes: boolean;
+  activo: boolean;
+  fechaBaja?: string;
+  agendaId: number;
+  subtipoId: number;
+  subtipoNombre?: string;
+}

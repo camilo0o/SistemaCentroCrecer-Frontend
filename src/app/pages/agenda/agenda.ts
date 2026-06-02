@@ -15,12 +15,17 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatDividerModule } from '@angular/material/divider';
 import { finalize } from 'rxjs/operators';
 import { Sidebar } from '../../shared/components/sidebar/sidebar';
 import { AgendaService } from '../../services/agenda.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
-import { AgendaRequest, AgendaResponse, TipoAgendaResponse } from '../../models/models';
+import {
+  AgendaRequest, AgendaResponse, TipoAgendaResponse,
+  DetalleAgendaRequest, DetalleAgendaResponse, SubtipoAgendaResponse
+} from '../../models/models';
 
 @Component({
   selector: 'app-agenda-dialog',
@@ -147,6 +152,254 @@ export class AgendaDialogComponent {
 }
 
 @Component({
+  selector: 'app-detalle-agenda-dialog',
+  standalone: true,
+  imports: [
+    CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule,
+    MatSelectModule, MatButtonModule, MatIconModule, MatDialogModule,
+    MatProgressSpinnerModule, MatCheckboxModule, MatDividerModule
+  ],
+  styles: [`
+    .detalles-list { display:flex; flex-direction:column; gap:12px; margin-bottom:16px; }
+    .detalle-item  { border:1px solid #E0E4EC; border-radius:10px; padding:14px 16px; display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+    .detalle-item.inactivo { opacity:0.5; }
+    .detalle-info  { flex:1; }
+    .detalle-desc  { font-size:14px; font-weight:600; color:#1A1A2E; margin:0 0 4px; }
+    .detalle-meta  { font-size:12px; color:#5C6680; display:flex; gap:8px; flex-wrap:wrap; }
+    .subtipo-badge { display:inline-block; padding:2px 10px; border-radius:20px; font-size:11px; font-weight:600; background:#EDE7F6; color:#512DA8; }
+    .participantes-badge { display:inline-flex; align-items:center; gap:3px; font-size:11px; color:#1565C0; }
+    .detalle-actions { display:flex; gap:2px; flex-shrink:0; }
+    .empty-detalles { text-align:center; padding:32px; color:#9AA0B9; }
+    .empty-detalles mat-icon { font-size:40px; width:40px; height:40px; display:block; margin:0 auto 8px; }
+    .form-section { border-top:1px solid #E0E4EC; padding-top:16px; margin-top:4px; }
+    .form-section h4 { font-family:'Poppins',sans-serif; font-size:14px; font-weight:700; color:#1A1A2E; margin:0 0 12px; }
+  `],
+  template: `
+    <div class="dialog-header">
+      <h2 class="dialog-title">Detalles de la anotación</h2>
+      <button mat-icon-button (click)="ref.close()"><mat-icon>close</mat-icon></button>
+    </div>
+
+    <mat-dialog-content style="padding:24px;min-width:520px;max-width:600px">
+
+      <div style="background:#F4F6FB;border-radius:10px;padding:12px 16px;margin-bottom:20px">
+        <div style="font-size:13px;font-weight:600;color:#1A1A2E;margin-bottom:4px">{{ data.agenda.descripcion }}</div>
+        <div style="font-size:12px;color:#5C6680;display:flex;gap:12px;flex-wrap:wrap">
+          <span><mat-icon style="font-size:12px;width:12px;height:12px;vertical-align:middle">calendar_today</mat-icon> {{ formatFecha(data.agenda.fecha) }}</span>
+          <span><mat-icon style="font-size:12px;width:12px;height:12px;vertical-align:middle">access_time</mat-icon> {{ data.agenda.horaInicio }}{{ data.agenda.horaFin ? ' — ' + data.agenda.horaFin : '' }}</span>
+          <span class="subtipo-badge">{{ data.agenda.tipoNombre }}</span>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <span style="font-family:'Poppins',sans-serif;font-size:14px;font-weight:700;color:#1A1A2E">
+          Detalles ({{ detalles.length }})
+        </span>
+        @if(!mostrarForm){
+          <button mat-flat-button style="background:#1565C0;color:white;font-size:12px;height:32px"
+            (click)="mostrarForm = true">
+            <mat-icon style="font-size:16px;width:16px;height:16px">add</mat-icon> Agregar detalle
+          </button>
+        }
+      </div>
+
+      @if(cargando){
+        <div style="text-align:center;padding:32px">
+          <mat-spinner diameter="32" style="margin:0 auto"></mat-spinner>
+        </div>
+      } @else if(detalles.length === 0 && !mostrarForm){
+        <div class="empty-detalles">
+          <mat-icon>list_alt</mat-icon>
+          <p style="margin:0;font-size:14px">No hay detalles registrados</p>
+          <button mat-stroked-button style="margin-top:12px" (click)="mostrarForm = true">
+            Agregar primer detalle
+          </button>
+        </div>
+      } @else {
+        <div class="detalles-list">
+          @for(d of detalles; track d.id){
+            <div class="detalle-item" [class.inactivo]="!d.activo">
+              <div class="detalle-info">
+                <p class="detalle-desc">{{ d.descripcionEspecifica }}</p>
+                <div class="detalle-meta">
+                  <span class="subtipo-badge">{{ d.subtipoNombre }}</span>
+                  @if(d.requiereParticipantes){
+                    <span class="participantes-badge">
+                      <mat-icon style="font-size:12px;width:12px;height:12px">group</mat-icon>
+                      Requiere participantes
+                    </span>
+                  }
+                  @if(!d.activo){
+                    <span style="color:#C62828;font-size:11px;font-weight:600">● Dado de baja</span>
+                  }
+                </div>
+              </div>
+              <div class="detalle-actions">
+                @if(d.activo){
+                  <button mat-icon-button matTooltip="Editar" (click)="editarDetalle(d)">
+                    <mat-icon style="color:#1565C0;font-size:18px">edit</mat-icon>
+                  </button>
+                  <button mat-icon-button matTooltip="Dar de baja" (click)="darDeBajaDetalle(d.id)">
+                    <mat-icon style="color:#C62828;font-size:18px">cancel</mat-icon>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      @if(mostrarForm){
+        <div class="form-section">
+          <h4>{{ detalleEditando ? 'Editar detalle' : 'Nuevo detalle' }}</h4>
+          <form [formGroup]="formDetalle" style="display:flex;flex-direction:column;gap:14px">
+
+            <mat-form-field appearance="outline">
+              <mat-label>Descripción específica</mat-label>
+              <textarea matInput formControlName="descripcionEspecifica" rows="2"
+                placeholder="Describí el detalle de esta anotación..."></textarea>
+              @if(formDetalle.get('descripcionEspecifica')?.invalid && formDetalle.get('descripcionEspecifica')?.touched){
+                <mat-error>La descripción es obligatoria</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Subtipo</mat-label>
+              <mat-select formControlName="subtipoAgendaId">
+                @for(s of data.subtipos; track s.subtipoId){
+                  <mat-option [value]="s.subtipoId">{{ s.subtipo }}</mat-option>
+                }
+              </mat-select>
+              @if(formDetalle.get('subtipoAgendaId')?.invalid && formDetalle.get('subtipoAgendaId')?.touched){
+                <mat-error>Seleccioná un subtipo</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-checkbox formControlName="requiereParticipantes" color="primary">
+              Requiere participantes
+            </mat-checkbox>
+
+            <div style="display:flex;gap:8px;justify-content:flex-end">
+              <button mat-stroked-button type="button" (click)="cancelarForm()">Cancelar</button>
+              <button mat-flat-button style="background:#1565C0;color:white"
+                type="button" (click)="guardarDetalle()" [disabled]="guardandoDetalle">
+                @if(guardandoDetalle){ <mat-spinner diameter="18" color="accent"></mat-spinner> }
+                @else { {{ detalleEditando ? 'Actualizar' : 'Guardar' }} }
+              </button>
+            </div>
+          </form>
+        </div>
+      }
+
+    </mat-dialog-content>
+
+    <div class="dialog-actions">
+      <button mat-flat-button style="background:#1565C0;color:white" (click)="ref.close(true)">
+        Cerrar
+      </button>
+    </div>
+  `
+})
+export class DetalleAgendaDialogComponent implements OnInit {
+  detalles: DetalleAgendaResponse[] = [];
+  cargando = false;
+  guardandoDetalle = false;
+  mostrarForm = false;
+  detalleEditando: DetalleAgendaResponse | null = null;
+
+  formDetalle: FormGroup;
+
+  constructor(
+    private fb: FormBuilder,
+    public ref: MatDialogRef<DetalleAgendaDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: {
+      agenda: AgendaResponse;
+      subtipos: SubtipoAgendaResponse[];
+    },
+    private agendaService: AgendaService,
+    private toast: ToastService,
+    private cdr: ChangeDetectorRef
+  ) {
+    this.formDetalle = this.fb.group({
+      descripcionEspecifica: ['', Validators.required],
+      subtipoAgendaId:       [null, Validators.required],
+      requiereParticipantes: [false],
+    });
+  }
+
+  ngOnInit() {
+    this.cargarDetalles();
+  }
+
+  cargarDetalles() {
+    this.cargando = true;
+    this.agendaService.listarDetallesPorAgenda(this.data.agenda.id).pipe(
+      finalize(() => { this.cargando = false; this.cdr.detectChanges(); })
+    ).subscribe({
+      next: (d) => this.detalles = d,
+      error: () => this.toast.error('Error al cargar los detalles')
+    });
+  }
+
+  editarDetalle(d: DetalleAgendaResponse) {
+    this.detalleEditando = d;
+    this.formDetalle.patchValue({
+      descripcionEspecifica: d.descripcionEspecifica,
+      subtipoAgendaId:       d.subtipoId,
+      requiereParticipantes: d.requiereParticipantes,
+    });
+    this.mostrarForm = true;
+  }
+
+  cancelarForm() {
+    this.mostrarForm = false;
+    this.detalleEditando = null;
+    this.formDetalle.reset({ requiereParticipantes: false });
+  }
+
+  guardarDetalle() {
+    if (this.formDetalle.invalid) { this.formDetalle.markAllAsTouched(); return; }
+    this.guardandoDetalle = true;
+    const v = this.formDetalle.value;
+    const payload: DetalleAgendaRequest = {
+      descripcionEspecifica: v.descripcionEspecifica,
+      subtipoAgendaId:       v.subtipoAgendaId,
+      requiereParticipantes: v.requiereParticipantes ?? false,
+      agendaId:              this.data.agenda.id,
+    };
+
+    const op = this.detalleEditando
+      ? this.agendaService.actualizarDetalle(this.detalleEditando.id, payload)
+      : this.agendaService.crearDetalle(payload);
+
+    op.subscribe({
+      next: () => {
+        this.guardandoDetalle = false;
+        this.toast.success(this.detalleEditando ? 'Detalle actualizado' : 'Detalle agregado');
+        this.cancelarForm();
+        this.cargarDetalles();
+      },
+      error: (err) => {
+        this.guardandoDetalle = false;
+        this.toast.error(err.error?.error ?? 'Error al guardar el detalle');
+      }
+    });
+  }
+
+  darDeBajaDetalle(id: number) {
+    this.agendaService.darDeBajaDetalle(id).subscribe({
+      next: () => { this.toast.success('Detalle dado de baja'); this.cargarDetalles(); },
+      error: (err) => this.toast.error(err.error?.error ?? 'Error al dar de baja')
+    });
+  }
+
+  formatFecha(f?: string): string {
+    if (!f) return '—';
+    return new Date(f + 'T00:00:00').toLocaleDateString('es-UY', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+}
+
+@Component({
   selector: 'app-agenda',
   standalone: true,
   imports: [
@@ -163,6 +416,7 @@ export class AgendaComponent implements OnInit {
   filtradas: AgendaResponse[]   = [];
   pagina: AgendaResponse[]      = [];
   tipos: TipoAgendaResponse[]   = [];
+  subtipos: SubtipoAgendaResponse[] = [];
 
   cargando     = true;
   busqueda     = '';
@@ -187,6 +441,7 @@ export class AgendaComponent implements OnInit {
     const uid = this.authService.getUserId();
     this.funcionarioId = uid ?? 0;
     this.agendaService.listarTipos().subscribe(t => this.tipos = t);
+    this.agendaService.listarSubtipos().subscribe(s => this.subtipos = s);
     this.cargar();
   }
 
@@ -246,6 +501,14 @@ export class AgendaComponent implements OnInit {
     });
     ref.afterClosed().subscribe(r => {
       if (r) { this.toast.success('Anotación actualizada'); this.cargar(); }
+    });
+  }
+
+  abrirDetalles(a: AgendaResponse) {
+    this.dialog.open(DetalleAgendaDialogComponent, {
+      data: { agenda: a, subtipos: this.subtipos },
+      width: '600px',
+      maxHeight: '90vh'
     });
   }
 

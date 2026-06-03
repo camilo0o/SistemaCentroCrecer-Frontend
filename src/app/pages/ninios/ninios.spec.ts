@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { Ninios } from './ninios';
+import { NiniosComponent } from './ninios';
 
-describe('Ninios', () => {
-  let component: Ninios;
-  let fixture: ComponentFixture<Ninios>;
+describe('NiniosComponent', () => {
+  let component: NiniosComponent;
+  let fixture: ComponentFixture<NiniosComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [Ninios],
+      imports: [NiniosComponent],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(Ninios);
+    fixture = TestBed.createComponent(NiniosComponent);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

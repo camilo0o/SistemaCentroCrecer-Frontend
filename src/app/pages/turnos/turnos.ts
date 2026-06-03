@@ -282,6 +282,7 @@ export class TurnosComponent implements OnInit {
   pageSize = 10;
   pageIndex = 0;
   diasSemana = DIAS_SEMANA;
+  vistaActual: 'semana' | 'tabla' = 'semana';
 
   constructor(
     private turnoService: TurnoService,
@@ -328,6 +329,11 @@ export class TurnosComponent implements OnInit {
   }
 
   onPage(e: PageEvent) { this.pageIndex = e.pageIndex; this.pageSize = e.pageSize; this.actualizarPagina(); }
+
+  /** Devuelve turnos filtrados que incluyen el día dado */
+  turnosPorDia(dia: DiaSemana): TurnoResponse[] {
+    return this.filtrados.filter(t => t.dias?.includes(dia));
+  }
 
   calcularDuracion(inicio: string, fin: string): string {
     if (!inicio || !fin) return '—';

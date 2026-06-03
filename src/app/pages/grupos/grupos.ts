@@ -21,7 +21,7 @@ import { NinioService } from '../../services/ninio.service';
 import { FuncionarioService } from '../../services/funcionario.service';
 import { ToastService } from '../../services/toast.service';
 import { CondicionMedicaResponse, GrupoResponse, GrupoRequest, NinioResponse, FuncionarioResponse, ROL_DISPLAY } from '../../models/models';
-import { NinioCrearDialogComponent, NinioEditarDialogComponent } from '../ninios/ninios';
+import { NinioCrearDialogComponent, NinioEditarDialogComponent, NinioDetalleDialogComponent } from '../ninios/ninios';
 import { finalize } from 'rxjs/operators';
 import { forkJoin } from 'rxjs';
 
@@ -455,6 +455,15 @@ export class GruposComponent implements OnInit {
         this.cargarNinios();
         this.cargarGrupos();
       }
+    });
+  }
+
+  abrirDetalleNinio(ninio: NinioResponse) {
+    this.dialog.open(NinioDetalleDialogComponent, {
+      data: { ninio },
+      width: '600px',
+      maxWidth: '96vw',
+      panelClass: 'detalle-dialog'
     });
   }
 

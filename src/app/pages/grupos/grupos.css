@@ -506,3 +506,12 @@ mat-paginator {
   background: white;
   box-shadow: var(--shadow);
 }
+
+/* Botón más información en cards de niños */
+.btn-mas-info {
+  font-size: 13px; font-weight: 600; color: #1565C0;
+  border-color: #1565C0; border-radius: 8px; height: 34px;
+  display: flex; align-items: center; gap: 4px;
+}
+.btn-mas-info mat-icon { font-size: 16px; width: 16px; height: 16px; }
+.btn-mas-info:hover { background: #E3F2FD; }

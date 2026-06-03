@@ -69,91 +69,93 @@
           <!-- Cabecera de la tarjeta -->
           <div class="card-header">
             <div class="card-title">
-              <mat-icon>child_care</mat-icon>
+              <div class="card-avatar" [class.avatar-inactivo]="!ninio.activo">
+                <mat-icon>child_care</mat-icon>
+              </div>
               <div>
                 <div class="title">{{ getNombreCompleto(ninio) }}</div>
-                <div class="subtitle">{{ ninio.grupo?.nombre || 'Sin grupo asignado' }}</div>
+                <div class="subtitle">
+                  <mat-icon style="font-size:13px;width:13px;height:13px;vertical-align:middle">group</mat-icon>
+                  {{ ninio.grupo?.nombre || 'Sin grupo asignado' }}
+                </div>
               </div>
             </div>
-            <div style="display:flex;align-items:center;gap:4px">
+            <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
               <mat-chip class="status-chip" [class.status-inactivo]="!ninio.activo">
                 {{ ninio.activo ? 'Activo' : 'Inactivo' }}
               </mat-chip>
-              @if(ninio.activo){
-                <button mat-icon-button matTooltip="Editar" (click)="abrirEditar(ninio)">
-                  <mat-icon style="font-size:18px">edit</mat-icon>
-                </button>
-                <button mat-icon-button matTooltip="Dar de baja" (click)="darDeBaja(ninio)">
-                  <mat-icon style="font-size:18px;color:#C62828">delete_outline</mat-icon>
-                </button>
-              }
             </div>
           </div>
 
-          <!-- Datos del niño -->
-          <mat-card-content>
+          <!-- Datos resumidos -->
+          <mat-card-content class="card-body">
+
             <div class="field-row">
-              <span class="field-label">Cédula</span>
-              <span>{{ ninio.cedula }}</span>
-            </div>
-            <div class="field-row">
-              <span class="field-label">Sexo</span>
-              <span>{{ displaySexo(ninio.sexo) }}</span>
-            </div>
-            <div class="field-row">
-              <span class="field-label">Fecha de nacimiento</span>
-              <span>{{ formatDate(ninio.fechaNacimiento) }}</span>
-            </div>
-            <div class="field-row">
-              <span class="field-label">Edad</span>
-              <span class="edad-badge">
-                <mat-icon style="font-size:14px;width:14px;height:14px;vertical-align:middle">cake</mat-icon>
+              <span class="field-label">
+                <mat-icon class="field-icon">cake</mat-icon>
+                Edad
+              </span>
+              <span class="field-val">
                 {{ calcularEdad(ninio.fechaNacimiento) }}
                 @if(ninio.grupo?.rangoEdad){
                   <span class="rango-tag">{{ ninio.grupo!.rangoEdad }} años</span>
                 }
               </span>
             </div>
+
             <div class="field-row">
-              <span class="field-label">Dirección</span>
-              <span>{{ ninio.direccion || '—' }}</span>
-            </div>
-            <div class="field-row">
-              <span class="field-label">Observaciones</span>
-              <span>{{ ninio.observaciones || '—' }}</span>
+              <span class="field-label">
+                <mat-icon class="field-icon">badge</mat-icon>
+                Cédula
+              </span>
+              <span class="field-val">{{ ninio.cedula }}</span>
             </div>
 
-            <div class="condiciones-section">
-              <div class="condiciones-header">
-                <mat-icon class="condiciones-icon">medical_services</mat-icon>
-                <span class="condiciones-title">Condiciones médicas</span>
-                @if(cantidadCondiciones(ninio) > 0){
-                  <span class="condiciones-badge">{{ cantidadCondiciones(ninio) }}</span>
+            <div class="field-row">
+              <span class="field-label">
+                <mat-icon class="field-icon">wc</mat-icon>
+                Sexo
+              </span>
+              <span class="field-val">{{ displaySexo(ninio.sexo) }}</span>
+            </div>
+
+            <!-- Condiciones médicas: resumen compacto -->
+            <div class="field-row condiciones-row">
+              <span class="field-label">
+                <mat-icon class="field-icon">medical_services</mat-icon>
+                Condiciones
+              </span>
+              <span class="field-val">
+                @if(cantidadCondiciones(ninio) === 0){
+                  <span class="muted-text">Ninguna</span>
+                } @else {
+                  <span class="condiciones-badge-inline">
+                    <mat-icon style="font-size:13px;width:13px;height:13px">warning_amber</mat-icon>
+                    {{ cantidadCondiciones(ninio) }} registrada{{ cantidadCondiciones(ninio) !== 1 ? 's' : '' }}
+                  </span>
                 }
-              </div>
-
-              @if(cantidadCondiciones(ninio) === 0){
-                <p class="sin-condiciones">Sin condiciones registradas</p>
-              } @else {
-                <div class="condiciones-list">
-                  @for(c of getCondiciones(ninio); track c.condicionId){
-                    <div class="condicion-item">
-                      <div class="condicion-top">
-                        <span class="condicion-nombre">{{ c.condicion }}</span>
-                        <span [class]="c.esCronica ? 'tag-cronica' : 'tag-aguda'">
-                          {{ c.esCronica ? 'Crónica' : 'Aguda' }}
-                        </span>
-                      </div>
-                      @if(c.observacion){
-                        <p class="condicion-obs">{{ c.observacion }}</p>
-                      }
-                    </div>
-                  }
-                </div>
-              }
+              </span>
             </div>
 
           </mat-card-content>
+
+          <!-- Acciones -->
+          <div class="card-actions">
+            <button mat-stroked-button class="btn-mas-info" (click)="abrirDetalle(ninio)">
+              <mat-icon>info_outline</mat-icon>
+              Más información
+            </button>
+            @if(ninio.activo){
+              <div style="display:flex;gap:4px">
+                <button mat-icon-button matTooltip="Editar" (click)="abrirEditar(ninio)">
+                  <mat-icon style="font-size:18px;color:#1565C0">edit</mat-icon>
+                </button>
+                <button mat-icon-button matTooltip="Dar de baja" (click)="darDeBaja(ninio)">
+                  <mat-icon style="font-size:18px;color:#C62828">delete_outline</mat-icon>
+                </button>
+              </div>
+            }
+          </div>
 
         </mat-card>
       }

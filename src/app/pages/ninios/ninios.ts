@@ -27,6 +27,258 @@ import { ToastService } from '../../services/toast.service';
 import { CondicionMedicaResponse, GrupoResponse, NinioResponse } from '../../models/models';
 import { finalize } from 'rxjs/operators';
 
+// ─── Dialog: Ver detalle del niño ───────────────────────────────────────────
+@Component({
+  selector: 'app-ninio-detalle-dialog',
+  standalone: true,
+  imports: [
+    CommonModule,
+    MatButtonModule, MatIconModule, MatDialogModule,
+    MatChipsModule, MatDividerModule
+  ],
+  styles: [`
+    .dlg-header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      padding: 24px 24px 0;
+    }
+    .header-left { display: flex; gap: 16px; align-items: flex-start; }
+    .avatar {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: linear-gradient(135deg, #1565C0, #42A5F5);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .avatar mat-icon { color: white; font-size: 28px; width: 28px; height: 28px; }
+    .header-info { display: flex; flex-direction: column; gap: 4px; }
+    .nombre-completo { font-size: 1.2rem; font-weight: 700; color: #1a2340; margin: 0; }
+    .grupo-label {
+      font-size: 0.85rem; color: #5C6680; display: flex; align-items: center; gap: 4px;
+    }
+    .grupo-label mat-icon { font-size: 14px; width: 14px; height: 14px; }
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      border-radius: 20px; padding: 3px 12px; font-size: 12px; font-weight: 600;
+    }
+    .status-activo   { background: #E8F5E9; color: #2E7D32; }
+    .status-inactivo { background: #FFEBEE; color: #C62828; }
+    .section-title {
+      font-size: 11px; font-weight: 700; color: #9AA0B9;
+      text-transform: uppercase; letter-spacing: 0.7px;
+      margin: 0 0 12px; display: flex; align-items: center; gap: 6px;
+    }
+    .section-title mat-icon { font-size: 15px; width: 15px; height: 15px; color: #1565C0; }
+    .info-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    }
+    .info-item { display: flex; flex-direction: column; gap: 3px; }
+    .info-item.full { grid-column: 1 / -1; }
+    .info-key { font-size: 11px; color: #9AA0B9; text-transform: uppercase; letter-spacing: 0.5px; }
+    .info-val { font-size: 0.9rem; font-weight: 500; color: #1a2340; }
+    .info-val.muted { color: #9AA0B9; font-style: italic; font-weight: 400; }
+    .edad-badge { display: flex; align-items: center; gap: 6px; }
+    .rango-tag {
+      background: #E3F2FD; color: #1565C0; border-radius: 12px;
+      padding: 2px 9px; font-size: 11px; font-weight: 600;
+    }
+    .section-sep { border: none; border-top: 1px solid #F0F2F7; margin: 18px 0; }
+    .condicion-card {
+      background: #F7F9FF; border: 1px solid #E8EAF0; border-radius: 10px;
+      padding: 12px 14px; display: flex; flex-direction: column; gap: 6px;
+    }
+    .condicion-top {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .condicion-nombre { font-size: 0.9rem; font-weight: 600; color: #1a2340; }
+    .condicion-obs { font-size: 0.82rem; color: #5C6680; margin: 0; line-height: 1.45; }
+    .tag-cronica {
+      background: #FFF3E0; color: #E65100; border-radius: 10px;
+      padding: 2px 9px; font-size: 11px; font-weight: 700; flex-shrink: 0;
+    }
+    .tag-aguda {
+      background: #E8F5E9; color: #2E7D32; border-radius: 10px;
+      padding: 2px 9px; font-size: 11px; font-weight: 700; flex-shrink: 0;
+    }
+    .no-condiciones {
+      text-align: center; padding: 20px 0; color: #9AA0B9; font-size: 0.88rem;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+    }
+    .no-condiciones mat-icon { font-size: 32px; width: 32px; height: 32px; color: #D0D4E3; }
+    .condiciones-grid { display: flex; flex-direction: column; gap: 10px; }
+    .actions-bar {
+      display: flex; justify-content: flex-end; gap: 10px;
+      padding: 16px 24px; border-top: 1px solid #F0F2F7;
+    }
+    .badge-count {
+      background: #1565C0; color: white; border-radius: 10px;
+      padding: 1px 8px; font-size: 11px; font-weight: 700;
+    }
+  `],
+  template: `
+    <!-- Encabezado -->
+    <div class="dlg-header">
+      <div class="header-left">
+        <div class="avatar">
+          <mat-icon>child_care</mat-icon>
+        </div>
+        <div class="header-info">
+          <p class="nombre-completo">{{ data.ninio.nombre }} {{ data.ninio.apellido }}</p>
+          <span class="grupo-label">
+            <mat-icon>group</mat-icon>
+            {{ data.ninio.grupo?.nombre || 'Sin grupo asignado' }}
+          </span>
+          <span class="status-pill"
+                [class.status-activo]="data.ninio.activo"
+                [class.status-inactivo]="!data.ninio.activo">
+            <mat-icon style="font-size:12px;width:12px;height:12px">
+              {{ data.ninio.activo ? 'check_circle' : 'cancel' }}
+            </mat-icon>
+            {{ data.ninio.activo ? 'Activo' : 'Inactivo' }}
+          </span>
+        </div>
+      </div>
+      <button mat-icon-button (click)="ref.close()" matTooltip="Cerrar">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <mat-dialog-content style="padding: 20px 24px; min-width: 500px; max-height: 68vh; overflow-y: auto;">
+
+      <!-- Sección: Datos personales -->
+      <p class="section-title">
+        <mat-icon>person</mat-icon>
+        Datos personales
+      </p>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-key">Cédula</span>
+          <span class="info-val">{{ data.ninio.cedula }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-key">Sexo</span>
+          <span class="info-val">{{ displaySexo(data.ninio.sexo) }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-key">Fecha de nacimiento</span>
+          <span class="info-val">{{ formatDate(data.ninio.fechaNacimiento) }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-key">Edad</span>
+          <span class="info-val">
+            <span class="edad-badge">
+              {{ calcularEdad(data.ninio.fechaNacimiento) }}
+              @if(data.ninio.grupo?.rangoEdad){
+                <span class="rango-tag">{{ data.ninio.grupo!.rangoEdad }} años</span>
+              }
+            </span>
+          </span>
+        </div>
+        <div class="info-item full">
+          <span class="info-key">Dirección</span>
+          <span class="info-val" [class.muted]="!data.ninio.direccion">
+            {{ data.ninio.direccion || 'No registrada' }}
+          </span>
+        </div>
+        <div class="info-item full">
+          <span class="info-key">Observaciones</span>
+          <span class="info-val" [class.muted]="!data.ninio.observaciones">
+            {{ data.ninio.observaciones || 'Sin observaciones' }}
+          </span>
+        </div>
+      </div>
+
+      <hr class="section-sep">
+
+      <!-- Sección: Condiciones médicas -->
+      <p class="section-title">
+        <mat-icon>medical_services</mat-icon>
+        Condiciones médicas
+        @if(condiciones.length > 0){
+          <span class="badge-count">{{ condiciones.length }}</span>
+        }
+      </p>
+
+      @if(condiciones.length === 0){
+        <div class="no-condiciones">
+          <mat-icon>health_and_safety</mat-icon>
+          <span>Sin condiciones médicas registradas</span>
+        </div>
+      } @else {
+        <div class="condiciones-grid">
+          @for(c of condiciones; track c.condicionId){
+            <div class="condicion-card">
+              <div class="condicion-top">
+                <span class="condicion-nombre">{{ c.condicion }}</span>
+                <span [class]="c.esCronica ? 'tag-cronica' : 'tag-aguda'">
+                  {{ c.esCronica ? 'Crónica' : 'Aguda' }}
+                </span>
+              </div>
+              @if(c.observacion){
+                <p class="condicion-obs">{{ c.observacion }}</p>
+              }
+            </div>
+          }
+        </div>
+      }
+
+    </mat-dialog-content>
+
+    <!-- Pie -->
+    <div class="actions-bar">
+      @if(data.ninio.activo){
+        <button mat-stroked-button color="warn"
+                (click)="ref.close('baja')" matTooltip="Dar de baja al niño">
+          <mat-icon>person_off</mat-icon>
+          Dar de baja
+        </button>
+        <button mat-flat-button style="background:#1565C0;color:white"
+                (click)="ref.close('editar')">
+          <mat-icon>edit</mat-icon>
+          Editar
+        </button>
+      }
+      @if(!data.ninio.activo){
+        <button mat-stroked-button (click)="ref.close()">Cerrar</button>
+      }
+    </div>
+  `
+})
+export class NinioDetalleDialogComponent {
+  constructor(
+    public ref: MatDialogRef<NinioDetalleDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: { ninio: NinioResponse }
+  ) {}
+
+  get condiciones(): CondicionMedicaResponse[] {
+    return this.data.ninio.condicionesMedicas ?? [];
+  }
+
+  displaySexo(sexo?: string): string {
+    if (!sexo) return '—';
+    const s = sexo.toUpperCase();
+    return s === 'MASCULINO' ? 'Masculino' : s === 'FEMENINO' ? 'Femenino' : sexo;
+  }
+
+  formatDate(fecha?: string): string {
+    if (!fecha) return '—';
+    return new Date(fecha + 'T00:00:00').toLocaleDateString('es-UY', {
+      day: '2-digit', month: '2-digit', year: 'numeric'
+    });
+  }
+
+  calcularEdad(fechaNacimiento?: string): string {
+    if (!fechaNacimiento) return '—';
+    const hoy = new Date();
+    const nacimiento = new Date(fechaNacimiento + 'T00:00:00');
+    let anios = hoy.getFullYear() - nacimiento.getFullYear();
+    const meses = hoy.getMonth() - nacimiento.getMonth();
+    if (meses < 0 || (meses === 0 && hoy.getDate() < nacimiento.getDate())) anios--;
+    const mesesRestantes = ((hoy.getMonth() - nacimiento.getMonth()) + 12) % 12;
+    if (anios === 0) return `${mesesRestantes} mes${mesesRestantes !== 1 ? 'es' : ''}`;
+    if (mesesRestantes === 0) return `${anios} año${anios !== 1 ? 's' : ''}`;
+    return `${anios} año${anios !== 1 ? 's' : ''} y ${mesesRestantes} mes${mesesRestantes !== 1 ? 'es' : ''}`;
+  }
+}
+
 // ─── Dialog: Crear Niño (2 pasos) ───────────────────────────────────────────
 @Component({
   selector: 'app-ninio-crear-dialog',
@@ -64,7 +316,6 @@ import { finalize } from 'rxjs/operators';
       <button mat-icon-button (click)="ref.close()"><mat-icon>close</mat-icon></button>
     </div>
 
-    <!-- Indicador de pasos manual -->
     <div style="display:flex;align-items:center;gap:0;padding:16px 24px 0;">
       <div style="display:flex;align-items:center;gap:8px;">
         <div [style.background]="paso===1?'#1565C0':'#E3F2FD'"
@@ -85,12 +336,9 @@ import { finalize } from 'rxjs/operators';
       </div>
     </div>
 
-    <!-- PASO 1: Datos del niño -->
     <mat-dialog-content *ngIf="paso===1"
         style="padding:20px 24px;min-width:520px;max-height:65vh;overflow-y:auto">
-
       <form [formGroup]="formDatos" style="display:flex;flex-direction:column;gap:14px">
-
         <div style="display:flex;gap:12px">
           <mat-form-field appearance="outline" style="flex:1">
             <mat-label>Nombre</mat-label>
@@ -107,7 +355,6 @@ import { finalize } from 'rxjs/operators';
             }
           </mat-form-field>
         </div>
-
         <mat-form-field appearance="outline">
           <mat-label>Cédula</mat-label>
           <input matInput formControlName="cedula" placeholder="Solo números, máx. 8 dígitos">
@@ -115,7 +362,6 @@ import { finalize } from 'rxjs/operators';
             <mat-error>Cédula inválida (solo números, máx. 8)</mat-error>
           }
         </mat-form-field>
-
         <div style="display:flex;gap:12px">
           <mat-form-field appearance="outline" style="flex:1">
             <mat-label>Fecha de nacimiento</mat-label>
@@ -137,7 +383,6 @@ import { finalize } from 'rxjs/operators';
             }
           </mat-form-field>
         </div>
-
         <mat-form-field appearance="outline">
           <mat-label>Grupo</mat-label>
           <mat-select formControlName="grupoId">
@@ -155,40 +400,32 @@ import { finalize } from 'rxjs/operators';
             <mat-error>Seleccione un grupo</mat-error>
           }
         </mat-form-field>
-
         <mat-form-field appearance="outline">
           <mat-label>Dirección</mat-label>
           <input matInput formControlName="direccion">
         </mat-form-field>
-
         <mat-form-field appearance="outline">
           <mat-label>Observaciones</mat-label>
           <textarea matInput formControlName="observaciones" rows="2"></textarea>
         </mat-form-field>
-
       </form>
     </mat-dialog-content>
 
-    <!-- PASO 2: Condiciones médicas -->
     <mat-dialog-content *ngIf="paso===2"
         style="padding:20px 24px;min-width:520px;max-height:65vh;overflow-y:auto">
-
       <p style="color:#5C6680;font-size:.9rem;margin:0 0 16px">
         <mat-icon style="font-size:16px;vertical-align:middle;color:#1565C0">info</mat-icon>
         Podés agregar las condiciones médicas del niño ahora o hacerlo más tarde desde su ficha.
         Este paso es <strong>opcional</strong>.
       </p>
-
       <form [formGroup]="formCondiciones">
         <div formArrayName="condiciones">
-
           @if(condicionesArray.length === 0){
             <div class="no-condiciones">
               <mat-icon style="font-size:36px;color:#D0D4E3">medical_services</mat-icon>
               <p>No se cargaron condiciones médicas aún.</p>
             </div>
           }
-
           @for(ctrl of condicionesArray.controls; track $index){
             <div class="condicion-row" [formGroupName]="$index">
               <button mat-icon-button class="remove-btn" type="button"
@@ -196,7 +433,6 @@ import { finalize } from 'rxjs/operators';
                       matTooltip="Eliminar condición">
                 <mat-icon style="color:#C62828;font-size:18px">delete_outline</mat-icon>
               </button>
-
               <mat-form-field appearance="outline" style="width:100%;margin-bottom:4px">
                 <mat-label>Condición médica</mat-label>
                 <input matInput formControlName="condicion"
@@ -205,13 +441,11 @@ import { finalize } from 'rxjs/operators';
                   <mat-error>La condición es obligatoria</mat-error>
                 }
               </mat-form-field>
-
               <mat-form-field appearance="outline" style="width:100%;margin-bottom:4px">
                 <mat-label>Observaciones</mat-label>
                 <textarea matInput formControlName="observacion" rows="2"
                           placeholder="Detalles adicionales, medicación, etc."></textarea>
               </mat-form-field>
-
               <div class="cronica-row">
                 <mat-checkbox formControlName="esCronica" color="primary"></mat-checkbox>
                 <span class="cronica-label">¿Es crónica?</span>
@@ -223,9 +457,7 @@ import { finalize } from 'rxjs/operators';
               </div>
             </div>
           }
-
         </div>
-
         <button mat-stroked-button class="add-btn" type="button"
                 (click)="agregarCondicion()">
           <mat-icon>add_circle_outline</mat-icon>
@@ -234,7 +466,6 @@ import { finalize } from 'rxjs/operators';
       </form>
     </mat-dialog-content>
 
-    <!-- Acciones -->
     <div class="step-actions">
       @if(paso===1){
         <button mat-stroked-button (click)="ref.close()">Cancelar</button>
@@ -333,7 +564,6 @@ export class NinioCrearDialogComponent implements OnInit {
   }
 
   guardar(omitirCondiciones: boolean) {
-    // Validar condiciones sólo si no se omiten
     if (!omitirCondiciones && this.condicionesArray.length > 0) {
       if (this.formCondiciones.invalid) {
         this.formCondiciones.markAllAsTouched();
@@ -379,7 +609,7 @@ export class NinioCrearDialogComponent implements OnInit {
   }
 }
 
-// ─── Dialog: Editar niño (igual que antes, sin paso de condiciones) ──────────
+// ─── Dialog: Editar niño ────────────────────────────────────────────────────
 @Component({
   selector: 'app-ninio-editar-dialog',
   standalone: true,
@@ -397,7 +627,6 @@ export class NinioCrearDialogComponent implements OnInit {
 
     <mat-dialog-content style="padding:24px;min-width:520px;max-height:70vh;overflow-y:auto">
       <form [formGroup]="form" style="display:flex;flex-direction:column;gap:14px">
-
         <div style="display:flex;gap:12px">
           <mat-form-field appearance="outline" style="flex:1">
             <mat-label>Nombre</mat-label>
@@ -414,7 +643,6 @@ export class NinioCrearDialogComponent implements OnInit {
             }
           </mat-form-field>
         </div>
-
         <mat-form-field appearance="outline">
           <mat-label>Cédula</mat-label>
           <input matInput formControlName="cedula" placeholder="Solo números, máx. 8 dígitos">
@@ -422,7 +650,6 @@ export class NinioCrearDialogComponent implements OnInit {
             <mat-error>Cédula inválida (solo números, máx. 8)</mat-error>
           }
         </mat-form-field>
-
         <div style="display:flex;gap:12px">
           <mat-form-field appearance="outline" style="flex:1">
             <mat-label>Fecha de nacimiento</mat-label>
@@ -444,7 +671,6 @@ export class NinioCrearDialogComponent implements OnInit {
             }
           </mat-form-field>
         </div>
-
         <mat-form-field appearance="outline">
           <mat-label>Grupo</mat-label>
           <mat-select formControlName="grupoId">
@@ -462,17 +688,14 @@ export class NinioCrearDialogComponent implements OnInit {
             <mat-error>Seleccione un grupo</mat-error>
           }
         </mat-form-field>
-
         <mat-form-field appearance="outline">
           <mat-label>Dirección</mat-label>
           <input matInput formControlName="direccion">
         </mat-form-field>
-
         <mat-form-field appearance="outline">
           <mat-label>Observaciones</mat-label>
           <textarea matInput formControlName="observaciones" rows="3"></textarea>
         </mat-form-field>
-
       </form>
     </mat-dialog-content>
 
@@ -555,6 +778,7 @@ export class NinioEditarDialogComponent implements OnInit {
   }
 }
 
+// ─── Componente principal ────────────────────────────────────────────────────
 @Component({
   selector: 'app-ninios',
   standalone: true,
@@ -575,7 +799,6 @@ export class NiniosComponent implements OnInit {
   cargando = true;
   busqueda = '';
 
-  // Paginación
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   pageSize = 12;
   pageIndex = 0;
@@ -630,11 +853,21 @@ export class NiniosComponent implements OnInit {
   }
 
   abrirCrear() {
-    const ref = this.dialog.open(NinioCrearDialogComponent, {
-      disableClose: false
-    });
+    const ref = this.dialog.open(NinioCrearDialogComponent, { disableClose: false });
     ref.afterClosed().subscribe(n => {
       if (n) { this.toast.success('Niño registrado correctamente'); this.cargarNinios(); }
+    });
+  }
+
+  abrirDetalle(ninio: NinioResponse) {
+    const ref = this.dialog.open(NinioDetalleDialogComponent, {
+      data: { ninio },
+      width: '580px',
+      disableClose: false
+    });
+    ref.afterClosed().subscribe(accion => {
+      if (accion === 'editar') this.abrirEditar(ninio);
+      if (accion === 'baja')   this.darDeBaja(ninio);
     });
   }
 
@@ -679,21 +912,17 @@ export class NiniosComponent implements OnInit {
     const nacimiento = new Date(fechaNacimiento + 'T00:00:00');
     let anios = hoy.getFullYear() - nacimiento.getFullYear();
     const meses = hoy.getMonth() - nacimiento.getMonth();
-    if (meses < 0 || (meses === 0 && hoy.getDate() < nacimiento.getDate())) {
-      anios--;
-    }
+    if (meses < 0 || (meses === 0 && hoy.getDate() < nacimiento.getDate())) anios--;
     const mesesRestantes = ((hoy.getMonth() - nacimiento.getMonth()) + 12) % 12;
     if (anios === 0) return `${mesesRestantes} mes${mesesRestantes !== 1 ? 'es' : ''}`;
     if (mesesRestantes === 0) return `${anios} año${anios !== 1 ? 's' : ''}`;
     return `${anios} año${anios !== 1 ? 's' : ''} y ${mesesRestantes} mes${mesesRestantes !== 1 ? 'es' : ''}`;
   }
 
-  /** Devuelve la cantidad de condiciones médicas de un niño */
   cantidadCondiciones(ninio: NinioResponse): number {
     return ninio.condicionesMedicas?.length ?? 0;
   }
 
-  /** Devuelve las condiciones médicas para mostrar en la tarjeta */
   getCondiciones(ninio: NinioResponse): CondicionMedicaResponse[] {
     return ninio.condicionesMedicas ?? [];
   }

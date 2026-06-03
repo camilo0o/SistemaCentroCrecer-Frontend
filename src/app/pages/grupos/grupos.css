@@ -498,3 +498,11 @@
     justify-content: center;
   }
 }
+
+/* ── Paginador ── */
+mat-paginator {
+  margin-top: 20px;
+  border-radius: var(--radius);
+  background: white;
+  box-shadow: var(--shadow);
+}

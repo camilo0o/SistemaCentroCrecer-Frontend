@@ -282,7 +282,7 @@
 
     @if(!cargandoNinios && niniosFiltrados.length > 0){
       <div class="grupos-grid">
-        @for(ninio of niniosFiltrados; track ninio.id){
+        @for(ninio of niniosPaginados; track ninio.id){
           <mat-card class="grupo-card child-card" [class.inactivo]="!ninio.activo">
             <div class="gc-header child-header" [style.border-top]="'4px solid ' + (metaRango(ninio.grupo?.rangoEdad ?? '')?.color ?? '#1565C0')">
               <div class="gc-title-row">
@@ -383,6 +383,17 @@
           </mat-card>
         }
       </div>
+
+      <mat-paginator
+        #paginatorNinios
+        [length]="niniosFiltrados.length"
+        [pageSize]="pageSizeNinios"
+        [pageIndex]="pageIndexNinios"
+        [pageSizeOptions]="pageSizeOptionsNinios"
+        (page)="onPageChangeNinios($event)"
+        showFirstLastButtons
+        aria-label="Paginación de niños">
+      </mat-paginator>
     }
   }
 

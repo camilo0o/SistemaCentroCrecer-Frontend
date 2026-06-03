@@ -63,7 +63,7 @@
   <!-- Grid de tarjetas -->
   @if(!cargando && filtrados.length > 0){
     <div class="cards-grid">
-      @for(ninio of filtrados; track ninio.id){
+      @for(ninio of paginados; track ninio.id){
         <mat-card class="ninio-card" [class.inactivo]="!ninio.activo">
 
           <!-- Cabecera de la tarjeta -->
@@ -158,6 +158,16 @@
         </mat-card>
       }
     </div>
+
+    <mat-paginator
+      [length]="filtrados.length"
+      [pageSize]="pageSize"
+      [pageIndex]="pageIndex"
+      [pageSizeOptions]="pageSizeOptions"
+      (page)="onPageChange($event)"
+      showFirstLastButtons
+      aria-label="Paginación de niños">
+    </mat-paginator>
   }
 
 </div>

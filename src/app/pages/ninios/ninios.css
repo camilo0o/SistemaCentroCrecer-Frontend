@@ -125,3 +125,10 @@
   white-space: nowrap;
   flex-shrink: 0;
 }
+/* ── Paginador ── */
+mat-paginator {
+  margin-top: 20px;
+  border-radius: var(--radius);
+  background: white;
+  box-shadow: var(--shadow);
+}

@@ -1,5 +1,6 @@
-import { Component, OnInit, Inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, Inject, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MatPaginatorModule, MatPaginator, PageEvent } from '@angular/material/paginator';
 import {
   FormsModule, ReactiveFormsModule, FormBuilder, FormGroup,
   FormArray, AbstractControl, Validators
@@ -554,7 +555,6 @@ export class NinioEditarDialogComponent implements OnInit {
   }
 }
 
-// ─── Componente principal ────────────────────────────────────────────────────
 @Component({
   selector: 'app-ninios',
   standalone: true,
@@ -562,7 +562,8 @@ export class NinioEditarDialogComponent implements OnInit {
     CommonModule, FormsModule,
     MatToolbarModule, MatCardModule, MatIconModule,
     MatProgressSpinnerModule, MatFormFieldModule, MatInputModule,
-    MatChipsModule, MatButtonModule, MatDialogModule, MatTooltipModule
+    MatChipsModule, MatButtonModule, MatDialogModule, MatTooltipModule,
+    MatPaginatorModule
   ],
   templateUrl: './ninios.html',
   styleUrls: ['./ninios.css']
@@ -570,8 +571,15 @@ export class NinioEditarDialogComponent implements OnInit {
 export class NiniosComponent implements OnInit {
   ninios: NinioResponse[] = [];
   filtrados: NinioResponse[] = [];
+  paginados: NinioResponse[] = [];
   cargando = true;
   busqueda = '';
+
+  // Paginación
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
+  pageSize = 12;
+  pageIndex = 0;
+  pageSizeOptions = [6, 12, 24, 48];
 
   constructor(
     private ninioService: NinioService,
@@ -606,6 +614,19 @@ export class NiniosComponent implements OnInit {
       ].join(' ').toLowerCase();
       return target.includes(texto);
     });
+    this.pageIndex = 0;
+    this.actualizarPaginados();
+  }
+
+  actualizarPaginados() {
+    const inicio = this.pageIndex * this.pageSize;
+    this.paginados = this.filtrados.slice(inicio, inicio + this.pageSize);
+  }
+
+  onPageChange(event: PageEvent) {
+    this.pageSize  = event.pageSize;
+    this.pageIndex = event.pageIndex;
+    this.actualizarPaginados();
   }
 
   abrirCrear() {

@@ -1,6 +1,7 @@
-import { Component, OnInit, Inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, Inject, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { MatPaginatorModule, MatPaginator, PageEvent } from '@angular/material/paginator';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -256,7 +257,7 @@ export class GrupoDialogComponent implements OnInit {
     MatCardModule, MatButtonModule, MatIconModule, MatChipsModule,
     MatProgressSpinnerModule, MatTooltipModule, MatExpansionModule,
     MatBadgeModule, MatDividerModule, MatDialogModule,
-    MatFormFieldModule, MatInputModule
+    MatFormFieldModule, MatInputModule, MatPaginatorModule
   ],
   templateUrl: './grupos.html',
   styleUrl: './grupos.css'
@@ -265,10 +266,17 @@ export class GruposComponent implements OnInit {
   grupos: GrupoResponse[] = [];
   ninios: NinioResponse[] = [];
   niniosFiltrados: NinioResponse[] = [];
+  niniosPaginados: NinioResponse[] = [];
   vista: VistaGestion = 'grupos';
   cargandoGrupos = true;
   cargandoNinios = true;
   busqueda = '';
+
+  // Paginación de niños
+  @ViewChild('paginatorNinios') paginatorNinios!: MatPaginator;
+  pageSizeNinios = 12;
+  pageIndexNinios = 0;
+  pageSizeOptionsNinios = [6, 12, 24, 48];
 
   readonly RANGOS = [
     { valor: '0-1',  label: '0 – 1 año',   icon: 'baby_changing_station', color: '#FF6F00', bg: '#FFF3E0' },
@@ -297,6 +305,7 @@ export class GruposComponent implements OnInit {
   cambiarVista(vista: VistaGestion) {
     this.vista = vista;
     this.busqueda = '';
+    this.pageIndexNinios = 0;
     this.aplicarFiltrosNinios();
   }
 
@@ -338,6 +347,19 @@ export class GruposComponent implements OnInit {
       ].join(' ').toLowerCase();
       return target.includes(texto);
     });
+    this.pageIndexNinios = 0;
+    this.actualizarPaginadosNinios();
+  }
+
+  actualizarPaginadosNinios() {
+    const inicio = this.pageIndexNinios * this.pageSizeNinios;
+    this.niniosPaginados = this.niniosFiltrados.slice(inicio, inicio + this.pageSizeNinios);
+  }
+
+  onPageChangeNinios(event: PageEvent) {
+    this.pageSizeNinios  = event.pageSize;
+    this.pageIndexNinios = event.pageIndex;
+    this.actualizarPaginadosNinios();
   }
 
   gruposPorRango(rango: string): GrupoResponse[] {

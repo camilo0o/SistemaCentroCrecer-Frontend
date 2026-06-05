@@ -97,12 +97,19 @@
                         <span class="duracion-sm">{{ calcularDuracion(t.horaInicio, t.horaFin) }}</span>
                       </div>
                       <div class="turno-item-acciones">
-                        <button mat-icon-button matTooltip="Editar" (click)="abrirEditar(t)" [disabled]="!t.activo">
-                          <mat-icon class="icon-edit">edit</mat-icon>
-                        </button>
-                        @if(t.activo){
-                          <button mat-icon-button matTooltip="Dar de baja" (click)="darDeBaja(t)">
-                            <mat-icon class="icon-baja">cancel</mat-icon>
+                        @if(puedeGestionar(t)){
+                          <button mat-icon-button matTooltip="Editar" (click)="abrirEditar(t)" [disabled]="!t.activo">
+                            <mat-icon class="icon-edit">edit</mat-icon>
+                          </button>
+                          @if(t.activo){
+                            <button mat-icon-button matTooltip="Dar de baja" (click)="darDeBaja(t)">
+                              <mat-icon class="icon-baja">cancel</mat-icon>
+                            </button>
+                          }
+                        }
+                        @if(!t.activo && puedeReactivar(t)){
+                          <button mat-icon-button matTooltip="Dar de alta" (click)="reactivar(t)">
+                            <mat-icon class="icon-alta">check_circle</mat-icon>
                           </button>
                         }
                       </div>
@@ -193,12 +200,19 @@
                 <th mat-header-cell *matHeaderCellDef>Acciones</th>
                 <td mat-cell *matCellDef="let t">
                   <div class="acciones-row">
-                    <button mat-icon-button matTooltip="Editar" (click)="abrirEditar(t)" [disabled]="!t.activo">
-                      <mat-icon class="icon-edit">edit</mat-icon>
-                    </button>
-                    @if(t.activo){
-                      <button mat-icon-button matTooltip="Dar de baja" (click)="darDeBaja(t)">
-                        <mat-icon class="icon-baja">cancel</mat-icon>
+                    @if(puedeGestionar(t)){
+                      <button mat-icon-button matTooltip="Editar" (click)="abrirEditar(t)" [disabled]="!t.activo">
+                        <mat-icon class="icon-edit">edit</mat-icon>
+                      </button>
+                      @if(t.activo){
+                        <button mat-icon-button matTooltip="Dar de baja" (click)="darDeBaja(t)">
+                          <mat-icon class="icon-baja">cancel</mat-icon>
+                        </button>
+                      }
+                    }
+                    @if(!t.activo && puedeReactivar(t)){
+                      <button mat-icon-button matTooltip="Dar de alta" (click)="reactivar(t)">
+                        <mat-icon class="icon-alta">check_circle</mat-icon>
                       </button>
                     }
                   </div>

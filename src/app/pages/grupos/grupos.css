@@ -515,3 +515,32 @@ mat-paginator {
 }
 .btn-mas-info mat-icon { font-size: 16px; width: 16px; height: 16px; }
 .btn-mas-info:hover { background: #E3F2FD; }
+/* ── Botón ver todos los niños ───────────────────────────────────────────── */
+.btn-ver-todos {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 7px 12px;
+  border: 1.5px dashed #b0bec5;
+  border-radius: 8px;
+  background: transparent;
+  color: #1565C0;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+  justify-content: center;
+}
+
+.btn-ver-todos:hover {
+  background: #e3f2fd;
+  border-color: #1565C0;
+}
+
+.btn-ver-todos mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}

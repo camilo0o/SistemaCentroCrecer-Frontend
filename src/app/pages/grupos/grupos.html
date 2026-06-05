@@ -136,7 +136,7 @@
                           Responsables
                         </div>
                         <div class="funcionarios-list">
-                          @for(f of grupo.funcionarios; track f.id){
+                          @for(f of (grupo.funcionarios ?? []).slice(0, PREVIEW_FUNCIONARIOS); track f.id){
                             <div class="func-row">
                               <div class="func-avatar">{{ iniciales(f) }}</div>
                               <div class="func-info">
@@ -146,6 +146,12 @@
                             </div>
                           }
                         </div>
+                        @if((grupo.funcionarios?.length ?? 0) > PREVIEW_FUNCIONARIOS){
+                          <button class="btn-ver-todos" (click)="abrirFuncionariosGrupo(grupo)">
+                            <mat-icon>group</mat-icon>
+                            Ver todos los {{ grupo.funcionarios!.length }} responsables
+                          </button>
+                        }
                       </div>
                       <div class="section-divider"></div>
                     }
@@ -157,7 +163,7 @@
                           Niños
                         </div>
                         <div class="ninios-list">
-                          @for(ninio of grupo.ninios; track ninio.id){
+                          @for(ninio of (grupo.ninios ?? []).slice(0, PREVIEW_NINIOS); track ninio.id){
                             <div class="ninio-row">
                               <div class="ninio-avatar" [style.background]="rango.bg" [style.color]="rango.color">
                                 {{ ninio.nombre[0] }}{{ ninio.apellido?.[0] ?? '' }}
@@ -175,6 +181,12 @@
                             </div>
                           }
                         </div>
+                        @if((grupo.ninios?.length ?? 0) > PREVIEW_NINIOS){
+                          <button class="btn-ver-todos" (click)="abrirNiniosGrupo(grupo)">
+                            <mat-icon>expand_more</mat-icon>
+                            Ver todos los {{ grupo.ninios!.length }} niños
+                          </button>
+                        }
                       </div>
                     } @else {
                       <div class="ninios-empty">
@@ -235,7 +247,7 @@
                           Responsables
                         </div>
                         <div class="funcionarios-list">
-                          @for(f of grupo.funcionarios; track f.id){
+                          @for(f of (grupo.funcionarios ?? []).slice(0, PREVIEW_FUNCIONARIOS); track f.id){
                             <div class="func-row">
                               <div class="func-avatar">{{ iniciales(f) }}</div>
                               <div class="func-info">
@@ -245,6 +257,12 @@
                             </div>
                           }
                         </div>
+                        @if((grupo.funcionarios?.length ?? 0) > PREVIEW_FUNCIONARIOS){
+                          <button class="btn-ver-todos" (click)="abrirFuncionariosGrupo(grupo)">
+                            <mat-icon>group</mat-icon>
+                            Ver todos los {{ grupo.funcionarios!.length }} responsables
+                          </button>
+                        }
                       </div>
                       <div class="section-divider"></div>
                     }

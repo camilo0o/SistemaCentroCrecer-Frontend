@@ -94,12 +94,26 @@
               <mat-icon>login</mat-icon>
               <span class="registro-label">Entrada</span>
               <span class="registro-hora">{{ miRegistro.horaEntrada }}</span>
+              @if (miRegistro.estadoEntrada) {
+                <span class="puntualidad-badge {{ puntualidadClase(miRegistro.estadoEntrada) }}"
+                      [matTooltip]="puntualidadLabel(miRegistro.estadoEntrada)">
+                  <mat-icon>{{ puntualidadIcono(miRegistro.estadoEntrada) }}</mat-icon>
+                  {{ puntualidadLabel(miRegistro.estadoEntrada) }}
+                </span>
+              }
             </div>
             <div class="registro-divider"></div>
             <div class="registro-item salida" [class.pendiente]="!miRegistro.horaSalida">
               <mat-icon>logout</mat-icon>
               <span class="registro-label">Salida</span>
               <span class="registro-hora">{{ miRegistro.horaSalida || '—' }}</span>
+              @if (miRegistro.estadoSalida) {
+                <span class="puntualidad-badge {{ puntualidadClase(miRegistro.estadoSalida) }}"
+                      [matTooltip]="puntualidadLabel(miRegistro.estadoSalida)">
+                  <mat-icon>{{ puntualidadIcono(miRegistro.estadoSalida) }}</mat-icon>
+                  {{ puntualidadLabel(miRegistro.estadoSalida) }}
+                </span>
+              }
             </div>
           </div>
 

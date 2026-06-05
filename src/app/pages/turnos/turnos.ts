@@ -16,6 +16,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { Sidebar } from '../../shared/components/sidebar/sidebar';
 import { TurnoService } from '../../services/turno.service';
 import { FuncionarioService } from '../../services/funcionario.service';
+import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 import {
   TurnoResponse, TurnoRequest, FuncionarioResponse,
@@ -103,7 +104,7 @@ import { finalize } from 'rxjs/operators';
         <!-- Funcionario -->
         <mat-form-field appearance="outline">
           <mat-label>Funcionario</mat-label>
-          <mat-select formControlName="funcionarioId">
+          <mat-select formControlName="funcionarioId" [disabled]="!!data.funcionarioIdFijo">
             @for(f of funcionarios; track f.id){
               <mat-option [value]="f.id">{{ f.nombre }} {{ f.apellido }} — {{ getRolDisplay(f.rol?.nombre) }}</mat-option>
             }
@@ -112,6 +113,12 @@ import { finalize } from 'rxjs/operators';
             <mat-error>Seleccioná un funcionario</mat-error>
           }
         </mat-form-field>
+        @if(data.funcionarioIdFijo){
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#E3F2FD;border-radius:8px;border:1px solid #BBDEFB;margin-top:-8px">
+            <mat-icon style="color:#1565C0;font-size:18px">lock</mat-icon>
+            <span style="font-size:13px;color:#1565C0">El turno se creará a tu nombre</span>
+          </div>
+        }
 
         <!-- Horario -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
@@ -199,13 +206,21 @@ export class TurnoDialogComponent {
   constructor(
     private fb: FormBuilder,
     public ref: MatDialogRef<TurnoDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { modo: 'crear' | 'editar'; turno?: TurnoResponse; funcionarios: FuncionarioResponse[] },
+    @Inject(MAT_DIALOG_DATA) public data: {
+      modo: 'crear' | 'editar';
+      turno?: TurnoResponse;
+      funcionarios: FuncionarioResponse[];
+      /** Si está definido, el select de funcionario queda bloqueado con este valor */
+      funcionarioIdFijo?: number | null;
+    },
     private turnoService: TurnoService,
     private toast: ToastService
   ) {
     const t = data.turno;
+    // Preseleccionar: en edición usar el del turno, en creación usar el fijo si existe
+    const funcionarioInicial = t?.funcionarioId ?? data.funcionarioIdFijo ?? null;
     this.form = this.fb.group({
-      funcionarioId: [t?.funcionarioId ?? null, Validators.required],
+      funcionarioId: [funcionarioInicial, Validators.required],
       horaInicio: [t?.horaInicio ?? '', Validators.required],
       horaFin: [t?.horaFin ?? '', Validators.required],
     });
@@ -287,6 +302,7 @@ export class TurnosComponent implements OnInit {
   constructor(
     private turnoService: TurnoService,
     private funcionarioService: FuncionarioService,
+    private authService: AuthService,
     private dialog: MatDialog,
     private toast: ToastService,
     private cdr: ChangeDetectorRef
@@ -358,20 +374,80 @@ export class TurnosComponent implements OnInit {
   }
 
   abrirCrear() {
-    const ref = this.dialog.open(TurnoDialogComponent, { data: { modo: 'crear', funcionarios: this.funcionarios } });
+    // Si es un funcionario raso, solo puede crear su propio turno:
+    // se le pasa la lista con solo su propio registro (o toda si es admin/coordinadora)
+    const funcionariosFiltrados = this.esAdminOCoordinadora
+      ? this.funcionarios
+      : this.funcionarios.filter(f => f.id === this.funcionarioIdPropio);
+    const preseleccionado = this.esAdminOCoordinadora ? null : this.funcionarioIdPropio;
+    const ref = this.dialog.open(TurnoDialogComponent, {
+      data: {
+        modo: 'crear',
+        funcionarios: funcionariosFiltrados,
+        funcionarioIdFijo: preseleccionado
+      }
+    });
     ref.afterClosed().subscribe(r => { if (r) { this.toast.success('Turno creado'); this.cargarTurnos(); } });
   }
 
   abrirEditar(t: TurnoResponse) {
-    const ref = this.dialog.open(TurnoDialogComponent, { data: { modo: 'editar', turno: t, funcionarios: this.funcionarios } });
+    if (!this.puedeGestionar(t)) {
+      this.toast.error('Solo podés editar tus propios turnos');
+      return;
+    }
+    const funcionariosFiltrados = this.esAdminOCoordinadora
+      ? this.funcionarios
+      : this.funcionarios.filter(f => f.id === this.funcionarioIdPropio);
+    const ref = this.dialog.open(TurnoDialogComponent, {
+      data: {
+        modo: 'editar',
+        turno: t,
+        funcionarios: funcionariosFiltrados,
+        funcionarioIdFijo: this.esAdminOCoordinadora ? null : this.funcionarioIdPropio
+      }
+    });
     ref.afterClosed().subscribe(r => { if (r) { this.toast.success('Turno actualizado'); this.cargarTurnos(); } });
   }
 
   darDeBaja(t: TurnoResponse) {
+    if (!this.puedeGestionar(t)) {
+      this.toast.error('Solo podés dar de baja tus propios turnos');
+      return;
+    }
     this.turnoService.darDeBaja(t.id).subscribe({
       next: () => { this.toast.success('Turno dado de baja'); this.cargarTurnos(); },
       error: (err) => this.toast.error(err.error?.error ?? 'Error')
     });
+  }
+
+  reactivar(t: TurnoResponse) {
+    this.turnoService.reactivar(t.id).subscribe({
+      next: () => { this.toast.success('Turno reactivado'); this.cargarTurnos(); },
+      error: (err) => this.toast.error(err.error?.message ?? err.error?.error ?? 'Error al reactivar')
+    });
+  }
+
+  /** Admin y coordinadora pueden gestionar cualquier turno; un funcionario solo puede gestionar el suyo */
+  puedeGestionar(t: TurnoResponse): boolean {
+    const rol = this.authService.getRol();
+    if (rol === 'ADMINISTRADOR_SISTEMA' || rol === 'COORDINADORA') return true;
+    return t.funcionarioId === this.authService.getUserId();
+  }
+
+  /** Mantiene compatibilidad: dar de alta solo si puede gestionar */
+  puedeReactivar(t: TurnoResponse): boolean {
+    return this.puedeGestionar(t);
+  }
+
+  /** True si el usuario logueado es admin o coordinadora */
+  get esAdminOCoordinadora(): boolean {
+    const rol = this.authService.getRol();
+    return rol === 'ADMINISTRADOR_SISTEMA' || rol === 'COORDINADORA';
+  }
+
+  /** ID del funcionario logueado (null si es admin sin registro de funcionario) */
+  get funcionarioIdPropio(): number | null {
+    return this.authService.getUserId();
   }
 
   get totalActivos() { return this.turnos.filter(t => t.activo).length; }

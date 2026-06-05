@@ -23,6 +23,7 @@
 .acciones-row { display:flex; gap:2px; }
 .icon-edit { color:#1565C0; }
 .icon-baja { color:#C62828; }
+.icon-alta { color:#2e7d32; }
 .row-inactive { opacity:0.55; }
 .empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px; color:#9AA0B9; gap:16px; }
 .empty-state mat-icon { font-size:48px; width:48px; height:48px; }

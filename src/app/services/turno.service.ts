@@ -33,4 +33,8 @@ export class TurnoService {
   darDeBaja(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`);
   }
+
+  reactivar(id: number): Observable<TurnoResponse> {
+    return this.http.put<TurnoResponse>(`${this.apiUrl}/${id}/reactivar`, {});
+  }
 }

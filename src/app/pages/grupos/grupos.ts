@@ -27,6 +27,262 @@ import { forkJoin } from 'rxjs';
 
 type VistaGestion = 'grupos' | 'ninios';
 
+// ─── Dialog: Todos los niños del grupo ────────────────────────────────────────
+@Component({
+  selector: 'app-ninios-grupo-dialog',
+  standalone: true,
+  imports: [
+    CommonModule, FormsModule,
+    MatButtonModule, MatIconModule, MatDialogModule,
+    MatFormFieldModule, MatInputModule, MatChipsModule, MatTooltipModule
+  ],
+  styles: [`
+    .dialog-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 20px 24px 0;
+    }
+    .dialog-title { margin: 0; font-size: 18px; font-weight: 600; }
+    .dialog-subtitle { margin: 4px 0 0; font-size: 13px; color: #6b7280; }
+    .search-wrap { padding: 12px 24px 0; }
+    .search-input {
+      width: 100%; box-sizing: border-box;
+      border: 1.5px solid #e0e0e0; border-radius: 8px;
+      padding: 8px 12px 8px 36px; font-size: 14px; outline: none;
+      background: #f9fafb url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath fill='%239ca3af' d='M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z'/%3E%3C/svg%3E") no-repeat 10px center;
+    }
+    .search-input:focus { border-color: #1565C0; background-color: #fff; }
+    .ninios-scroll { padding: 12px 24px 8px; max-height: 60vh; overflow-y: auto; }
+    .ninio-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 12px; border-radius: 10px; margin-bottom: 6px;
+      border: 1px solid #f0f2f7; transition: background .15s;
+    }
+    .ninio-row:hover { background: #f5f7ff; }
+    .ninio-avatar {
+      width: 38px; height: 38px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 14px; flex-shrink: 0;
+    }
+    .ninio-info { flex: 1; min-width: 0; }
+    .ninio-nombre { display: block; font-weight: 600; font-size: 14px; color: #1a1a2e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ninio-sub { display: block; font-size: 12px; color: #6b7280; }
+    .ninio-status { font-size: 11px; font-weight: 600; padding: 2px 10px; border-radius: 12px; }
+    .ninio-status.activo { background: #e8f5e9; color: #2e7d32; }
+    .ninio-status.inactivo { background: #fce4e4; color: #c62828; }
+    .empty-ninios { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 32px 0; color: #9ca3af; }
+    .footer { display: flex; justify-content: flex-end; padding: 12px 24px; border-top: 1px solid #f0f2f7; }
+    .count-badge { background: #e3f2fd; color: #1565C0; font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 12px; margin-left: 8px; }
+  `],
+  template: `
+    <div class="dialog-header">
+      <div>
+        <h2 class="dialog-title" [style.color]="data.color">
+          {{ data.grupo.nombre }}
+          <span class="count-badge">{{ filtrados.length }} niño{{ filtrados.length !== 1 ? 's' : '' }}</span>
+        </h2>
+        <p class="dialog-subtitle">{{ data.rangoLabel }}</p>
+      </div>
+      <button mat-icon-button (click)="ref.close()"><mat-icon>close</mat-icon></button>
+    </div>
+
+    <div class="search-wrap">
+      <input class="search-input" type="text" placeholder="Buscar por nombre o cédula..."
+             [(ngModel)]="busqueda" (ngModelChange)="filtrar()">
+    </div>
+
+    <div class="ninios-scroll">
+      @if(filtrados.length === 0){
+        <div class="empty-ninios">
+          <mat-icon style="font-size:36px;width:36px;height:36px">child_care</mat-icon>
+          <span>{{ busqueda ? 'Sin resultados para "' + busqueda + '"' : 'Sin niños en este grupo' }}</span>
+        </div>
+      }
+      @for(ninio of filtrados; track ninio.id){
+        <div class="ninio-row">
+          <div class="ninio-avatar" [style.background]="data.bg" [style.color]="data.color">
+            {{ ninio.nombre[0] }}{{ ninio.apellido?.[0] ?? '' }}
+          </div>
+          <div class="ninio-info">
+            <span class="ninio-nombre">{{ ninio.nombre }} {{ ninio.apellido }}</span>
+            <span class="ninio-sub">CI: {{ ninio.cedula }} · {{ formatFecha(ninio.fechaNacimiento) }}</span>
+          </div>
+          <span class="ninio-status" [class.activo]="ninio.activo" [class.inactivo]="!ninio.activo">
+            {{ ninio.activo ? 'Activo' : 'Inactivo' }}
+          </span>
+          <button mat-icon-button matTooltip="Ver detalle" (click)="verDetalle(ninio)">
+            <mat-icon style="font-size:18px;color:#1565C0">info_outline</mat-icon>
+          </button>
+        </div>
+      }
+    </div>
+
+    <div class="footer">
+      <button mat-flat-button style="background:#1565C0;color:white" (click)="ref.close()">Cerrar</button>
+    </div>
+  `
+})
+export class NiniosGrupoDialogComponent {
+  busqueda = '';
+  filtrados: NinioResponse[];
+
+  constructor(
+    public ref: MatDialogRef<NiniosGrupoDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: {
+      grupo: GrupoResponse;
+      color: string;
+      bg: string;
+      rangoLabel: string;
+    },
+    private dialog: MatDialog
+  ) {
+    this.filtrados = [...(data.grupo.ninios ?? [])];
+  }
+
+  filtrar() {
+    const t = this.busqueda.trim().toLowerCase();
+    const ninios = this.data.grupo.ninios ?? [];
+    this.filtrados = t
+      ? ninios.filter(n => `${n.nombre} ${n.apellido} ${n.cedula}`.toLowerCase().includes(t))
+      : [...ninios];
+  }
+
+  formatFecha(f?: string): string {
+    if (!f) return '—';
+    return new Date(f + 'T00:00:00').toLocaleDateString('es-UY', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+
+  verDetalle(ninio: NinioResponse) {
+    this.dialog.open(NinioDetalleDialogComponent, {
+      data: { ninio },
+      width: '600px',
+      maxWidth: '96vw',
+      panelClass: 'detalle-dialog'
+    });
+  }
+}
+
+// ─── Dialog: Todos los funcionarios del grupo ─────────────────────────────────
+@Component({
+  selector: 'app-funcionarios-grupo-dialog',
+  standalone: true,
+  imports: [
+    CommonModule, FormsModule,
+    MatButtonModule, MatIconModule, MatDialogModule,
+    MatFormFieldModule, MatInputModule, MatTooltipModule
+  ],
+  styles: [`
+    .dialog-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 20px 24px 0;
+    }
+    .dialog-title { margin: 0; font-size: 18px; font-weight: 600; }
+    .dialog-subtitle { margin: 4px 0 0; font-size: 13px; color: #6b7280; }
+    .search-wrap { padding: 12px 24px 0; }
+    .search-input {
+      width: 100%; box-sizing: border-box;
+      border: 1.5px solid #e0e0e0; border-radius: 8px;
+      padding: 8px 12px 8px 36px; font-size: 14px; outline: none;
+      background: #f9fafb url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath fill='%239ca3af' d='M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z'/%3E%3C/svg%3E") no-repeat 10px center;
+    }
+    .search-input:focus { border-color: #1565C0; background-color: #fff; }
+    .funcs-scroll { padding: 12px 24px 8px; max-height: 60vh; overflow-y: auto; }
+    .func-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 12px; border-radius: 10px; margin-bottom: 6px;
+      border: 1px solid #f0f2f7; transition: background .15s;
+    }
+    .func-row:hover { background: #f5f7ff; }
+    .func-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: #E3F2FD; color: #1565C0;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 15px; flex-shrink: 0;
+    }
+    .func-info { flex: 1; min-width: 0; }
+    .func-nombre { display: block; font-weight: 600; font-size: 14px; color: #1a1a2e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .func-rol { display: block; font-size: 12px; color: #6b7280; }
+    .empty-funcs { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 32px 0; color: #9ca3af; }
+    .footer { display: flex; justify-content: flex-end; padding: 12px 24px; border-top: 1px solid #f0f2f7; }
+    .count-badge { background: #e3f2fd; color: #1565C0; font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 12px; margin-left: 8px; }
+    .rol-badge {
+      font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 12px;
+      background: #E3F2FD; color: #1565C0; white-space: nowrap; flex-shrink: 0;
+    }
+  `],
+  template: `
+    <div class="dialog-header">
+      <div>
+        <h2 class="dialog-title" style="color:#1565C0">
+          Responsables – {{ data.grupo.nombre }}
+          <span class="count-badge">{{ filtrados.length }}</span>
+        </h2>
+        <p class="dialog-subtitle">{{ data.rangoLabel }}</p>
+      </div>
+      <button mat-icon-button (click)="ref.close()"><mat-icon>close</mat-icon></button>
+    </div>
+
+    <div class="search-wrap">
+      <input class="search-input" type="text" placeholder="Buscar por nombre o rol..."
+             [(ngModel)]="busqueda" (ngModelChange)="filtrar()">
+    </div>
+
+    <div class="funcs-scroll">
+      @if(filtrados.length === 0){
+        <div class="empty-funcs">
+          <mat-icon style="font-size:36px;width:36px;height:36px">person_off</mat-icon>
+          <span>{{ busqueda ? 'Sin resultados para "' + busqueda + '"' : 'Sin funcionarios asignados' }}</span>
+        </div>
+      }
+      @for(f of filtrados; track f.id){
+        <div class="func-row">
+          <div class="func-avatar">{{ iniciales(f) }}</div>
+          <div class="func-info">
+            <span class="func-nombre">{{ f.nombre }} {{ f.apellido }}</span>
+            <span class="func-rol">{{ getRolDisplay(f.rol?.nombre) }}</span>
+          </div>
+          <span class="rol-badge">{{ getRolDisplay(f.rol?.nombre) || 'Sin rol' }}</span>
+        </div>
+      }
+    </div>
+
+    <div class="footer">
+      <button mat-flat-button style="background:#1565C0;color:white" (click)="ref.close()">Cerrar</button>
+    </div>
+  `
+})
+export class FuncionariosGrupoDialogComponent {
+  busqueda = '';
+  filtrados: FuncionarioResponse[];
+
+  constructor(
+    public ref: MatDialogRef<FuncionariosGrupoDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: {
+      grupo: GrupoResponse;
+      rangoLabel: string;
+    }
+  ) {
+    this.filtrados = [...(data.grupo.funcionarios ?? [])];
+  }
+
+  filtrar() {
+    const t = this.busqueda.trim().toLowerCase();
+    const funcs = this.data.grupo.funcionarios ?? [];
+    this.filtrados = t
+      ? funcs.filter(f =>
+          `${f.nombre} ${f.apellido} ${f.rol?.nombre ?? ''}`.toLowerCase().includes(t)
+        )
+      : [...funcs];
+  }
+
+  iniciales(f: { nombre: string; apellido: string }): string {
+    return ((f.nombre[0] ?? '') + (f.apellido[0] ?? '')).toUpperCase();
+  }
+
+  getRolDisplay(nombre?: string): string {
+    return nombre ? (ROL_DISPLAY[nombre] ?? nombre) : '';
+  }
+}
+
 @Component({
   selector: 'app-grupo-dialog',
   standalone: true,
@@ -287,6 +543,12 @@ export class GruposComponent implements OnInit {
     { valor: '5-12', label: '5 – 12 años',  icon: 'menu_book',             color: '#2E7D32', bg: '#E8F5E9' },
   ];
 
+  /** Cuántos niños mostrar en la preview de la card antes del botón "Ver todos" */
+  readonly PREVIEW_NINIOS = 2;
+
+  /** Cuántos funcionarios mostrar en la preview de la card antes del botón "+" */
+  readonly PREVIEW_FUNCIONARIOS = 2;
+
   constructor(
     private grupoService: GrupoService,
     private ninioService: NinioService,
@@ -481,6 +743,34 @@ export class GruposComponent implements OnInit {
 
   metaRango(rango: string) {
     return this.RANGOS.find(r => r.valor === rango);
+  }
+
+  abrirFuncionariosGrupo(grupo: GrupoResponse) {
+    const meta = this.metaRango(grupo.rangoEdad ?? '');
+    this.dialog.open(FuncionariosGrupoDialogComponent, {
+      data: {
+        grupo,
+        rangoLabel: meta?.label ?? 'Sin rango'
+      },
+      width: '480px',
+      maxWidth: '96vw',
+      maxHeight: '90vh'
+    });
+  }
+
+  abrirNiniosGrupo(grupo: GrupoResponse) {
+    const meta = this.metaRango(grupo.rangoEdad ?? '');
+    this.dialog.open(NiniosGrupoDialogComponent, {
+      data: {
+        grupo,
+        color: meta?.color ?? '#1565C0',
+        bg:    meta?.bg    ?? '#E3F2FD',
+        rangoLabel: meta?.label ?? 'Sin rango'
+      },
+      width: '540px',
+      maxWidth: '96vw',
+      maxHeight: '90vh'
+    });
   }
 
   formatHora(h?: string) {

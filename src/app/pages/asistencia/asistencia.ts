@@ -17,7 +17,7 @@ import { finalize, forkJoin } from 'rxjs';
 import { AsistenciaService } from '../../services/asistencia.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
-import { AsistenciaResponse, NinioResponse } from '../../models/models';
+import { AsistenciaResponse, EstadoPuntualidad, NinioResponse } from '../../models/models';
 import { GetPresentesPipe } from '../../pipes/get-presentes-pipe';
 
 interface NinioConEstado extends NinioResponse {
@@ -74,6 +74,36 @@ export class AsistenciaComponent implements OnInit {
     private authService: AuthService,
     private toast: ToastService
   ) {}
+
+  // ── Helpers de puntualidad ───────────────────────────────────────────────
+
+  puntualidadIcono(estado?: EstadoPuntualidad): string {
+    switch (estado) {
+      case 'EN_HORARIO': return 'check_circle';
+      case 'TARDE':      return 'schedule';
+      case 'TEMPRANO':   return 'alarm';
+      default:           return 'help_outline';
+    }
+  }
+
+  puntualidadLabel(estado?: EstadoPuntualidad): string {
+    switch (estado) {
+      case 'EN_HORARIO':          return 'En horario';
+      case 'TARDE':               return 'Tarde';
+      case 'TEMPRANO':            return 'Anticipado';
+      case 'SIN_TURNO_ASIGNADO':  return 'Sin turno asignado';
+      default:                    return '';
+    }
+  }
+
+  puntualidadClase(estado?: EstadoPuntualidad): string {
+    switch (estado) {
+      case 'EN_HORARIO': return 'puntualidad-ok';
+      case 'TARDE':      return 'puntualidad-tarde';
+      case 'TEMPRANO':   return 'puntualidad-temprano';
+      default:           return 'puntualidad-sin-turno';
+    }
+  }
 
   ngOnInit(): void {
     this.horaEntradaInput = this.horaActual();

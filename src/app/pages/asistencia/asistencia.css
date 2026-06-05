@@ -460,3 +460,46 @@
 .ausente-stat  { color: #c62828; }
 .total-stat    { color: #555; }
 .stat-sep      { color: #ccc; }
+/* ── Puntualidad badges ────────────────────────────────────────────────── */
+.registro-item {
+  flex-direction: column;
+  gap: 4px;
+}
+
+.puntualidad-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-top: 4px;
+  letter-spacing: 0.2px;
+}
+
+.puntualidad-badge mat-icon {
+  font-size: 13px;
+  height: 13px;
+  width: 13px;
+}
+
+.puntualidad-ok {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.puntualidad-tarde {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.puntualidad-temprano {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.puntualidad-sin-turno {
+  background: #f3f4f6;
+  color: #6b7280;
+}

@@ -314,6 +314,8 @@ export interface TipoAgendaResponse {
   tipo: string;
 }
 
+export type EstadoPuntualidad = 'EN_HORARIO' | 'TARDE' | 'TEMPRANO' | 'SIN_TURNO_ASIGNADO';
+
 export interface AsistenciaResponse {
   id: number;
   fecha: string;
@@ -321,6 +323,8 @@ export interface AsistenciaResponse {
   horaSalida?: string;
   observaciones?: string;
   activo: boolean;
+  estadoEntrada?: EstadoPuntualidad;
+  estadoSalida?: EstadoPuntualidad;
   ninioId?: number;
   ninioNombre?: string;
   ninioApellido?: string;

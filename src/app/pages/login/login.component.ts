@@ -29,12 +29,6 @@ export class LoginComponent {
   cargando = false;
   error = '';
 
-  stats = [
-    { icon: 'admin_panel_settings', num: '12',   label: 'Roles'   },
-    { icon: 'groups',               num: '5',    label: 'Grupos'  },
-    { icon: 'monitoring',           num: '360°', label: 'Gestión' },
-  ];
-
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,

@@ -2,14 +2,14 @@
   min-height: 100vh;
   background: #F5F7FA;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 24px;
+  padding: 32px 16px;
 }
 
 .registro-card {
   width: 100%;
-  max-width: 520px;
+  max-width: 640px;
 }
 
 .registro-header {
@@ -31,41 +31,73 @@ mat-card-content {
   padding: 24px !important;
 }
 
-.tipo-tabs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  background: #F0F4FF;
-  padding: 5px;
-  border-radius: 10px;
-  margin-bottom: 4px;
-}
-
-.tipo-tab {
+/* ── Indicador de pasos ── */
+.pasos-indicador {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 0;
+  margin-bottom: 28px;
+}
+
+.paso-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 6px;
-  padding: 10px;
-  border: none;
-  border-radius: 7px;
-  background: transparent;
-  color: #5C6680;
-  font-family: 'Nunito', sans-serif;
-  font-size: 13px;
+}
+
+.paso-circulo {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  background: #E0E7FF;
+  color: #6b7280;
+  transition: all 0.3s;
+}
+
+.paso-item.activo .paso-circulo {
+  background: #1565C0;
+  color: white;
+}
+
+.paso-item.completo .paso-circulo {
+  background: #2E7D32;
+  color: white;
+}
+
+.paso-item.completo .paso-circulo mat-icon,
+.paso-item.activo .paso-circulo mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.paso-item span {
+  font-size: 12px;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
+  color: #9ca3af;
 }
 
-.tipo-tab.active {
-  background: white;
-  color: #1565C0;
-  box-shadow: 0 2px 8px rgba(21, 101, 192, 0.15);
+.paso-item.activo span { color: #1565C0; }
+.paso-item.completo span { color: #2E7D32; }
+
+.paso-linea {
+  flex: 1;
+  height: 2px;
+  background: #E0E7FF;
+  margin: 0 12px;
+  margin-bottom: 22px;
+  transition: background 0.3s;
 }
+.paso-linea.completo { background: #2E7D32; }
 
-.divider { margin: 16px 0; }
-
+/* ── Formulario ── */
 .form-col {
   display: flex;
   flex-direction: column;
@@ -78,7 +110,125 @@ mat-card-content {
   gap: 12px;
 }
 
+.form-row-btns {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
 mat-form-field { width: 100%; }
+
+.seccion-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1565C0;
+  margin: 4px 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.seccion-label mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+/* ── Tarjeta de niño ── */
+.nino-card {
+  border: 1.5px solid #E0E7FF;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  background: #FAFBFF;
+}
+
+.nino-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.nino-card-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 15px;
+  color: #1565C0;
+}
+
+.nino-card-titulo mat-icon { color: #1565C0; }
+
+/* ── Condiciones médicas ── */
+.condiciones-section {
+  margin-top: 8px;
+  border-top: 1px solid #E0E7FF;
+  padding-top: 12px;
+}
+
+.condiciones-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.condiciones-titulo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #5C6680;
+}
+
+.condiciones-titulo mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+.btn-agregar-cond {
+  font-size: 12px;
+  height: 32px;
+  line-height: 32px;
+}
+
+.condicion-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.cond-field-main { flex: 2; min-width: 180px; }
+.cond-field-obs  { flex: 2; min-width: 160px; }
+
+.cond-cronica {
+  display: flex;
+  align-items: center;
+  padding-top: 10px;
+  min-width: 90px;
+}
+
+.sin-condiciones {
+  font-size: 12px;
+  color: #9ca3af;
+  text-align: center;
+  padding: 8px 0;
+  font-style: italic;
+}
+
+/* ── Botones ── */
+.btn-agregar-nino {
+  width: 100%;
+  margin: 4px 0 12px;
+}
+
+.btn-enviar {
+  flex: 1;
+  height: 44px;
+  font-size: 15px;
+  font-weight: 700;
+}
 
 .btn-full {
   width: 100%;
@@ -88,6 +238,7 @@ mat-form-field { width: 100%; }
   margin-top: 4px;
 }
 
+/* ── Éxito ── */
 .exito-block {
   display: flex;
   flex-direction: column;
@@ -104,8 +255,9 @@ mat-form-field { width: 100%; }
 }
 
 .exito-block h2 { font-size: 20px; font-weight: 700; color: #2E7D32; }
-.exito-block p  { color: #5C6680; margin-bottom: 8px; }
+.exito-block p  { color: #5C6680; margin-bottom: 8px; max-width: 380px; }
 
+/* ── Link login ── */
 .login-link {
   text-align: center;
   margin-top: 16px;
@@ -114,3 +266,9 @@ mat-form-field { width: 100%; }
 }
 
 .login-link a { color: #1565C0; font-weight: 700; text-decoration: none; }
+
+@media (max-width: 540px) {
+  .form-row { grid-template-columns: 1fr; }
+  .condicion-row { flex-direction: column; }
+  .cond-field-main, .cond-field-obs { min-width: 0; width: 100%; }
+}

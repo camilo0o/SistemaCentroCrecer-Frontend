@@ -1,0 +1,180 @@
+/* ── Layout ── */
+.app-shell    { display: flex; height: 100vh; overflow: hidden; }
+.main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+.page-content { flex: 1; overflow-y: auto; padding: 24px 28px; }
+.toolbar      { justify-content: space-between; flex-shrink: 0; }
+.spacer       { flex: 1; }
+
+.loading-center {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 80px; gap: 16px; color: #5C6680;
+}
+
+.fecha-label {
+  color: #5C6680; font-size: 13px; margin-bottom: 20px; text-transform: capitalize;
+}
+
+/* ── Stat cards ── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px; margin-bottom: 20px;
+}
+.stat-card mat-card-content {
+  display: flex; align-items: center; gap: 14px; padding: 18px !important;
+}
+.stat-icon-wrap {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.stat-value { font-size: 1.6rem; font-weight: 800; color: #1A1F36; line-height: 1; }
+.stat-label { font-size: 12px; color: #5C6680; margin-top: 4px; }
+
+/* ── Action card ── */
+.action-card {
+  cursor: pointer; margin-bottom: 24px;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+  border: 1.5px solid #C7D2FE !important;
+}
+.action-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(99,102,241,.15) !important; }
+.action-card mat-card-content { display: flex; align-items: center; gap: 14px; padding: 16px !important; }
+.action-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.action-text  { flex: 1; }
+.action-titulo { font-size: 14px; font-weight: 700; color: #1A1F36; }
+.action-desc   { font-size: 12px; color: #5C6680; margin-top: 2px; }
+.action-arrow  { opacity: .4; }
+
+/* ── Section label ── */
+.section-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: #9AA0B9; margin-bottom: 12px;
+}
+
+/* ── Empty state ── */
+.empty-card mat-card-content {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 12px; padding: 40px !important; text-align: center; color: #9ca3af;
+}
+.empty-icon { font-size: 48px; width: 48px; height: 48px; opacity: .4; }
+
+/* ── Inscripción list ── */
+.insc-list { display: flex; flex-direction: column; gap: 14px; }
+
+.insc-card mat-card-content { padding: 16px !important; }
+
+.insc-header { display: flex; align-items: flex-start; gap: 14px; }
+
+.insc-avatar {
+  width: 46px; height: 46px; border-radius: 50%;
+  background: linear-gradient(135deg, #6366F1, #818CF8);
+  color: white; display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 15px; flex-shrink: 0; text-transform: uppercase;
+}
+
+.insc-info    { flex: 1; min-width: 0; }
+.insc-nombre  { font-weight: 700; font-size: 15px; color: #1A1F36; }
+.insc-meta    { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+.insc-meta span {
+  display: flex; align-items: center; gap: 3px;
+  font-size: 12px; color: #6b7280;
+}
+.insc-meta mat-icon { font-size: 14px; width: 14px; height: 14px; }
+
+.insc-estado {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 13px; font-weight: 700; flex-shrink: 0;
+}
+.insc-estado mat-icon { font-size: 18px; width: 18px; }
+
+.insc-detalles { display: flex; flex-wrap: wrap; gap: 14px; margin: 6px 0 4px; }
+.detalle-item {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 13px; color: #4b5563;
+}
+.detalle-item mat-icon { font-size: 16px; width: 16px; color: #9CA3AF; }
+
+/* ── Info boxes ── */
+.info-pendiente, .info-cancelada {
+  display: flex; align-items: flex-start; gap: 8px;
+  font-size: 13px; border-radius: 8px; padding: 10px 12px; margin-top: 8px;
+}
+.info-pendiente {
+  background: #FFFBEB; color: #92400E; border: 1px solid #FDE68A;
+}
+.info-cancelada {
+  background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA;
+}
+.info-pendiente mat-icon, .info-cancelada mat-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+/* ── Condiciones médicas panel ── */
+.cond-panel { margin-top: 10px; box-shadow: none !important; border: 1px solid #eee !important; border-radius: 8px !important; }
+.cond-list  { display: flex; flex-direction: column; gap: 8px; padding: 4px 0; }
+.cond-item  { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: #374151; }
+.cond-item mat-icon { font-size: 16px; color: #E65100; flex-shrink: 0; margin-top: 2px; }
+.badge-cronica {
+  display: inline-block; font-size: 10px; font-weight: 700;
+  background: #FFF3E0; color: #E65100; border: 1px solid #FFCC80;
+  border-radius: 8px; padding: 1px 7px; margin-left: 6px;
+}
+
+/* ── Formulario nueva inscripción ── */
+.form-col { display: flex; flex-direction: column; gap: 16px; max-width: 680px; }
+
+.nino-card {
+  background: #FAFBFF; border: 1.5px solid #E0E7FF;
+  border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 14px;
+}
+
+.nino-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nino-card-titulo {
+  display: flex; align-items: center; gap: 8px;
+  font-weight: 700; font-size: 15px; color: #4338CA;
+}
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-row mat-form-field { width: 100%; }
+
+mat-form-field { width: 100%; }
+
+.condiciones-section { display: flex; flex-direction: column; gap: 10px; }
+.condiciones-header  { display: flex; align-items: center; justify-content: space-between; }
+.condiciones-titulo  { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: #E65100; }
+.condiciones-titulo mat-icon { font-size: 18px; }
+.btn-agregar-cond    { height: 34px; font-size: 12px; }
+
+.condicion-row {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.cond-field-main { flex: 2; min-width: 150px; }
+.cond-field-obs  { flex: 2; min-width: 140px; }
+.cond-cronica    { flex-shrink: 0; }
+
+.sin-condiciones { font-size: 13px; color: #9ca3af; margin: 0; }
+
+.btn-agregar-nino { align-self: flex-start; }
+
+.form-row-btns {
+  display: flex; gap: 12px; justify-content: flex-end; padding-top: 4px;
+}
+.btn-enviar { min-width: 160px; }
+
+/* ── Éxito ── */
+.exito-block {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 14px; text-align: center; padding: 48px 24px;
+}
+.exito-icon { font-size: 64px; width: 64px; height: 64px; }
+
+@media (max-width: 640px) {
+  .page-content  { padding: 16px; }
+  .form-row      { grid-template-columns: 1fr; }
+  .condicion-row { flex-direction: column; }
+  .stat-grid     { grid-template-columns: 1fr 1fr; }
+  .form-row-btns { flex-direction: column-reverse; }
+  .btn-enviar    { width: 100%; }
+}

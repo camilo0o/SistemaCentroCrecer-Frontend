@@ -26,6 +26,71 @@
         <!-- ── Fecha ──────────────────────────────────────────────────── -->
         <p class="fecha-label">{{ fechaFormateada }}</p>
 
+        <!-- ── PANEL SOLICITUDES PENDIENTES ──────────────────────────── -->
+        @if(puedeGestionarInscripciones){
+          <div class="solicitudes-panel">
+            <div class="solicitudes-header">
+              <div class="solicitudes-titulo">
+                <mat-icon class="sol-icon">pending_actions</mat-icon>
+                <span>Solicitudes de inscripción pendientes</span>
+                @if(solicitudesPendientes.length > 0){
+                  <span class="badge-pendiente">{{ solicitudesPendientes.length }}</span>
+                }
+              </div>
+              <button mat-icon-button (click)="cargarSolicitudesPendientes()"
+                      matTooltip="Actualizar" [disabled]="cargandoSolicitudes">
+                <mat-icon>refresh</mat-icon>
+              </button>
+            </div>
+
+            @if(cargandoSolicitudes){
+              <div class="sol-loading">
+                <mat-spinner diameter="28"></mat-spinner>
+                <span>Cargando solicitudes...</span>
+              </div>
+            }
+
+            @if(!cargandoSolicitudes && solicitudesPendientes.length === 0){
+              <div class="sol-empty">
+                <mat-icon>check_circle_outline</mat-icon>
+                <span>No hay solicitudes pendientes</span>
+              </div>
+            }
+
+            @if(!cargandoSolicitudes && solicitudesPendientes.length > 0){
+              <div class="sol-list">
+                @for(sol of solicitudesPendientes; track sol.id){
+                  <div class="sol-item">
+                    <div class="sol-avatar">
+                      {{ (sol.ninioNombre || 'N')[0] }}{{ (sol.ninioApellido || '')[0] }}
+                    </div>
+                    <div class="sol-info">
+                      <span class="sol-nombre">{{ sol.ninioNombre }} {{ sol.ninioApellido }}</span>
+                      <span class="sol-sub">
+                        CI {{ sol.ninioCedula }} ·
+                        {{ calcularEdadTexto(sol.ninioFechaNacimiento) }} ·
+                        Resp: {{ sol.responsableNombre || '(sin datos)' }}
+                        @if(sol.condicionesMedicas?.length){
+                          · <mat-icon style="font-size:13px;vertical-align:middle;color:#E65100">medical_services</mat-icon>
+                          {{ sol.condicionesMedicas!.length }} condición(es)
+                        }
+                      </span>
+                      <span class="sol-fecha">
+                        Solicitado: {{ sol.fechaInscripcion | date:'dd/MM/yyyy' }}
+                      </span>
+                    </div>
+                    <button mat-flat-button color="primary" class="btn-alta"
+                            (click)="abrirDarDeAlta(sol)">
+                      <mat-icon>how_to_reg</mat-icon>
+                      <span class="btn-alta-txt">Dar de alta</span>
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+
         <!-- ── Banner de rol ─────────────────────────────────────────── -->
         <div class="rol-banner"
              [style.background]="rolConfig.bannerBg"

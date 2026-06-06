@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { adminGuard, authGuard, funcionarioGuard, responsableGuard, rolGuard } from './guards/auth-guard';
+import { adminGuard, authGuard, funcionarioGuard, responsableGuard } from './guards/auth-guard';
 import { Home } from './pages/home/home';
 
 
@@ -62,7 +62,6 @@ export const routes: Routes = [
   },
 
   // Sección de funcionarios (coordinadora, psicólogo, maestra, etc.)
-  // El administrador de sistema NO tiene acceso a estas rutas.
   {
     path: 'funcionario',
     loadComponent: () =>

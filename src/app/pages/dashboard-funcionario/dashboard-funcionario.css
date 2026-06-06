@@ -5,6 +5,133 @@
 .loading-center { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px; gap: 16px; color: #5C6680; }
 .fecha-label { color: #5C6680; font-size: 13px; margin-bottom: 20px; text-transform: capitalize; }
 
+/* ── Panel de solicitudes pendientes ── */
+.solicitudes-panel {
+  background: white;
+  border: 1.5px solid #FFA726;
+  border-radius: 14px;
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+
+.solicitudes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: linear-gradient(90deg, #FFF3E0, #FFFDE7);
+  border-bottom: 1px solid #FFE082;
+}
+
+.solicitudes-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  color: #E65100;
+}
+
+.sol-icon { color: #FF6F00; }
+
+.badge-pendiente {
+  background: #FF6F00;
+  color: white;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 1px 8px;
+  border-radius: 12px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.sol-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 18px;
+  color: #5C6680;
+  font-size: 14px;
+}
+
+.sol-empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 18px;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.sol-empty mat-icon { color: #A5D6A7; font-size: 22px; }
+
+.sol-list { padding: 6px 0; }
+
+.sol-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px;
+  border-bottom: 1px solid #FFF3E0;
+  transition: background 0.15s;
+}
+.sol-item:last-child { border-bottom: none; }
+.sol-item:hover { background: #FFFBF5; }
+
+.sol-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF6F00, #FFA726);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.sol-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sol-nombre {
+  font-weight: 700;
+  font-size: 14px;
+  color: #1a1a2e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sol-sub {
+  font-size: 12px;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.sol-fecha {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.btn-alta {
+  flex-shrink: 0;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.btn-alta-txt { margin-left: 2px; }
+
 /* ── Banner de rol ── */
 .rol-banner {
   display: flex;
@@ -87,3 +214,9 @@
   line-height: 1.5;
 }
 .info-row mat-icon { font-size: 20px; width: 20px; flex-shrink: 0; margin-top: 1px; }
+
+@media (max-width: 640px) {
+  .page-content { padding: 16px; }
+  .btn-alta-txt { display: none; }
+  .sol-item { gap: 10px; }
+}

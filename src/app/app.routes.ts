@@ -47,6 +47,14 @@ export const routes: Routes = [
     canActivate: [responsableGuard]
   },
 
+  // Reportes visibles para el responsable
+  {
+    path: 'responsable/reportes',
+    loadComponent: () =>
+      import('./pages/reportes-responsable/reportes-responsable').then(m => m.ReportesResponsableComponent),
+    canActivate: [responsableGuard]
+  },
+
   // Dashboard para administradores — SOLO gestión de funcionarios del sistema
   {
     path: 'admin',

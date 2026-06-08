@@ -1,7 +1,7 @@
-import { Component, OnInit, Inject, ChangeDetectorRef, ViewChild } from '@angular/core';
+import { Component, OnInit, Inject, ChangeDetectorRef, ViewChild, ElementRef, NgZone, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MatPaginatorModule, MatPaginator, PageEvent } from '@angular/material/paginator';
+import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -18,6 +18,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { Router } from '@angular/router';
 import { GrupoService } from '../../services/grupo.service';
 import { NinioService } from '../../services/ninio.service';
+import { environment } from '../../../environments/environment';
 import { FuncionarioService } from '../../services/funcionario.service';
 import { ToastService } from '../../services/toast.service';
 import { CondicionMedicaResponse, GrupoResponse, GrupoRequest, NinioResponse, FuncionarioResponse, ROL_DISPLAY } from '../../models/models';
@@ -152,11 +153,17 @@ export class NiniosGrupoDialogComponent {
   }
 
   verDetalle(ninio: NinioResponse) {
-    this.dialog.open(NinioDetalleDialogComponent, {
+    const detalleRef = this.dialog.open(NinioDetalleDialogComponent, {
       data: { ninio },
       width: '600px',
       maxWidth: '96vw',
       panelClass: 'detalle-dialog'
+    });
+    detalleRef.afterClosed().subscribe(accion => {
+      if (accion === 'editar' || accion === 'baja') {
+        // Cerramos este dialog y propagamos la acción al padre
+        this.ref.close({ accion, ninio });
+      }
     });
   }
 }
@@ -454,7 +461,7 @@ export class GrupoDialogComponent implements OnInit {
 
   ngOnInit() {
     this.funcionarioService.listarActivos().pipe(
-      finalize(() => { this.cargandoDatos = false; this.cdr.detectChanges(); })
+      finalize(() => { this.cargandoDatos = false; })
     ).subscribe({
       next: (fs) => {
         this.funcionarios = fs;
@@ -508,12 +515,13 @@ export class GrupoDialogComponent implements OnInit {
 @Component({
   selector: 'app-grupos',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule, FormsModule,
     MatCardModule, MatButtonModule, MatIconModule, MatChipsModule,
     MatProgressSpinnerModule, MatTooltipModule, MatExpansionModule,
     MatBadgeModule, MatDividerModule, MatDialogModule,
-    MatFormFieldModule, MatInputModule, MatPaginatorModule
+    MatFormFieldModule, MatInputModule, MatSelectModule, MatPaginatorModule
   ],
   templateUrl: './grupos.html',
   styleUrl: './grupos.css'
@@ -529,7 +537,9 @@ export class GruposComponent implements OnInit {
   busqueda = '';
 
   // Paginación de niños
-  @ViewChild('paginatorNinios') paginatorNinios!: MatPaginator;
+  @ViewChild('fotoInputGrupos') fotoInputGrupos!: ElementRef<HTMLInputElement>;
+  ninioParaFotoGrupos: NinioResponse | null = null;
+  subiendoFotoGrupos = false;
   pageSizeNinios = 12;
   pageIndexNinios = 0;
   pageSizeOptionsNinios = [6, 12, 24, 48];
@@ -555,6 +565,7 @@ export class GruposComponent implements OnInit {
     private dialog: MatDialog,
     private toast: ToastService,
     private cdr: ChangeDetectorRef,
+    private zone: NgZone,
     private router: Router
   ) {}
 
@@ -574,9 +585,9 @@ export class GruposComponent implements OnInit {
   cargarGrupos() {
     this.cargandoGrupos = true;
     this.grupoService.listarTodos().pipe(
-      finalize(() => { this.cargandoGrupos = false; this.cdr.detectChanges(); })
+      finalize(() => { this.cargandoGrupos = false; this.cdr.markForCheck(); })
     ).subscribe({
-      next: (g) => { this.grupos = g; },
+      next: (g) => { this.grupos = g; this.cdr.markForCheck(); },
       error: () => { this.toast.error('Error al cargar grupos'); }
     });
   }
@@ -584,7 +595,7 @@ export class GruposComponent implements OnInit {
   cargarNinios() {
     this.cargandoNinios = true;
     this.ninioService.listarTodos().pipe(
-      finalize(() => { this.cargandoNinios = false; this.cdr.detectChanges(); })
+      finalize(() => { this.cargandoNinios = false; this.cdr.markForCheck(); })
     ).subscribe({
       next: (data) => { this.ninios = data; this.aplicarFiltrosNinios(); },
       error: () => this.toast.error('Error al cargar los niños')
@@ -611,6 +622,7 @@ export class GruposComponent implements OnInit {
     });
     this.pageIndexNinios = 0;
     this.actualizarPaginadosNinios();
+    this.cdr.markForCheck();
   }
 
   actualizarPaginadosNinios() {
@@ -618,10 +630,43 @@ export class GruposComponent implements OnInit {
     this.niniosPaginados = this.niniosFiltrados.slice(inicio, inicio + this.pageSizeNinios);
   }
 
-  onPageChangeNinios(event: PageEvent) {
-    this.pageSizeNinios  = event.pageSize;
-    this.pageIndexNinios = event.pageIndex;
+  irPrimeraPaginaNinios() {
+    this.pageIndexNinios = 0;
     this.actualizarPaginadosNinios();
+    this.cdr.markForCheck();
+  }
+
+  retrocederPaginaNinios() {
+    if (this.pageIndexNinios > 0) {
+      this.pageIndexNinios--;
+      this.actualizarPaginadosNinios();
+      this.cdr.markForCheck();
+    }
+  }
+
+  avanzarPaginaNinios() {
+    if ((this.pageIndexNinios + 1) * this.pageSizeNinios < this.niniosFiltrados.length) {
+      this.pageIndexNinios++;
+      this.actualizarPaginadosNinios();
+      this.cdr.markForCheck();
+    }
+  }
+
+  irUltimaPaginaNinios() {
+    const ultima = Math.max(0, Math.ceil(this.niniosFiltrados.length / this.pageSizeNinios) - 1);
+    this.pageIndexNinios = ultima;
+    this.actualizarPaginadosNinios();
+    this.cdr.markForCheck();
+  }
+
+  onPageSizeChangeNinios() {
+    this.pageIndexNinios = 0;
+    this.actualizarPaginadosNinios();
+    this.cdr.markForCheck();
+  }
+
+  min(a: number, b: number): number {
+    return Math.min(a, b);
   }
 
   gruposPorRango(rango: string): GrupoResponse[] {
@@ -721,11 +766,15 @@ export class GruposComponent implements OnInit {
   }
 
   abrirDetalleNinio(ninio: NinioResponse) {
-    this.dialog.open(NinioDetalleDialogComponent, {
+    const ref = this.dialog.open(NinioDetalleDialogComponent, {
       data: { ninio },
       width: '600px',
       maxWidth: '96vw',
       panelClass: 'detalle-dialog'
+    });
+    ref.afterClosed().subscribe(accion => {
+      if (accion === 'editar') this.abrirEditarNinio(ninio);
+      if (accion === 'baja')   this.darDeBajaNinio(ninio);
     });
   }
 
@@ -738,6 +787,59 @@ export class GruposComponent implements OnInit {
         this.cargarGrupos();
       },
       error: (err) => this.toast.error(err.error?.error ?? 'Error al dar de baja')
+    });
+  }
+
+  abrirSelectorFotoNinio(ninio: NinioResponse) {
+    this.ninioParaFotoGrupos = ninio;
+    this.fotoInputGrupos.nativeElement.value = '';
+    this.fotoInputGrupos.nativeElement.click();
+  }
+
+  onFotoNinioSeleccionada(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length || !this.ninioParaFotoGrupos) return;
+    const file = input.files[0];
+    const ninio = this.ninioParaFotoGrupos;
+    this.subiendoFotoGrupos = true;
+    this.uploadFotoNinioCloudinary(file).then(fotoUrl => {
+      this.zone.run(() => {
+        this.ninioService.actualizarFoto(ninio.id, fotoUrl).subscribe({
+          next: () => {
+            this.subiendoFotoGrupos = false;
+            this.toast.success('Foto actualizada correctamente');
+            this.cargarNinios();
+            this.ninioParaFotoGrupos = null;
+          },
+          error: (err) => {
+            this.subiendoFotoGrupos = false;
+            this.toast.error(err.error?.message ?? 'Error al guardar la foto');
+            this.ninioParaFotoGrupos = null;
+          }
+        });
+      });
+    }).catch(() => {
+      this.zone.run(() => {
+        this.subiendoFotoGrupos = false;
+        this.toast.error('Error al subir la imagen a Cloudinary');
+        this.ninioParaFotoGrupos = null;
+      });
+    });
+  }
+
+  private uploadFotoNinioCloudinary(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', environment.cloudinaryUploadPreset);
+      formData.append('folder', 'centro-crecer/ninios');
+      fetch(`https://api.cloudinary.com/v1_1/${environment.cloudinaryCloudName}/image/upload`, {
+        method: 'POST',
+        body: formData
+      })
+        .then(r => r.json())
+        .then(data => { if (data.secure_url) resolve(data.secure_url); else reject(); })
+        .catch(reject);
     });
   }
 
@@ -760,7 +862,7 @@ export class GruposComponent implements OnInit {
 
   abrirNiniosGrupo(grupo: GrupoResponse) {
     const meta = this.metaRango(grupo.rangoEdad ?? '');
-    this.dialog.open(NiniosGrupoDialogComponent, {
+    const ref = this.dialog.open(NiniosGrupoDialogComponent, {
       data: {
         grupo,
         color: meta?.color ?? '#1565C0',
@@ -770,6 +872,10 @@ export class GruposComponent implements OnInit {
       width: '540px',
       maxWidth: '96vw',
       maxHeight: '90vh'
+    });
+    ref.afterClosed().subscribe(result => {
+      if (result?.accion === 'editar') this.abrirEditarNinio(result.ninio);
+      if (result?.accion === 'baja')   this.darDeBajaNinio(result.ninio);
     });
   }
 

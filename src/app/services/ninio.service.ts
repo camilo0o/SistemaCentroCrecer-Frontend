@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { CondicionMedicaResponse, NinioResponse } from '../models/models';
 
@@ -30,6 +31,27 @@ export class NinioService {
   obtenerCondiciones(ninioId: number): Observable<CondicionMedicaResponse[]> {
     return this.http.get<CondicionMedicaResponse[]>(
       `${this.condicionesUrl}?ninioId=${ninioId}`
+    );
+  }
+
+  actualizarFoto(id: number, fotoUrl: string): Observable<NinioResponse> {
+    return this.http.put<NinioResponse>(`${this.apiUrl}/${id}/foto`, { fotoUrl });
+  }
+
+  subirFotoCloudinary(file: File): Observable<string> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', environment.cloudinaryUploadPreset);
+    return this.http.post<any>(
+      `https://api.cloudinary.com/v1_1/${environment.cloudinaryCloudName}/image/upload`,
+      formData
+    ).pipe(
+      map(res => {
+        if (!res?.secure_url) {
+          throw new Error(res?.error?.message ?? 'Cloudinary no devolvió una URL válida');
+        }
+        return res.secure_url as string;
+      })
     );
   }
 }

@@ -309,9 +309,14 @@
               <div class="gc-title-row">
                 <div class="child-title">
                   <div class="ninio-avatar"
-                       [style.background]="metaRango(ninio.grupo?.rangoEdad ?? '')?.bg ?? '#E3F2FD'"
-                       [style.color]="metaRango(ninio.grupo?.rangoEdad ?? '')?.color ?? '#1565C0'">
-                    {{ ninio.nombre[0] }}{{ ninio.apellido?.[0] ?? '' }}
+                       [style.background]="ninio.fotoUrl ? 'transparent' : (metaRango(ninio.grupo?.rangoEdad ?? '')?.bg ?? '#E3F2FD')"
+                       [style.color]="metaRango(ninio.grupo?.rangoEdad ?? '')?.color ?? '#1565C0'"
+                       style="overflow:hidden;position:relative">
+                    @if(ninio.fotoUrl){
+                      <img [src]="ninio.fotoUrl" alt="Foto" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+                    } @else {
+                      {{ ninio.nombre[0] }}{{ ninio.apellido?.[0] ?? '' }}
+                    }
                   </div>
                   <div>
                     <span class="gc-nombre">{{ getNombreCompleto(ninio) }}</span>
@@ -414,17 +419,39 @@
         }
       </div>
 
-      <mat-paginator
-        #paginatorNinios
-        [length]="niniosFiltrados.length"
-        [pageSize]="pageSizeNinios"
-        [pageIndex]="pageIndexNinios"
-        [pageSizeOptions]="pageSizeOptionsNinios"
-        (page)="onPageChangeNinios($event)"
-        showFirstLastButtons
-        aria-label="Paginación de niños">
-      </mat-paginator>
+      <div class="paginacion-manual" *ngIf="niniosFiltrados.length > pageSizeNinios">
+        <button mat-icon-button [disabled]="pageIndexNinios === 0"
+                (click)="irPrimeraPaginaNinios()">
+          <mat-icon>first_page</mat-icon>
+        </button>
+        <button mat-icon-button [disabled]="pageIndexNinios === 0"
+                (click)="retrocederPaginaNinios()">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <span class="paginacion-info">
+          {{ pageIndexNinios * pageSizeNinios + 1 }} –
+          {{ min((pageIndexNinios + 1) * pageSizeNinios, niniosFiltrados.length) }}
+          de {{ niniosFiltrados.length }}
+        </span>
+        <button mat-icon-button [disabled]="(pageIndexNinios + 1) * pageSizeNinios >= niniosFiltrados.length"
+                (click)="avanzarPaginaNinios()">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+        <button mat-icon-button [disabled]="(pageIndexNinios + 1) * pageSizeNinios >= niniosFiltrados.length"
+                (click)="irUltimaPaginaNinios()">
+          <mat-icon>last_page</mat-icon>
+        </button>
+        <mat-form-field appearance="outline" style="width:90px;margin-left:12px" subscriptSizing="dynamic">
+          <mat-select [(value)]="pageSizeNinios" (selectionChange)="onPageSizeChangeNinios()">
+            @for(op of pageSizeOptionsNinios; track op){
+              <mat-option [value]="op">{{ op }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
     }
   }
 
-</div>
+</div>-e 
+<input #fotoInputGrupos type="file" accept="image/*" style="display:none"
+       (change)="onFotoNinioSeleccionada($event)">

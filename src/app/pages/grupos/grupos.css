@@ -544,3 +544,57 @@ mat-paginator {
   width: 16px;
   height: 16px;
 }
+/* ── Foto niño en grupos ── */
+.ninio-avatar-wrap {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+}
+.ninio-avatar-wrap .ninio-avatar {
+  width: 44px;
+  height: 44px;
+}
+.btn-foto-ninio {
+  position: absolute;
+  bottom: -5px;
+  right: -5px;
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px !important;
+  background: #1565C0 !important;
+  color: white !important;
+  border-radius: 50% !important;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  padding: 0 !important;
+  line-height: 22px !important;
+}
+.btn-foto-ninio mat-icon {
+  font-size: 12px !important;
+  width: 12px !important;
+  height: 12px !important;
+  line-height: 12px !important;
+}
+.ninio-avatar-wrap:hover .btn-foto-ninio {
+  opacity: 1;
+}
+.paginacion-manual {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 20px;
+  padding: 8px 16px;
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.paginacion-info {
+  font-size: 0.875rem;
+  color: #5C6680;
+  padding: 0 8px;
+  min-width: 120px;
+  text-align: center;
+}

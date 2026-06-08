@@ -69,8 +69,18 @@
           <!-- Cabecera de la tarjeta -->
           <div class="card-header">
             <div class="card-title">
-              <div class="card-avatar" [class.avatar-inactivo]="!ninio.activo">
-                <mat-icon>child_care</mat-icon>
+              <div class="card-avatar-wrap">
+                <div class="card-avatar" [class.avatar-inactivo]="!ninio.activo">
+                  @if(ninio.fotoUrl){
+                    <img [src]="ninio.fotoUrl" alt="Foto" class="avatar-img">
+                  } @else {
+                    <mat-icon>child_care</mat-icon>
+                  }
+                </div>
+                <button mat-icon-button class="btn-foto" matTooltip="Cambiar foto"
+                        (click)="$event.stopPropagation(); abrirSelectorFoto(ninio)">
+                  <mat-icon>photo_camera</mat-icon>
+                </button>
               </div>
               <div>
                 <div class="title">{{ getNombreCompleto(ninio) }}</div>
@@ -137,6 +147,31 @@
               </span>
             </div>
 
+            <!-- Responsables -->
+            <div class="field-row responsables-row">
+              <span class="field-label">
+                <mat-icon class="field-icon">family_restroom</mat-icon>
+                Responsables
+              </span>
+              <span class="field-val">
+                @if(!ninio.responsables || ninio.responsables.length === 0){
+                  <span class="muted-text">Sin responsables</span>
+                } @else {
+                  <div class="responsables-inline">
+                    @for(r of ninio.responsables; track r.id){
+                      <span class="resp-pill" [matTooltip]="getResponsableTooltip(r)">
+                        <span class="resp-pill-avatar">{{ r.nombre[0] }}{{ r.apellido?.[0] ?? '' }}</span>
+                        <span class="resp-pill-name">{{ r.nombre }} {{ r.apellido }}</span>
+                        @if(r.tipoRelacion){
+                          <span class="resp-pill-tipo">{{ r.tipoRelacion }}</span>
+                        }
+                      </span>
+                    }
+                  </div>
+                }
+              </span>
+            </div>
+
           </mat-card-content>
 
           <!-- Acciones -->
@@ -164,7 +199,6 @@
     <mat-paginator
       [length]="filtrados.length"
       [pageSize]="pageSize"
-      [pageIndex]="pageIndex"
       [pageSizeOptions]="pageSizeOptions"
       (page)="onPageChange($event)"
       showFirstLastButtons
@@ -173,3 +207,6 @@
   }
 
 </div>
+
+<input #fotoInput type="file" accept="image/*" style="display:none"
+       (change)="onFotoSeleccionada($event)">

@@ -1,10 +1,12 @@
-import { HttpInterceptorFn, HttpClientModule } from '@angular/common/http';
+import { HttpInterceptorFn } from '@angular/common/http';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  console.log('INTERCEPTOR RUNNING, token:', localStorage.getItem('token'));
-  const token = localStorage.getItem('token');
+  if (req.url.includes('cloudinary.com')) {
+    return next(req);
+  }
 
- if (token) {
+  const token = localStorage.getItem('token');
+  if (token) {
     return next(req.clone({
       setHeaders: { Authorization: `Bearer ${token}` }
     }));

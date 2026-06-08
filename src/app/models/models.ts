@@ -79,6 +79,17 @@ export interface NinioRequest {
   grupo: GrupoResponse[];
 }
 
+export interface ResponsableResumen {
+  id: number;
+  nombre: string;
+  apellido: string;
+  cedula?: string;
+  telefono?: string;
+  email?: string;
+  tipoRelacion?: string;
+  autorizadoRetiro?: boolean;
+}
+
 export interface NinioResponse {
   id: number;
   cedula: string;
@@ -94,6 +105,8 @@ export interface NinioResponse {
   grupoId?: number;
   grupoNombre?: string;
   condicionesMedicas?: CondicionMedicaResponse[];
+  fotoUrl?: string;
+  responsables?: ResponsableResumen[];
 }
 
 

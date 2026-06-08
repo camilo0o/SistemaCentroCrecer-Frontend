@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject, ChangeDetectorRef, ViewChild } from '@angular/core';
+import { Component, OnInit, Inject, ChangeDetectorRef, ViewChild, ElementRef, NgZone, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatPaginatorModule, MatPaginator, PageEvent } from '@angular/material/paginator';
 import {
@@ -24,8 +24,9 @@ import { MatDividerModule } from '@angular/material/divider';
 import { NinioService } from '../../services/ninio.service';
 import { GrupoService } from '../../services/grupo.service';
 import { ToastService } from '../../services/toast.service';
-import { CondicionMedicaResponse, GrupoResponse, NinioResponse } from '../../models/models';
-import { finalize } from 'rxjs/operators';
+import { CondicionMedicaResponse, GrupoResponse, NinioResponse, ResponsableResumen } from '../../models/models';
+import { finalize, switchMap } from 'rxjs/operators';
+import { of } from 'rxjs';
 
 // ─── Dialog: Ver detalle del niño ───────────────────────────────────────────
 @Component({
@@ -46,7 +47,7 @@ import { finalize } from 'rxjs/operators';
       width: 56px; height: 56px; border-radius: 50%;
       background: linear-gradient(135deg, #1565C0, #42A5F5);
       display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
+      flex-shrink: 0; overflow: hidden;
     }
     .avatar mat-icon { color: white; font-size: 28px; width: 28px; height: 28px; }
     .header-info { display: flex; flex-direction: column; gap: 4px; }
@@ -98,16 +99,44 @@ import { finalize } from 'rxjs/operators';
       background: #E8F5E9; color: #2E7D32; border-radius: 10px;
       padding: 2px 9px; font-size: 11px; font-weight: 700; flex-shrink: 0;
     }
+    .actions-bar {
+      display: flex; justify-content: flex-end; gap: 10px;
+      padding: 16px 24px; border-top: 1px solid #F0F2F7;
+    }
+    .resp-card {
+      background: #F7F9FF; border: 1px solid #E8EAF0; border-radius: 10px;
+      padding: 12px 14px; display: flex; align-items: center; gap: 12px;
+    }
+    .resp-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, #1565C0, #42A5F5);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: white; flex-shrink: 0;
+    }
+    .resp-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .resp-nombre { font-size: 0.9rem; font-weight: 600; color: #1a2340; }
+    .resp-sub { font-size: 0.8rem; color: #5C6680; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .resp-relacion {
+      background: #E3F2FD; color: #1565C0; border-radius: 10px;
+      padding: 2px 9px; font-size: 11px; font-weight: 600; flex-shrink: 0;
+    }
+    .resp-retiro-ok  { background: #E8F5E9; color: #2E7D32; border-radius: 10px; padding: 2px 9px; font-size: 11px; font-weight: 600; }
+    .resp-retiro-no  { background: #FFEBEE; color: #C62828; border-radius: 10px; padding: 2px 9px; font-size: 11px; font-weight: 600; }
+    .resp-contact { display: flex; flex-direction: column; gap: 2px; text-align: right; flex-shrink: 0; }
+    .resp-tel { font-size: 12px; color: #1565C0; font-weight: 500; }
+    .resp-mail { font-size: 11px; color: #9AA0B9; }
+    .no-responsables {
+      text-align: center; padding: 16px 0; color: #9AA0B9; font-size: 0.88rem;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+    }
+    .no-responsables mat-icon { font-size: 32px; width: 32px; height: 32px; color: #D0D4E3; }
+    .responsables-grid { display: flex; flex-direction: column; gap: 10px; }
     .no-condiciones {
       text-align: center; padding: 20px 0; color: #9AA0B9; font-size: 0.88rem;
       display: flex; flex-direction: column; align-items: center; gap: 6px;
     }
     .no-condiciones mat-icon { font-size: 32px; width: 32px; height: 32px; color: #D0D4E3; }
     .condiciones-grid { display: flex; flex-direction: column; gap: 10px; }
-    .actions-bar {
-      display: flex; justify-content: flex-end; gap: 10px;
-      padding: 16px 24px; border-top: 1px solid #F0F2F7;
-    }
     .badge-count {
       background: #1565C0; color: white; border-radius: 10px;
       padding: 1px 8px; font-size: 11px; font-weight: 700;
@@ -117,8 +146,12 @@ import { finalize } from 'rxjs/operators';
     <!-- Encabezado -->
     <div class="dlg-header">
       <div class="header-left">
-        <div class="avatar">
-          <mat-icon>child_care</mat-icon>
+        <div class="avatar" style="overflow:hidden">
+          @if(data.ninio.fotoUrl){
+            <img [src]="data.ninio.fotoUrl" alt="Foto" style="width:100%;height:100%;object-fit:cover">
+          } @else {
+            <mat-icon>child_care</mat-icon>
+          }
         </div>
         <div class="header-info">
           <p class="nombre-completo">{{ data.ninio.nombre }} {{ data.ninio.apellido }}</p>
@@ -220,6 +253,55 @@ import { finalize } from 'rxjs/operators';
         </div>
       }
 
+      <hr class="section-sep">
+
+      <!-- Sección: Responsables -->
+      <p class="section-title">
+        <mat-icon>family_restroom</mat-icon>
+        Responsables
+        @if(responsables.length > 0){
+          <span class="badge-count">{{ responsables.length }}</span>
+        }
+      </p>
+
+      @if(responsables.length === 0){
+        <div class="no-responsables">
+          <mat-icon>person_search</mat-icon>
+          <span>Sin responsables registrados</span>
+        </div>
+      } @else {
+        <div class="responsables-grid">
+          @for(r of responsables; track r.id){
+            <div class="resp-card">
+              <div class="resp-avatar">{{ r.nombre[0] }}{{ r.apellido?.[0] ?? '' }}</div>
+              <div class="resp-info">
+                <span class="resp-nombre">{{ r.nombre }} {{ r.apellido }}</span>
+                <div class="resp-sub">
+                  @if(r.cedula){ <span>CI: {{ r.cedula }}</span> }
+                  @if(r.tipoRelacion){
+                    <span class="resp-relacion">{{ r.tipoRelacion }}</span>
+                  }
+                  @if(r.autorizadoRetiro !== undefined){
+                    <span [class]="r.autorizadoRetiro ? 'resp-retiro-ok' : 'resp-retiro-no'">
+                      <mat-icon style="font-size:11px;width:11px;height:11px;vertical-align:middle">
+                        {{ r.autorizadoRetiro ? 'check_circle' : 'cancel' }}
+                      </mat-icon>
+                      {{ r.autorizadoRetiro ? 'Autorizado retiro' : 'No autorizado retiro' }}
+                    </span>
+                  }
+                </div>
+              </div>
+              @if(r.telefono || r.email){
+                <div class="resp-contact">
+                  @if(r.telefono){ <span class="resp-tel">{{ r.telefono }}</span> }
+                  @if(r.email){ <span class="resp-mail">{{ r.email }}</span> }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
     </mat-dialog-content>
 
     <!-- Pie -->
@@ -250,6 +332,10 @@ export class NinioDetalleDialogComponent {
 
   get condiciones(): CondicionMedicaResponse[] {
     return this.data.ninio.condicionesMedicas ?? [];
+  }
+
+  get responsables(): ResponsableResumen[] {
+    return this.data.ninio.responsables ?? [];
   }
 
   displaySexo(sexo?: string): string {
@@ -619,6 +705,28 @@ export class NinioCrearDialogComponent implements OnInit {
     MatButtonModule, MatIconModule, MatDialogModule,
     MatProgressSpinnerModule, MatDatepickerModule, MatNativeDateModule
   ],
+  styles: [`
+    .foto-section {
+      display: flex; align-items: center; gap: 16px;
+      padding: 14px 16px; background: #F7F9FF;
+      border: 1px solid #E8EAF0; border-radius: 10px;
+    }
+    .foto-avatar {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: linear-gradient(135deg, #1565C0, #42A5F5);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; overflow: hidden; position: relative;
+    }
+    .foto-avatar mat-icon { color: white; font-size: 32px; width: 32px; height: 32px; }
+    .foto-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .foto-info { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .foto-label { font-size: 12px; font-weight: 600; color: #5C6680; text-transform: uppercase; letter-spacing: 0.5px; }
+    .foto-hint { font-size: 11px; color: #9AA0B9; }
+    .uploading-overlay {
+      position: absolute; inset: 0; border-radius: 50%;
+      background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center;
+    }
+  `],
   template: `
     <div style="display:flex;justify-content:space-between;align-items:center;padding:20px 24px 0">
       <h2 style="font-size:1.15rem;font-weight:700;color:#1a2340;margin:0">Editar Niño</h2>
@@ -626,6 +734,41 @@ export class NinioCrearDialogComponent implements OnInit {
     </div>
 
     <mat-dialog-content style="padding:24px;min-width:520px;max-height:70vh;overflow-y:auto">
+      <!-- Foto -->
+      <div class="foto-section" style="margin-bottom:16px">
+        <div class="foto-avatar">
+          @if(subiendoFoto){
+            <div class="uploading-overlay">
+              <mat-spinner diameter="28" color="accent"></mat-spinner>
+            </div>
+          }
+          @if(fotoPreview){
+            <img [src]="fotoPreview" alt="Foto">
+          } @else {
+            <mat-icon>child_care</mat-icon>
+          }
+        </div>
+        <div class="foto-info">
+          <span class="foto-label">Foto del niño</span>
+          <span class="foto-hint">JPG, PNG o WEBP · máx. 5 MB</span>
+          <div style="display:flex;gap:8px;margin-top:4px">
+            <button mat-stroked-button type="button" [disabled]="subiendoFoto"
+                    (click)="triggerFotoInput()" style="font-size:12px;height:32px;line-height:32px">
+              <mat-icon style="font-size:16px;margin-right:4px">photo_camera</mat-icon>
+              {{ fotoPreview ? 'Cambiar foto' : 'Subir foto' }}
+            </button>
+            @if(fotoPreview && fotoPreview !== data.ninio.fotoUrl){
+              <button mat-icon-button type="button" matTooltip="Descartar cambio de foto"
+                      (click)="descartarFoto()" style="color:#C62828">
+                <mat-icon style="font-size:18px">undo</mat-icon>
+              </button>
+            }
+          </div>
+        </div>
+        <input #editFotoInput type="file" accept="image/*" style="display:none"
+               (change)="onFotoSeleccionada($event)">
+      </div>
+
       <form [formGroup]="form" style="display:flex;flex-direction:column;gap:14px">
         <div style="display:flex;gap:12px">
           <mat-form-field appearance="outline" style="flex:1">
@@ -702,7 +845,7 @@ export class NinioCrearDialogComponent implements OnInit {
     <div style="display:flex;justify-content:flex-end;gap:12px;padding:16px 24px;border-top:1px solid #F0F2F7">
       <button mat-stroked-button (click)="ref.close()">Cancelar</button>
       <button mat-flat-button style="background:#1565C0;color:white"
-              (click)="guardar()" [disabled]="guardando">
+              (click)="guardar()" [disabled]="guardando || subiendoFoto">
         @if(guardando){ <mat-spinner diameter="18" color="accent"></mat-spinner> }
         @else { Guardar Cambios }
       </button>
@@ -715,16 +858,31 @@ export class NinioEditarDialogComponent implements OnInit {
   grupos: GrupoResponse[] = [];
   cargandoGrupos = true;
 
+  fotoPreview: string | null = null;
+  subiendoFoto = false;
+  private nuevaFotoUrl: string | null = null;
+
+  @ViewChild('editFotoInput') editFotoInput!: ElementRef<HTMLInputElement>;
+
+  triggerFotoInput() {
+    this.editFotoInput.nativeElement.value = '';
+    this.editFotoInput.nativeElement.click();
+  }
+
   constructor(
     private fb: FormBuilder,
     public ref: MatDialogRef<NinioEditarDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { ninio: NinioResponse },
     private ninioService: NinioService,
     private grupoService: GrupoService,
-    private toast: ToastService
+    private toast: ToastService,
+    private zone: NgZone,
+    private cdr: ChangeDetectorRef
   ) {
     const n = data.ninio;
     const fechaInicial = n?.fechaNacimiento ? new Date(n.fechaNacimiento + 'T00:00:00') : null;
+
+    this.fotoPreview = n?.fotoUrl ?? null;
 
     this.form = this.fb.group({
       nombre:          [n?.nombre ?? '',  [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
@@ -745,6 +903,34 @@ export class NinioEditarDialogComponent implements OnInit {
       next: (gs) => this.grupos = gs,
       error: () => this.toast.error('Error al cargar grupos')
     });
+  }
+
+  onFotoSeleccionada(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+    const file = input.files[0];
+    input.value = '';
+    this.subiendoFoto = true;
+    this.cdr.markForCheck();
+
+    this.ninioService.subirFotoCloudinary(file).subscribe({
+      next: (url) => {
+        this.nuevaFotoUrl = url;
+        this.fotoPreview = url;
+        this.subiendoFoto = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.subiendoFoto = false;
+        this.toast.error('Error al subir la imagen a Cloudinary');
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  descartarFoto() {
+    this.nuevaFotoUrl = null;
+    this.fotoPreview = this.data.ninio.fotoUrl ?? null;
   }
 
   guardar() {
@@ -768,7 +954,18 @@ export class NinioEditarDialogComponent implements OnInit {
       grupo:           { id: v.grupoId }
     };
 
-    this.ninioService.actualizar(this.data.ninio.id, payload).subscribe({
+    // Capturamos nuevaFotoUrl antes del subscribe para evitar que un ciclo de CD la pise
+    const fotoAGuardar = this.nuevaFotoUrl;
+
+    this.ninioService.actualizar(this.data.ninio.id, payload).pipe(
+      switchMap(nActualizado => {
+        if (fotoAGuardar) {
+          return this.ninioService.actualizarFoto(nActualizado.id, fotoAGuardar);
+        }
+        // Si no hay foto nueva, conservar la foto existente en el objeto devuelto
+        return of({ ...nActualizado, fotoUrl: this.data.ninio.fotoUrl ?? nActualizado.fotoUrl });
+      })
+    ).subscribe({
       next: (n) => { this.guardando = false; this.ref.close(n); },
       error: (err) => {
         this.guardando = false;
@@ -800,6 +997,9 @@ export class NiniosComponent implements OnInit {
   busqueda = '';
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
+  @ViewChild('fotoInput') fotoInput!: ElementRef<HTMLInputElement>;
+  ninioParaFoto: NinioResponse | null = null;
+  subiendoFoto = false;
   pageSize = 12;
   pageIndex = 0;
   pageSizeOptions = [6, 12, 24, 48];
@@ -808,7 +1008,8 @@ export class NiniosComponent implements OnInit {
     private ninioService: NinioService,
     private toast: ToastService,
     private dialog: MatDialog,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private zone: NgZone
   ) {}
 
   ngOnInit() { this.cargarNinios(); }
@@ -816,7 +1017,7 @@ export class NiniosComponent implements OnInit {
   cargarNinios() {
     this.cargando = true;
     this.ninioService.listarTodos().pipe(
-      finalize(() => { this.cargando = false; this.cdr.detectChanges(); })
+      finalize(() => { this.cargando = false; })
     ).subscribe({
       next: (data) => { this.ninios = data; this.aplicarFiltros(); },
       error: () => this.toast.error('Error al cargar los niños')
@@ -838,6 +1039,9 @@ export class NiniosComponent implements OnInit {
       return target.includes(texto);
     });
     this.pageIndex = 0;
+    if (this.paginator) {
+      this.paginator.pageIndex = 0;
+    }
     this.actualizarPaginados();
   }
 
@@ -877,7 +1081,15 @@ export class NiniosComponent implements OnInit {
       disableClose: false
     });
     ref.afterClosed().subscribe(n => {
-      if (n) { this.toast.success('Niño actualizado correctamente'); this.cargarNinios(); }
+      if (n) {
+        this.toast.success('Niño actualizado correctamente');
+        const idx = this.ninios.findIndex(x => x.id === n.id);
+        if (idx !== -1) {
+          this.ninios[idx] = { ...n };
+          this.ninios = [...this.ninios];
+          this.aplicarFiltros();
+        }
+      }
     });
   }
 
@@ -919,6 +1131,16 @@ export class NiniosComponent implements OnInit {
     return `${anios} año${anios !== 1 ? 's' : ''} y ${mesesRestantes} mes${mesesRestantes !== 1 ? 'es' : ''}`;
   }
 
+  getResponsableTooltip(r: ResponsableResumen): string {
+    const partes: string[] = [];
+    if (r.cedula) partes.push(`CI: ${r.cedula}`);
+    if (r.telefono) partes.push(`Tel: ${r.telefono}`);
+    if (r.email) partes.push(r.email);
+    if (r.autorizadoRetiro !== undefined)
+      partes.push(r.autorizadoRetiro ? '✓ Autorizado retiro' : '✗ No autorizado retiro');
+    return partes.join(' · ');
+  }
+
   cantidadCondiciones(ninio: NinioResponse): number {
     return ninio.condicionesMedicas?.length ?? 0;
   }
@@ -929,4 +1151,39 @@ export class NiniosComponent implements OnInit {
 
   get totalActivos(): number  { return this.ninios.filter(n => n.activo).length; }
   get totalInactivos(): number { return this.ninios.filter(n => !n.activo).length; }
+
+  abrirSelectorFoto(ninio: NinioResponse) {
+    this.ninioParaFoto = ninio;
+    this.fotoInput.nativeElement.value = '';
+    this.fotoInput.nativeElement.click();
+  }
+
+  onFotoSeleccionada(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length || !this.ninioParaFoto) return;
+    const file = input.files[0];
+    const ninio = this.ninioParaFoto;
+    this.subiendoFoto = true;
+
+    this.ninioService.subirFotoCloudinary(file).pipe(
+      switchMap(fotoUrl => this.ninioService.actualizarFoto(ninio.id, fotoUrl))
+    ).subscribe({
+      next: (actualizado) => {
+        this.subiendoFoto = false;
+        const idx = this.ninios.findIndex(n => n.id === actualizado.id);
+        if (idx !== -1) {
+          this.ninios[idx] = { ...actualizado };
+          this.ninios = [...this.ninios];
+          this.aplicarFiltros();
+        }
+        this.toast.success('Foto actualizada correctamente');
+        this.ninioParaFoto = null;
+      },
+      error: (err) => {
+        this.subiendoFoto = false;
+        this.ninioParaFoto = null;
+        this.toast.error(err.error?.message ?? 'Error al subir la foto');
+      }
+    });
+  }
 }

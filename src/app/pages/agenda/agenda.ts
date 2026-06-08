@@ -488,7 +488,11 @@ export class AgendaComponent implements OnInit {
 
   abrirCrear() {
     const ref = this.dialog.open(AgendaDialogComponent, {
-      data: { modo: 'crear', tipos: this.tipos, funcionarioId: this.funcionarioId }
+      data: { modo: 'crear', tipos: this.tipos, funcionarioId: this.funcionarioId },
+      width: '560px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     });
     ref.afterClosed().subscribe(r => {
       if (r) { this.toast.success('Anotación creada'); this.cargar(); }
@@ -497,7 +501,11 @@ export class AgendaComponent implements OnInit {
 
   abrirEditar(a: AgendaResponse) {
     const ref = this.dialog.open(AgendaDialogComponent, {
-      data: { modo: 'editar', agenda: a, tipos: this.tipos, funcionarioId: this.funcionarioId }
+      data: { modo: 'editar', agenda: a, tipos: this.tipos, funcionarioId: this.funcionarioId },
+      width: '560px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     });
     ref.afterClosed().subscribe(r => {
       if (r) { this.toast.success('Anotación actualizada'); this.cargar(); }
@@ -508,6 +516,9 @@ export class AgendaComponent implements OnInit {
     this.dialog.open(DetalleAgendaDialogComponent, {
       data: { agenda: a, subtipos: this.subtipos },
       width: '600px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true,
       maxHeight: '90vh'
     });
   }

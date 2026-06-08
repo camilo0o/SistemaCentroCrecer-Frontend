@@ -585,6 +585,8 @@ export class DashboardFuncionarioComponent implements OnInit {
     const ref = this.dialog.open(DarDeAltaDialogComponent, {
       width: '580px',
       maxWidth: '95vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true,
       data: { solicitud, grupos: this.grupos }
     });
 

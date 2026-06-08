@@ -1057,7 +1057,12 @@ export class NiniosComponent implements OnInit {
   }
 
   abrirCrear() {
-    const ref = this.dialog.open(NinioCrearDialogComponent, { disableClose: false });
+    const ref = this.dialog.open(NinioCrearDialogComponent, {
+      width: '720px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
+    });
     ref.afterClosed().subscribe(n => {
       if (n) { this.toast.success('Niño registrado correctamente'); this.cargarNinios(); }
     });
@@ -1067,7 +1072,9 @@ export class NiniosComponent implements OnInit {
     const ref = this.dialog.open(NinioDetalleDialogComponent, {
       data: { ninio },
       width: '580px',
-      disableClose: false
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     });
     ref.afterClosed().subscribe(accion => {
       if (accion === 'editar') this.abrirEditar(ninio);
@@ -1078,7 +1085,10 @@ export class NiniosComponent implements OnInit {
   abrirEditar(ninio: NinioResponse) {
     const ref = this.dialog.open(NinioEditarDialogComponent, {
       data: { ninio },
-      disableClose: false
+      width: '680px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     });
     ref.afterClosed().subscribe(n => {
       if (n) {

@@ -385,7 +385,11 @@ export class TurnosComponent implements OnInit {
         modo: 'crear',
         funcionarios: funcionariosFiltrados,
         funcionarioIdFijo: preseleccionado
-      }
+      },
+      width: '560px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     });
     ref.afterClosed().subscribe(r => { if (r) { this.toast.success('Turno creado'); this.cargarTurnos(); } });
   }
@@ -404,7 +408,11 @@ export class TurnosComponent implements OnInit {
         turno: t,
         funcionarios: funcionariosFiltrados,
         funcionarioIdFijo: this.esAdminOCoordinadora ? null : this.funcionarioIdPropio
-      }
+      },
+      width: '560px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     });
     ref.afterClosed().subscribe(r => { if (r) { this.toast.success('Turno actualizado'); this.cargarTurnos(); } });
   }

@@ -251,7 +251,11 @@ export class AgendaLimpiezaComponent implements OnInit {
 
   abrirCrear() {
     const ref = this.dialog.open(AgendaLimpiezaDialogComponent, {
-      data: { modo: 'crear', subtipos: this.subtipos, funcionarioId: this.funcionarioId }
+      data: { modo: 'crear', subtipos: this.subtipos, funcionarioId: this.funcionarioId },
+      width: '560px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     });
     ref.afterClosed().subscribe(r => {
       if (r) { this.toast.success('Tarea creada'); this.cargar(); }
@@ -260,7 +264,11 @@ export class AgendaLimpiezaComponent implements OnInit {
 
   abrirEditar(item: AgendaLimpiezaResponse) {
     const ref = this.dialog.open(AgendaLimpiezaDialogComponent, {
-      data: { modo: 'editar', item, subtipos: this.subtipos, funcionarioId: this.funcionarioId }
+      data: { modo: 'editar', item, subtipos: this.subtipos, funcionarioId: this.funcionarioId },
+      width: '560px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     });
     ref.afterClosed().subscribe(r => {
       if (r) { this.toast.success('Tarea actualizada'); this.cargar(); }

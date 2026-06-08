@@ -426,22 +426,42 @@ export class ActividadesComponent implements OnInit {
   // ── Acciones compartidas ───────────────────────────────────────────────
   abrirCrear() {
     const ref = this.dialog.open(ActividadDialogComponent, {
-      data: { modo: 'crear', empresas: this.empresas }
+      data: { modo: 'crear', empresas: this.empresas },
+      width: '580px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     });
     ref.afterClosed().subscribe(r => { if (r) { this.toast.success('Actividad creada'); this.cargarActividades(); } });
   }
 
   abrirEditar(a: ActividadResponse) {
     const ref = this.dialog.open(ActividadDialogComponent, {
-      data: { modo: 'editar', actividad: a, empresas: this.empresas }
+      data: { modo: 'editar', actividad: a, empresas: this.empresas },
+      width: '580px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     });
     ref.afterClosed().subscribe(r => { if (r) { this.toast.success('Actividad actualizada'); this.cargarActividades(); } });
   }
 
   verDetalle(a: ActividadResponse) {
     this.actividadService.obtenerPorId(a.id).subscribe({
-      next: (detalle) => this.dialog.open(ActividadDetalleDialogComponent, { data: { actividad: detalle } }),
-      error: () => this.dialog.open(ActividadDetalleDialogComponent, { data: { actividad: a } })
+      next: (detalle) => this.dialog.open(ActividadDetalleDialogComponent, {
+        data: { actividad: detalle },
+        width: '620px',
+        maxWidth: '94vw',
+        panelClass: 'app-dialog-panel',
+        disableClose: true
+      }),
+      error: () => this.dialog.open(ActividadDetalleDialogComponent, {
+        data: { actividad: a },
+        width: '620px',
+        maxWidth: '94vw',
+        panelClass: 'app-dialog-panel',
+        disableClose: true
+      })
     });
   }
 

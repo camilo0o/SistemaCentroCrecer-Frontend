@@ -361,18 +361,34 @@ export class UsuariosComponent implements OnInit {
       this.toast.error('No hay roles disponibles. Recargá la página e intentá de nuevo.');
       return;
     }
-    this.dialog.open(FuncionarioDialogComponent, { data: { modo: 'crear', roles: this.roles } })
+    this.dialog.open(FuncionarioDialogComponent, {
+      data: { modo: 'crear', roles: this.roles },
+      width: '620px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
+    })
       .afterClosed().subscribe(r => { if (r) { this.toast.success('Funcionario creado'); this.cargarFuncionarios(); } });
   }
 
   abrirEditar(f: FuncionarioResponse) {
-    this.dialog.open(FuncionarioDialogComponent, { data: { modo: 'editar', funcionario: f, roles: this.roles } })
+    this.dialog.open(FuncionarioDialogComponent, {
+      data: { modo: 'editar', funcionario: f, roles: this.roles },
+      width: '620px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
+    })
       .afterClosed().subscribe(r => { if (r) { this.toast.success('Funcionario actualizado'); this.cargarFuncionarios(); } });
   }
 
   abrirBlanqueo(f: FuncionarioResponse) {
     this.dialog.open(BlanqueoPasswordDialogComponent, {
-      data: { id: f.id, nombre: `${f.nombre} ${f.apellido}` }
+      data: { id: f.id, nombre: `${f.nombre} ${f.apellido}` },
+      width: '460px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     }).afterClosed().subscribe(r => { if (r) this.cargarFuncionarios(); });
   }
 

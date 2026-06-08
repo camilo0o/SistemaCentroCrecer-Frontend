@@ -385,7 +385,10 @@ export class ReportesComponent implements OnInit {
   abrirCrear() {
     const ref = this.dialog.open(ReporteDialogComponent, {
       data: { funcionarioId: this.userId },
-      maxWidth: '640px', width: '100%'
+      width: '640px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     });
     ref.afterClosed().subscribe(r => { if (r) { this.toast.success('Reporte creado'); this.cargarReportes(); } });
   }
@@ -393,7 +396,10 @@ export class ReportesComponent implements OnInit {
   abrirEditar(reporte: ReporteResponse) {
     const ref = this.dialog.open(ReporteDialogComponent, {
       data: { funcionarioId: this.userId, reporte },
-      maxWidth: '640px', width: '100%'
+      width: '640px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     });
     ref.afterClosed().subscribe(r => { if (r) { this.toast.success('Reporte actualizado'); this.cargarReportes(); } });
   }
@@ -401,7 +407,10 @@ export class ReportesComponent implements OnInit {
   verDetalle(reporte: ReporteResponse) {
     this.dialog.open(ReporteDetalleDialogComponent, {
       data: { reporte },
-      maxWidth: '600px', width: '100%'
+      width: '600px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     });
   }
 

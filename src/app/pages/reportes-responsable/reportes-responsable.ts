@@ -273,7 +273,10 @@ export class ReportesResponsableComponent implements OnInit {
     }
     this.dialog.open(ReporteResponsableDetalleDialogComponent, {
       data: { reporte: r },
-      maxWidth: '580px', width: '100%'
+      width: '580px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     });
   }
 

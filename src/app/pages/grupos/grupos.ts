@@ -157,7 +157,8 @@ export class NiniosGrupoDialogComponent {
       data: { ninio },
       width: '600px',
       maxWidth: '96vw',
-      panelClass: 'detalle-dialog'
+      panelClass: ['app-dialog-panel', 'detalle-dialog'],
+      disableClose: true
     });
     detalleRef.afterClosed().subscribe(accion => {
       if (accion === 'editar' || accion === 'baja') {
@@ -715,7 +716,10 @@ export class GruposComponent implements OnInit {
   abrirCrear(rangoEdad?: string) {
     this.dialog.open(GrupoDialogComponent, {
       data: { modo: 'crear', rangoEdad: rangoEdad ?? '' },
-      maxWidth: '580px', width: '100%'
+      width: '580px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     }).afterClosed().subscribe(g => {
       if (g) { this.toast.success('Grupo creado'); this.cargarGrupos(); }
     });
@@ -724,7 +728,10 @@ export class GruposComponent implements OnInit {
   abrirEditar(grupo: GrupoResponse) {
     this.dialog.open(GrupoDialogComponent, {
       data: { modo: 'editar', grupo },
-      maxWidth: '580px', width: '100%'
+      width: '580px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     }).afterClosed().subscribe(g => {
       if (g) { this.toast.success('Grupo actualizado'); this.cargarGrupos(); }
     });
@@ -740,7 +747,10 @@ export class GruposComponent implements OnInit {
 
   abrirCrearNinio() {
     const ref = this.dialog.open(NinioCrearDialogComponent, {
-      disableClose: false
+      width: '720px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     });
     ref.afterClosed().subscribe(n => {
       if (n) {
@@ -754,7 +764,10 @@ export class GruposComponent implements OnInit {
   abrirEditarNinio(ninio: NinioResponse) {
     const ref = this.dialog.open(NinioEditarDialogComponent, {
       data: { ninio },
-      disableClose: false
+      width: '680px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     });
     ref.afterClosed().subscribe(n => {
       if (n) {
@@ -770,7 +783,8 @@ export class GruposComponent implements OnInit {
       data: { ninio },
       width: '600px',
       maxWidth: '96vw',
-      panelClass: 'detalle-dialog'
+      panelClass: ['app-dialog-panel', 'detalle-dialog'],
+      disableClose: true
     });
     ref.afterClosed().subscribe(accion => {
       if (accion === 'editar') this.abrirEditarNinio(ninio);
@@ -856,7 +870,9 @@ export class GruposComponent implements OnInit {
       },
       width: '480px',
       maxWidth: '96vw',
-      maxHeight: '90vh'
+      maxHeight: '90vh',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     });
   }
 
@@ -871,7 +887,9 @@ export class GruposComponent implements OnInit {
       },
       width: '540px',
       maxWidth: '96vw',
-      maxHeight: '90vh'
+      maxHeight: '90vh',
+      panelClass: 'app-dialog-panel',
+      disableClose: true
     });
     ref.afterClosed().subscribe(result => {
       if (result?.accion === 'editar') this.abrirEditarNinio(result.ninio);

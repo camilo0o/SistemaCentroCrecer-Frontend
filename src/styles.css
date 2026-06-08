@@ -66,3 +66,60 @@ html, body {
 .dialog-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid var(--border); margin: 0 -24px; }
 .dialog-title { font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 12px; padding: 16px 24px 0; border-top: 1px solid var(--border); margin: 16px -24px 0; }
+
+.app-dialog-panel {
+  width: min(94vw, var(--dialog-width, 640px)) !important;
+  max-width: 94vw !important;
+}
+
+.app-dialog-panel .mat-mdc-dialog-container {
+  max-height: 92vh;
+}
+
+.app-dialog-panel .mat-mdc-dialog-surface {
+  border-radius: var(--radius-sm) !important;
+  box-shadow: 0 16px 48px rgba(26, 26, 46, 0.18) !important;
+  overflow: hidden !important;
+}
+
+.app-dialog-panel mat-dialog-content,
+.app-dialog-panel .mat-mdc-dialog-content {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  max-height: min(70vh, 680px) !important;
+  overflow-y: auto !important;
+}
+
+.app-dialog-panel .dialog-header {
+  margin: 0 !important;
+  padding: 18px 22px !important;
+}
+
+.app-dialog-panel .dialog-actions,
+.app-dialog-panel mat-dialog-actions {
+  margin: 0 !important;
+  padding: 14px 22px 18px !important;
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 600px) {
+  .app-dialog-panel {
+    width: 96vw !important;
+    max-width: 96vw !important;
+  }
+
+  .app-dialog-panel mat-dialog-content,
+  .app-dialog-panel .mat-mdc-dialog-content {
+    padding: 16px !important;
+    max-height: 72vh !important;
+  }
+
+  .app-dialog-panel .dialog-header {
+    padding: 16px !important;
+  }
+
+  .app-dialog-panel .dialog-title {
+    font-size: 16px;
+    line-height: 1.25;
+  }
+}

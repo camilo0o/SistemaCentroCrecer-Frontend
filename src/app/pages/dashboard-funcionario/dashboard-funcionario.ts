@@ -505,16 +505,14 @@ export class DashboardFuncionarioComponent implements OnInit {
 
     AUXILIAR_LIMPIEZA: {
       bannerColor: '#FF6F00', bannerBg: '#FFF3E0', bannerIcon: 'cleaning_services',
-      bannerDesc: 'Auxiliar de Limpieza — Turnos rotativos 7:00 – 19:00 hs',
+      bannerDesc: 'Auxiliar de Limpieza',
       acciones: [
-        { route: '/funcionario/turnos', icon: 'schedule',        label: 'Mis Turnos', desc: 'Ver mis horarios asignados',       color: '#FF6F00', bg: '#FFF3E0' },
-        { route: '/funcionario/agenda', icon: 'calendar_month',  label: 'Agenda',     desc: 'Novedades y comunicados del día',  color: '#1565C0', bg: '#E3F2FD' },
+        { route: '/funcionario/asistencia',     icon: 'how_to_reg',      label: 'Asistencia',     desc: 'Registrar mi entrada y salida',    color: '#2E7D32', bg: '#E8F5E9' },
+        { route: '/funcionario/agenda-limpieza',icon: 'cleaning_services',label: 'Agenda Limpieza',desc: 'Ver mis tareas de limpieza',       color: '#FF6F00', bg: '#FFF3E0' },
+        { route: '/funcionario/turnos',         icon: 'schedule',         label: 'Mis Turnos',     desc: 'Ver mis horarios asignados',      color: '#1565C0', bg: '#E3F2FD' },
+        { route: '/funcionario/agenda',         icon: 'calendar_month',   label: 'Agenda',         desc: 'Novedades y comunicados del día', color: '#7B1FA2', bg: '#F3E5F5' },
       ],
-      infoItems: [
-        { icon: 'schedule',          color: '#FF6F00', text: 'El centro opera 7:00 – 19:00 hs de lunes a viernes' },
-        { icon: 'cleaning_services', color: '#FF6F00', text: 'Turno 1: 7:00–11:00 · Turno 2: 11:00–15:00 · Turno 3: 15:00–19:00' },
-        { icon: 'group',             color: '#2E7D32', text: 'Coincidencia de turnos en el cierre del centro (desde las 15:00)' },
-      ]
+      infoItems: []
     },
   };
 

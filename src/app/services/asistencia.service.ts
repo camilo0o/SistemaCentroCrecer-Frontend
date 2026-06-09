@@ -7,6 +7,9 @@ import {
   AsistenciaResponse,
   AsistenciaNinioRequest,
   RegistroEntradaFuncionarioRequest,
+  RegistroSalidaFuncionarioRequest,
+  RegistroSalidaNinioRequest,
+  FrecuenciaAsistenciaResponse,
   NinioResponse
 } from '../models/models';
 
@@ -22,10 +25,8 @@ export class AsistenciaService {
     return this.http.post<AsistenciaResponse>(`${this.apiUrl}/mi-entrada`, dto);
   }
 
-  registrarMiSalida(horaSalida: string, fecha?: string): Observable<AsistenciaResponse> {
-    const body: any = { horaSalida };
-    if (fecha) body['fecha'] = fecha;
-    return this.http.put<AsistenciaResponse>(`${this.apiUrl}/mi-salida`, body);
+  registrarMiSalida(dto: RegistroSalidaFuncionarioRequest): Observable<AsistenciaResponse> {
+    return this.http.put<AsistenciaResponse>(`${this.apiUrl}/mi-salida`, dto);
   }
 
   obtenerMiRegistroDelDia(fecha?: string): Observable<AsistenciaResponse | null> {
@@ -55,7 +56,16 @@ export class AsistenciaService {
     return this.http.get<AsistenciaResponse[]>(`${this.apiUrl}/mis-ninios`, { params });
   }
 
-  registrarSalidaNinio(asistenciaId: number, horaSalida: string): Observable<AsistenciaResponse> {
-    return this.http.put<AsistenciaResponse>(`${this.apiUrl}/ninio/${asistenciaId}/salida`, { horaSalida });
+  registrarSalidaNinio(asistenciaId: number, dto: RegistroSalidaNinioRequest): Observable<AsistenciaResponse> {
+    return this.http.put<AsistenciaResponse>(`${this.apiUrl}/ninio/${asistenciaId}/salida`, dto);
+  }
+
+  historialPorCedula(cedula: string): Observable<AsistenciaResponse[]> {
+    return this.http.get<AsistenciaResponse[]>(`${this.apiUrl}/historial/${cedula}`);
+  }
+
+  frecuenciaPorCedula(cedula: string, desde: string, hasta: string): Observable<FrecuenciaAsistenciaResponse> {
+    const params = new HttpParams().set('desde', desde).set('hasta', hasta);
+    return this.http.get<FrecuenciaAsistenciaResponse>(`${this.apiUrl}/frecuencia/${cedula}`, { params });
   }
 }

@@ -54,19 +54,21 @@ export class Sidebar implements OnInit, OnDestroy {
   ];
 
   funcionarioItems: NavItem[] = [
-    { label: 'Dashboard',      icon: 'dashboard',     route: '/dashboard/funcionario' },
-    { label: 'Grupos y Niños', icon: 'groups',         route: '/funcionario/gruposyninios' },
-    { label: 'Turnos',         icon: 'calendar_month', route: '/funcionario/turnos' },
-    { label: 'Reportes',       icon: 'analytics',      route: '/funcionario/reportes' },
-    { label: 'Actividades',    icon: 'event',           route: '/funcionario/actividades' },
+    { label: 'Dashboard',      icon: 'dashboard',        route: '/dashboard/funcionario' },
+    { label: 'Grupos y Niños', icon: 'groups',            route: '/funcionario/gruposyninios' },
+    { label: 'Responsables',   icon: 'family_restroom',   route: '/funcionario/responsables' },
+    { label: 'Turnos',         icon: 'calendar_month',    route: '/funcionario/turnos' },
+    { label: 'Reportes',       icon: 'analytics',         route: '/funcionario/reportes' },
+    { label: 'Actividades',    icon: 'event',             route: '/funcionario/actividades' },
     { label: 'Agenda',         icon: 'calendar_month', route: '/funcionario/agenda' },
     { label: 'Asistencia',     icon: 'how_to_reg',     route: '/funcionario/asistencia' },
   ];
 
   auxiliarLimpiezaItems: NavItem[] = [
-    { label: 'Dashboard',        icon: 'dashboard',      route: '/dashboard/funcionario' },
+    { label: 'Dashboard',        icon: 'dashboard',         route: '/dashboard/funcionario' },
     { label: 'Agenda Limpieza',  icon: 'cleaning_services', route: '/funcionario/agenda-limpieza' },
-    { label: 'Asistencia',       icon: 'how_to_reg',     route: '/funcionario/asistencia' },
+    { label: 'Asistencia',       icon: 'how_to_reg',        route: '/funcionario/asistencia' },
+    { label: 'Turnos',           icon: 'schedule',          route: '/funcionario/turnos' },
   ];
 
   responsableItems: NavItem[] = [
@@ -84,7 +86,7 @@ export class Sidebar implements OnInit, OnDestroy {
 
   get esFuncionario(): boolean {
     const rol = this.auth.getRol();
-    return rol !== 'ADMINISTRADOR_SISTEMA' && rol !== 'RESPONSABLE';
+    return rol !== 'ADMINISTRADOR_SISTEMA' && rol !== 'RESPONSABLE' && rol !== 'AUXILIAR_LIMPIEZA';
   }
 
   constructor(

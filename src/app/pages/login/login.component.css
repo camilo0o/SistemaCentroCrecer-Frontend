@@ -86,10 +86,12 @@
 .login-panel {
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   background: #F5F7FA;
   padding: 40px 24px;
+  gap: 16px;
 }
 
 .login-card { width: 100%; max-width: 420px; }
@@ -175,3 +177,21 @@ mat-form-field { width: 100%; }
 .register-link a { color: #1565C0; font-weight: 700; text-decoration: none; }
 
 @media (max-width: 768px) { .login-aside { display: none; } }
+
+.back-home-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1565C0;
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 20px;
+  transition: background 0.15s;
+  width: 100%;
+  max-width: 420px;
+  box-sizing: border-box;
+}
+.back-home-btn:hover { background: #E3F2FD; }
+.back-home-btn mat-icon { font-size: 18px; width: 18px; height: 18px; }

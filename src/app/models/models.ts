@@ -363,6 +363,32 @@ export interface AsistenciaNinioRequest {
   ninioId: number;
 }
 
+export interface RegistroSalidaFuncionarioRequest {
+  fecha?: string;
+  horaSalida?: string;
+  observaciones?: string;
+}
+
+export interface RegistroSalidaNinioRequest {
+  horaSalida?: string;
+  observaciones?: string;
+}
+
+export interface FrecuenciaAsistenciaResponse {
+  ninioId: number;
+  ninioNombre: string;
+  ninioApellido: string;
+  ninioCedula: string;
+  grupoNombre?: string;
+  desde: string;
+  hasta: string;
+  diasPresente: number;
+  diasAusente: number;
+  totalDiasHabiles: number;
+  porcentajeAsistencia: number;
+  porcentajeInasistencia: number;
+}
+
 export interface SubtipoAgendaResponse {
   subtipoId: number;
   subtipo: string;
@@ -419,4 +445,31 @@ export interface DetalleAgendaResponse {
   agendaId: number;
   subtipoId: number;
   subtipoNombre?: string;
+}
+
+export interface ResponsableNinioResponse {
+  id: number;
+  ninio: { id: number; nombre: string; apellido: string; cedula: string; };
+  responsable?: { id: number; nombre: string; apellido: string; };
+  tipoRelacion: string;
+  autorizadoRetiro: boolean;
+}
+
+export interface ResponsableNinioRequest {
+  ninioId: number;
+  responsableId: number;
+  tipoRelacion: string;
+  autorizadoRetiro: boolean;
+}
+
+export interface ResponsableResponse {
+  id: number;
+  cedula: string;
+  nombre: string;
+  apellido: string;
+  email?: string;
+  telefono?: string;
+  activo: boolean;
+  fotoPerfil?: string;
+  ninios?: ResponsableNinioResponse[];
 }

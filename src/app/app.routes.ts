@@ -92,6 +92,8 @@ export const routes: Routes = [
           import('./pages/agenda-limpieza/agenda-limpieza').then(m => m.AgendaLimpiezaComponent) },
       { path: 'asistencia', loadComponent: () =>
           import('./pages/asistencia/asistencia').then(m => m.AsistenciaComponent) },
+      { path: 'responsables', loadComponent: () =>
+          import('./pages/responsables/responsables').then(m => m.ResponsablesComponent) },
     ]
   },
 

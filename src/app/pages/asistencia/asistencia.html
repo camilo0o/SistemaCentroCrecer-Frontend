@@ -29,7 +29,7 @@
     </button>
   </div>
 
-  <div class="content-grid">
+  <div class="content-grid" [class.solo-panel]="esAuxiliar">
 
     <!-- ── Panel izquierdo: Mi Registro ─────────────────────────────────── -->
     <section class="panel mi-registro-panel">
@@ -135,10 +135,13 @@
                 <button mat-flat-button class="btn-primary small" (click)="registrarSalida()">
                   <mat-icon>check</mat-icon> Confirmar
                 </button>
-                <button mat-icon-button (click)="horaSalidaInput = ''">
+                <button mat-icon-button (click)="horaSalidaInput = ''; observacionesSalidaInput = ''">
                   <mat-icon>close</mat-icon>
                 </button>
               </div>
+              <textarea [(ngModel)]="observacionesSalidaInput" rows="2"
+                        placeholder="Observaciones de salida (opcional)..."
+                        class="obs-input obs-salida"></textarea>
             }
           }
         </div>
@@ -147,6 +150,7 @@
     </section>
 
     <!-- ── Panel derecho: Asistencia Niños ──────────────────────────────── -->
+    @if (!esAuxiliar) {
     <section class="panel ninios-panel">
 
       <div class="panel-header">
@@ -249,25 +253,49 @@
                     }
 
                     @if (!ninio.cargando && !ninio.presente) {
-                      <button mat-flat-button class="btn-marcar"
-                              (click)="marcarPresente(ninio)"
-                              matTooltip="Marcar asistencia">
-                        <mat-icon>how_to_reg</mat-icon> Presente
-                      </button>
+                      @if (ninioConObsAbierta === ninio.id) {
+                        <div class="form-presente-inline">
+                          <div class="hora-obs-row">
+                            <input type="time" [(ngModel)]="horaEntradaNinioInput" class="time-input small">
+                            <button mat-icon-button color="primary"
+                                    (click)="confirmarPresente(ninio)"
+                                    matTooltip="Confirmar entrada">
+                              <mat-icon>check</mat-icon>
+                            </button>
+                            <button mat-icon-button (click)="cancelarFormPresente()">
+                              <mat-icon>close</mat-icon>
+                            </button>
+                          </div>
+                          <textarea [(ngModel)]="observacionesEntradaNinioInput" rows="2"
+                                    placeholder="Observaciones (opcional)..."
+                                    class="obs-input obs-ninio"></textarea>
+                        </div>
+                      } @else {
+                        <button mat-flat-button class="btn-marcar"
+                                (click)="marcarPresente(ninio)"
+                                matTooltip="Marcar asistencia">
+                          <mat-icon>how_to_reg</mat-icon> Presente
+                        </button>
+                      }
                     }
 
                     @if (!ninio.cargando && ninio.presente && !ninio.horaSalida && esHoy) {
                       @if (ninioConSalidaAbierta === ninio.id) {
-                        <div class="salida-inline">
-                          <input type="time" [(ngModel)]="horaSalidaNinioInput" class="time-input small">
-                          <button mat-icon-button color="primary"
-                                  (click)="registrarSalidaNinio(ninio)"
-                                  matTooltip="Confirmar salida">
-                            <mat-icon>check</mat-icon>
-                          </button>
-                          <button mat-icon-button (click)="cancelarSalidaNinio()">
-                            <mat-icon>close</mat-icon>
-                          </button>
+                        <div class="form-presente-inline">
+                          <div class="hora-obs-row">
+                            <input type="time" [(ngModel)]="horaSalidaNinioInput" class="time-input small">
+                            <button mat-icon-button color="primary"
+                                    (click)="registrarSalidaNinio(ninio)"
+                                    matTooltip="Confirmar salida">
+                              <mat-icon>check</mat-icon>
+                            </button>
+                            <button mat-icon-button (click)="cancelarSalidaNinio()">
+                              <mat-icon>close</mat-icon>
+                            </button>
+                          </div>
+                          <textarea [(ngModel)]="observacionesSalidaNinioInput" rows="2"
+                                    placeholder="Observaciones de salida (opcional)..."
+                                    class="obs-input obs-ninio"></textarea>
                         </div>
                       } @else {
                         <button mat-stroked-button class="btn-salida-ninio"
@@ -283,6 +311,13 @@
                         <mat-icon>task_alt</mat-icon> Completo
                       </span>
                     }
+
+                    @if (ninio.observaciones) {
+                      <p class="ninio-obs">
+                        <mat-icon style="font-size:12px;vertical-align:middle">notes</mat-icon>
+                        {{ ninio.observaciones }}
+                      </p>
+                    }
                   </div>
 
                 </div>
@@ -294,7 +329,201 @@
       }
 
     </section>
+    }
 
   </div>
+
+  <!-- ── Sección consultas RF30/RF31/RF32 ──────────────────────────────── -->
+  <div class="consultas-section">
+
+    <div class="consultas-header">
+      <mat-icon class="panel-icon purple">search</mat-icon>
+      <h2 class="panel-title">Consultas por niño</h2>
+    </div>
+
+    <div class="consultas-grid">
+
+      <!-- RF30: Historial -->
+      <div class="consulta-card">
+        <div class="consulta-card-header">
+          <mat-icon class="consulta-icon blue">history</mat-icon>
+          <span class="consulta-title">Historial de asistencia</span>
+        </div>
+        <p class="consulta-desc">Ver el historial completo de asistencias de un niño ingresando su cédula.</p>
+        <button mat-flat-button class="btn-consulta btn-blue" (click)="abrirHistorial()">
+          <mat-icon>search</mat-icon> Consultar historial
+        </button>
+      </div>
+
+      <!-- RF31/RF32: Frecuencia -->
+      <div class="consulta-card">
+        <div class="consulta-card-header">
+          <mat-icon class="consulta-icon green">bar_chart</mat-icon>
+          <span class="consulta-title">Frecuencia de asistencia / inasistencia</span>
+        </div>
+        <p class="consulta-desc">Consultar cuántos días asistió o faltó un niño en un período determinado.</p>
+
+        <div class="frecuencia-form">
+          <input class="consulta-input" type="text" [(ngModel)]="frecuenciaCedula"
+                 placeholder="Cédula del niño" maxlength="8">
+          <div class="fecha-range-row">
+            <div class="fecha-range-field">
+              <label>Desde</label>
+              <input class="consulta-input" type="date" [(ngModel)]="frecuenciaDesde" [max]="hoy">
+            </div>
+            <div class="fecha-range-field">
+              <label>Hasta</label>
+              <input class="consulta-input" type="date" [(ngModel)]="frecuenciaHasta" [max]="hoy">
+            </div>
+          </div>
+
+          @if (frecuenciaError) {
+            <p class="consulta-error">{{ frecuenciaError }}</p>
+          }
+
+          <div class="consulta-actions">
+            <button mat-stroked-button (click)="limpiarFrecuencia()" [disabled]="frecuenciaCargando">
+              <mat-icon>clear</mat-icon> Limpiar
+            </button>
+            <button mat-flat-button class="btn-consulta btn-green" (click)="buscarFrecuencia()" [disabled]="frecuenciaCargando">
+              @if (frecuenciaCargando) { <mat-spinner diameter="16"></mat-spinner> }
+              @else { <mat-icon>search</mat-icon> }
+              Consultar
+            </button>
+          </div>
+        </div>
+
+        @if (frecuenciaResultado) {
+          <div class="frecuencia-resultado">
+            <div class="frecuencia-ninio-info">
+              <mat-icon>child_care</mat-icon>
+              <span>{{ frecuenciaResultado.ninioNombre }} {{ frecuenciaResultado.ninioApellido }}</span>
+              @if (frecuenciaResultado.grupoNombre) {
+                <span class="grupo-badge">{{ frecuenciaResultado.grupoNombre }}</span>
+              }
+            </div>
+            <div class="frecuencia-stats">
+              <div class="frec-stat presente">
+                <span class="frec-num">{{ frecuenciaResultado.diasPresente }}</span>
+                <span class="frec-label">días presente</span>
+                <span class="frec-pct">{{ frecuenciaResultado.porcentajeAsistencia }}%</span>
+              </div>
+              <div class="frec-stat ausente">
+                <span class="frec-num">{{ frecuenciaResultado.diasAusente }}</span>
+                <span class="frec-label">días ausente</span>
+                <span class="frec-pct">{{ frecuenciaResultado.porcentajeInasistencia }}%</span>
+              </div>
+              <div class="frec-stat total">
+                <span class="frec-num">{{ frecuenciaResultado.totalDiasHabiles }}</span>
+                <span class="frec-label">días hábiles</span>
+              </div>
+            </div>
+            <!-- Barra de progreso visual -->
+            <div class="frec-barra-wrapper">
+              <div class="frec-barra-presente"
+                   [style.width.%]="frecuenciaResultado.porcentajeAsistencia"
+                   [matTooltip]="frecuenciaResultado.porcentajeAsistencia + '% asistencia'">
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Modal: Historial RF30 ─────────────────────────────────────────── -->
+  @if (modalHistorialVisible) {
+    <div class="modal-overlay" (click)="cerrarHistorial()">
+      <div class="modal-panel" (click)="$event.stopPropagation()">
+
+        <div class="modal-header">
+          <div class="modal-title-row">
+            <mat-icon class="modal-icon">history</mat-icon>
+            <h2 class="modal-title">Historial de asistencia</h2>
+          </div>
+          <button mat-icon-button (click)="cerrarHistorial()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <div class="modal-body">
+
+          <div class="historial-search-row">
+            <input class="consulta-input historial-input" type="text"
+                   [(ngModel)]="historialCedula"
+                   placeholder="Ingrese la cédula del niño"
+                   maxlength="8"
+                   (keyup.enter)="buscarHistorial()">
+            <button mat-flat-button class="btn-consulta btn-blue" (click)="buscarHistorial()"
+                    [disabled]="historialCargando">
+              @if (historialCargando) { <mat-spinner diameter="16"></mat-spinner> }
+              @else { <mat-icon>search</mat-icon> }
+              Buscar
+            </button>
+          </div>
+
+          @if (historialError) {
+            <p class="consulta-error">{{ historialError }}</p>
+          }
+
+          @if (historialCargando) {
+            <div class="loading-center">
+              <mat-spinner diameter="32"></mat-spinner>
+            </div>
+          }
+
+          @if (!historialCargando && historialRegistros.length > 0) {
+            <div class="historial-ninio-info">
+              <mat-icon>child_care</mat-icon>
+              <strong>{{ historialRegistros[0].ninioNombre }} {{ historialRegistros[0].ninioApellido }}</strong>
+              <span class="cedula-badge">CI: {{ historialRegistros[0].ninioCedula }}</span>
+              @if (historialRegistros[0].grupoNombre) {
+                <span class="grupo-badge">{{ historialRegistros[0].grupoNombre }}</span>
+              }
+              <span class="total-badge">{{ historialRegistros.length }} registros</span>
+            </div>
+
+            <div class="historial-table-wrapper">
+              <table class="historial-table">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Entrada</th>
+                    <th>Salida</th>
+                    <th>Funcionario</th>
+                    <th>Observaciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (r of historialRegistros; track r.id) {
+                    <tr>
+                      <td class="td-fecha">{{ r.fecha | date:'dd/MM/yyyy' }}</td>
+                      <td class="td-hora entrada">
+                        <mat-icon style="font-size:13px;vertical-align:middle">login</mat-icon>
+                        {{ r.horaEntrada }}
+                      </td>
+                      <td class="td-hora salida">
+                        @if (r.horaSalida) {
+                          <mat-icon style="font-size:13px;vertical-align:middle">logout</mat-icon>
+                          {{ r.horaSalida }}
+                        } @else {
+                          <span class="sin-salida">—</span>
+                        }
+                      </td>
+                      <td class="td-func">{{ r.funcionarioNombre || '—' }}</td>
+                      <td class="td-obs">{{ r.observaciones || '—' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
+        </div>
+
+      </div>
+    </div>
+  }
 
 </div>

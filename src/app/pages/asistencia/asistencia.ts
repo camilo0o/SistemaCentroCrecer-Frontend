@@ -13,11 +13,12 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatBadgeModule } from '@angular/material/badge';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { finalize, forkJoin } from 'rxjs';
 import { AsistenciaService } from '../../services/asistencia.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
-import { AsistenciaResponse, EstadoPuntualidad, NinioResponse } from '../../models/models';
+import { AsistenciaResponse, EstadoPuntualidad, FrecuenciaAsistenciaResponse, NinioResponse } from '../../models/models';
 import { GetPresentesPipe } from '../../pipes/get-presentes-pipe';
 
 interface NinioConEstado extends NinioResponse {
@@ -25,6 +26,7 @@ interface NinioConEstado extends NinioResponse {
   presente: boolean;
   horaEntrada?: string;
   horaSalida?: string;
+  observaciones?: string;
   cargando?: boolean;
 }
 
@@ -37,7 +39,7 @@ interface NinioConEstado extends NinioResponse {
     MatFormFieldModule, MatInputModule, MatSelectModule,
     MatProgressSpinnerModule,
     MatTooltipModule, MatChipsModule, MatDividerModule,
-    MatTabsModule, MatBadgeModule,
+    MatTabsModule, MatBadgeModule, MatDialogModule,
     GetPresentesPipe
   ],
   templateUrl: './asistencia.html',
@@ -48,6 +50,8 @@ export class AsistenciaComponent implements OnInit {
   fechaSeleccionada: string = new Date().toISOString().split('T')[0];
   hoy: string = new Date().toISOString().split('T')[0];
   esHoy: boolean = true;
+
+  get esAuxiliar(): boolean { return this.authService.getRol() === 'AUXILIAR_LIMPIEZA'; }
 
   // ── Mi Registro ──────────────────────────────────────────────────────────
   miRegistro: AsistenciaResponse | null = null;
@@ -68,12 +72,92 @@ export class AsistenciaComponent implements OnInit {
   // ── Ingreso manual de hora de salida nino ────────────────────────────────
   ninioConSalidaAbierta: number | null = null;
   horaSalidaNinioInput: string = '';
+  observacionesSalidaNinioInput: string = '';
+
+  // ── Observaciones al marcar presente ────────────────────────────────────
+  ninioConObsAbierta: number | null = null;
+  horaEntradaNinioInput: string = '';
+  observacionesEntradaNinioInput: string = '';
+
+  // ── Observaciones al registrar salida propia ─────────────────────────────
+  observacionesSalidaInput: string = '';
 
   constructor(
     private asistenciaService: AsistenciaService,
     private authService: AuthService,
-    private toast: ToastService
+    private toast: ToastService,
+    private dialog: MatDialog
   ) {}
+
+  // ── RF30/RF31/RF32: Consultas por cédula ─────────────────────────────────
+
+  // Historial (RF30)
+  modalHistorialVisible = false;
+  historialCedula: string = '';
+  historialCargando = false;
+  historialRegistros: AsistenciaResponse[] = [];
+  historialError: string = '';
+
+  // Frecuencia (RF31/RF32)
+  frecuenciaCedula: string = '';
+  frecuenciaDesde: string = '';
+  frecuenciaHasta: string = '';
+  frecuenciaCargando = false;
+  frecuenciaResultado: FrecuenciaAsistenciaResponse | null = null;
+  frecuenciaError: string = '';
+
+  abrirHistorial(): void {
+    this.historialCedula = '';
+    this.historialRegistros = [];
+    this.historialError = '';
+    this.modalHistorialVisible = true;
+  }
+
+  cerrarHistorial(): void {
+    this.modalHistorialVisible = false;
+  }
+
+  buscarHistorial(): void {
+    const ced = this.historialCedula.trim();
+    if (!ced) { this.historialError = 'Ingrese una cédula'; return; }
+    this.historialError = '';
+    this.historialCargando = true;
+    this.historialRegistros = [];
+    this.asistenciaService.historialPorCedula(ced)
+      .pipe(finalize(() => this.historialCargando = false))
+      .subscribe({
+        next: r => {
+          this.historialRegistros = r;
+          if (r.length === 0) this.historialError = 'No se encontraron registros para esta cédula.';
+        },
+        error: e => this.historialError = e.error?.message || 'Cédula no encontrada.'
+      });
+  }
+
+  buscarFrecuencia(): void {
+    const ced = this.frecuenciaCedula.trim();
+    if (!ced || !this.frecuenciaDesde || !this.frecuenciaHasta) {
+      this.frecuenciaError = 'Complete la cédula y el rango de fechas.';
+      return;
+    }
+    this.frecuenciaError = '';
+    this.frecuenciaResultado = null;
+    this.frecuenciaCargando = true;
+    this.asistenciaService.frecuenciaPorCedula(ced, this.frecuenciaDesde, this.frecuenciaHasta)
+      .pipe(finalize(() => this.frecuenciaCargando = false))
+      .subscribe({
+        next: r => this.frecuenciaResultado = r,
+        error: e => this.frecuenciaError = e.error?.message || 'Cédula no encontrada.'
+      });
+  }
+
+  limpiarFrecuencia(): void {
+    this.frecuenciaCedula = '';
+    this.frecuenciaDesde = '';
+    this.frecuenciaHasta = '';
+    this.frecuenciaResultado = null;
+    this.frecuenciaError = '';
+  }
 
   // ── Helpers de puntualidad ───────────────────────────────────────────────
 
@@ -192,12 +276,16 @@ export class AsistenciaComponent implements OnInit {
       return;
     }
     this.cargandoMiRegistro = true;
-    this.asistenciaService.registrarMiSalida(this.horaSalidaInput, this.fechaSeleccionada)
-      .pipe(finalize(() => this.cargandoMiRegistro = false))
+    this.asistenciaService.registrarMiSalida({
+      horaSalida: this.horaSalidaInput,
+      fecha: this.fechaSeleccionada,
+      observaciones: this.observacionesSalidaInput || undefined
+    }).pipe(finalize(() => this.cargandoMiRegistro = false))
       .subscribe({
         next: r => {
           this.miRegistro = r;
           this.horaSalidaInput = '';
+          this.observacionesSalidaInput = '';
           this.toast.show('Salida registrada correctamente', 'success');
         },
         error: e => this.toast.show(e.error?.message || 'Error al registrar salida', 'error')
@@ -223,6 +311,7 @@ export class AsistenciaComponent implements OnInit {
               presente: !!asis,
               horaEntrada: asis?.horaEntrada,
               horaSalida: asis?.horaSalida,
+              observaciones: asis?.observaciones,
               cargando: false
             } as NinioConEstado;
           });
@@ -252,13 +341,26 @@ export class AsistenciaComponent implements OnInit {
     return this.gruposConNinios.find(g => g.nombre === this.grupoSeleccionado);
   }
 
-  marcarPresente(ninio: NinioConEstado): void {
+  abrirFormPresente(ninio: NinioConEstado): void {
+    this.ninioConObsAbierta = ninio.id;
+    this.horaEntradaNinioInput = this.horaActual();
+    this.observacionesEntradaNinioInput = '';
+  }
+
+  cancelarFormPresente(): void {
+    this.ninioConObsAbierta = null;
+    this.horaEntradaNinioInput = '';
+    this.observacionesEntradaNinioInput = '';
+  }
+
+  confirmarPresente(ninio: NinioConEstado): void {
     if (ninio.presente || ninio.cargando) return;
     ninio.cargando = true;
     this.asistenciaService.marcarAsistenciaNinio({
       fecha: this.fechaSeleccionada,
-      horaEntrada: this.horaActual(),
-      ninioId: ninio.id
+      horaEntrada: this.horaEntradaNinioInput || this.horaActual(),
+      ninioId: ninio.id,
+      observaciones: this.observacionesEntradaNinioInput || undefined
     }).pipe(finalize(() => ninio.cargando = false))
       .subscribe({
         next: r => {
@@ -266,32 +368,45 @@ export class AsistenciaComponent implements OnInit {
           ninio.asistenciaId = r.id;
           ninio.horaEntrada = r.horaEntrada;
           ninio.horaSalida = r.horaSalida;
+          ninio.observaciones = r.observaciones;
+          this.ninioConObsAbierta = null;
+          this.observacionesEntradaNinioInput = '';
           this.toast.show(`Asistencia de ${ninio.nombre} registrada`, 'success');
         },
         error: e => this.toast.show(e.error?.message || 'Error al marcar asistencia', 'error')
       });
   }
 
+  marcarPresente(ninio: NinioConEstado): void {
+    this.abrirFormPresente(ninio);
+  }
+
   abrirSalidaNinio(ninio: NinioConEstado): void {
     this.ninioConSalidaAbierta = ninio.id;
     this.horaSalidaNinioInput = this.horaActual();
+    this.observacionesSalidaNinioInput = '';
   }
 
   cancelarSalidaNinio(): void {
     this.ninioConSalidaAbierta = null;
     this.horaSalidaNinioInput = '';
+    this.observacionesSalidaNinioInput = '';
   }
 
   registrarSalidaNinio(ninio: NinioConEstado): void {
     if (!ninio.asistenciaId || !this.horaSalidaNinioInput) return;
     ninio.cargando = true;
-    this.asistenciaService.registrarSalidaNinio(ninio.asistenciaId, this.horaSalidaNinioInput)
-      .pipe(finalize(() => ninio.cargando = false))
+    this.asistenciaService.registrarSalidaNinio(ninio.asistenciaId, {
+      horaSalida: this.horaSalidaNinioInput,
+      observaciones: this.observacionesSalidaNinioInput || undefined
+    }).pipe(finalize(() => ninio.cargando = false))
       .subscribe({
         next: r => {
           ninio.horaSalida = r.horaSalida;
+          if (r.observaciones) ninio.observaciones = r.observaciones;
           this.ninioConSalidaAbierta = null;
           this.horaSalidaNinioInput = '';
+          this.observacionesSalidaNinioInput = '';
           this.toast.show(`Salida de ${ninio.nombre} registrada`, 'success');
         },
         error: e => this.toast.show(e.error?.message || 'Error al registrar salida', 'error')

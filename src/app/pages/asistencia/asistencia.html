@@ -244,7 +244,39 @@
                           }
                         </span>
                       }
+                      <!-- Mini frecuencia inline -->
+                      @if (ninioFrecuenciaSeleccionado === ninio.id) {
+                        <div class="ninio-frec-mini">
+                          @if (ninioFrecuenciaCargando) {
+                            <mat-spinner diameter="12"></mat-spinner>
+                            <span class="nfm-label">Cargando...</span>
+                          }
+                          @if (!ninioFrecuenciaCargando && ninioFrecuenciaData) {
+                            <div class="nfm-barra-wrap">
+                              <div class="nfm-barra-fill"
+                                   [style.width.%]="ninioFrecuenciaData.porcentajeAsistencia"></div>
+                            </div>
+                            <div class="nfm-row">
+                              <span class="nfm-chip verde">
+                                ✓ {{ ninioFrecuenciaData.diasPresente }}d ({{ ninioFrecuenciaData.porcentajeAsistencia }}%)
+                              </span>
+                              <span class="nfm-chip rojo">
+                                ✕ {{ ninioFrecuenciaData.diasAusente }}d
+                              </span>
+                              <span class="nfm-periodo">30 días</span>
+                            </div>
+                          }
+                          @if (!ninioFrecuenciaCargando && ninioFrecuenciaError) {
+                            <span class="nfm-label">Sin registros</span>
+                          }
+                        </div>
+                      }
                     </div>
+                    <button mat-icon-button class="btn-frec-ninio"
+                            [matTooltip]="ninioFrecuenciaSeleccionado === ninio.id ? 'Ocultar frecuencia' : 'Ver frecuencia (últimos 30 días)'"
+                            (click)="toggleFrecuenciaNinio(ninio)">
+                      <mat-icon style="font-size:16px;color:#16A34A">bar_chart</mat-icon>
+                    </button>
                   </div>
 
                   <div class="ninio-actions">
@@ -482,6 +514,57 @@
                 <span class="grupo-badge">{{ historialRegistros[0].grupoNombre }}</span>
               }
               <span class="total-badge">{{ historialRegistros.length }} registros</span>
+            </div>
+
+            <!-- Panel de frecuencia de asistencia -->
+            <div class="historial-frecuencia-panel">
+              <div class="hfp-header">
+                <mat-icon class="hfp-icon">bar_chart</mat-icon>
+                <span class="hfp-title">Frecuencia de asistencia</span>
+                <div class="hfp-rango">
+                  <input type="date" [(ngModel)]="historialFrecuenciaDesde" [max]="hoy" class="hfp-date-input"
+                         (change)="actualizarFrecuenciaHistorial()">
+                  <span class="hfp-sep">—</span>
+                  <input type="date" [(ngModel)]="historialFrecuenciaHasta" [max]="hoy" class="hfp-date-input"
+                         (change)="actualizarFrecuenciaHistorial()">
+                </div>
+              </div>
+
+              @if (historialFrecuenciaCargando) {
+                <div class="hfp-loading">
+                  <mat-spinner diameter="20"></mat-spinner>
+                  <span>Calculando frecuencia...</span>
+                </div>
+              }
+
+              @if (!historialFrecuenciaCargando && historialFrecuencia) {
+                <div class="hfp-stats">
+                  <div class="hfp-stat presente">
+                    <span class="hfp-num">{{ historialFrecuencia.diasPresente }}</span>
+                    <span class="hfp-label">días asistió</span>
+                    <span class="hfp-pct">{{ historialFrecuencia.porcentajeAsistencia }}%</span>
+                  </div>
+                  <div class="hfp-stat ausente">
+                    <span class="hfp-num">{{ historialFrecuencia.diasAusente }}</span>
+                    <span class="hfp-label">días faltó</span>
+                    <span class="hfp-pct">{{ historialFrecuencia.porcentajeInasistencia }}%</span>
+                  </div>
+                  <div class="hfp-stat total">
+                    <span class="hfp-num">{{ historialFrecuencia.totalDiasHabiles }}</span>
+                    <span class="hfp-label">días hábiles</span>
+                  </div>
+                </div>
+                <div class="hfp-barra-wrap">
+                  <div class="hfp-barra-presente"
+                       [style.width.%]="historialFrecuencia.porcentajeAsistencia"
+                       [matTooltip]="historialFrecuencia.porcentajeAsistencia + '% asistencia'">
+                  </div>
+                </div>
+                <p class="hfp-resumen">
+                  <mat-icon style="font-size:13px;vertical-align:middle">schedule</mat-icon>
+                  Concurrió <strong>{{ historialFrecuencia.diasPresente }} de {{ historialFrecuencia.totalDiasHabiles }}</strong> días hábiles en el período seleccionado.
+                </p>
+              }
             </div>
 
             <div class="historial-table-wrapper">

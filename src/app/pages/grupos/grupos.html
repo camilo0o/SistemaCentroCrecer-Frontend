@@ -57,6 +57,16 @@
         </button>
       }
     </mat-form-field>
+
+    @if(vista === 'ninios'){
+      <button mat-stroked-button (click)="toggleOrden()"
+              [matTooltip]="ordenAsc === null ? 'Ordenar A→Z' : ordenAsc ? 'Ordenar Z→A' : 'Quitar orden'"
+              style="height:56px;min-width:44px;padding:0 12px;flex-shrink:0">
+        <mat-icon style="margin-right:4px">sort_by_alpha</mat-icon>
+        @if(ordenAsc === true)  { <span style="font-size:12px;font-weight:600">A→Z</span> }
+        @if(ordenAsc === false) { <span style="font-size:12px;font-weight:600">Z→A</span> }
+      </button>
+    }
   </div>
 
   @if(vista === 'grupos'){
@@ -97,12 +107,18 @@
 
             <div class="grupos-grid">
               @for(grupo of gruposPorRango(rango.valor); track grupo.id){
-                <mat-card class="grupo-card">
+                <mat-card class="grupo-card" [class.grupo-sin-personal]="(grupo.funcionarios?.length ?? 0) === 0">
 
                   <div class="gc-header" [style.border-top]="'4px solid ' + rango.color">
                     <div class="gc-title-row">
                       <span class="gc-nombre">{{ grupo.nombre }}</span>
                       <div class="gc-actions">
+                        @if((grupo.funcionarios?.length ?? 0) === 0){
+                          <span class="badge-sin-personal" matTooltip="Este grupo no tiene personal asignado">
+                            <mat-icon style="font-size:14px;width:14px;height:14px">warning_amber</mat-icon>
+                            Sin personal
+                          </span>
+                        }
                         <button mat-icon-button matTooltip="Editar grupo" (click)="abrirEditar(grupo)">
                           <mat-icon style="font-size:18px">edit</mat-icon>
                         </button>
@@ -216,11 +232,17 @@
             </div>
             <div class="grupos-grid">
               @for(grupo of gruposSinRango(); track grupo.id){
-                <mat-card class="grupo-card">
+                <mat-card class="grupo-card" [class.grupo-sin-personal]="(grupo.funcionarios?.length ?? 0) === 0">
                   <div class="gc-header" style="border-top:4px solid #9AA0B9">
                     <div class="gc-title-row">
                       <span class="gc-nombre">{{ grupo.nombre }}</span>
                       <div class="gc-actions">
+                        @if((grupo.funcionarios?.length ?? 0) === 0){
+                          <span class="badge-sin-personal" matTooltip="Este grupo no tiene personal asignado">
+                            <mat-icon style="font-size:14px;width:14px;height:14px">warning_amber</mat-icon>
+                            Sin personal
+                          </span>
+                        }
                         <button mat-icon-button matTooltip="Editar" (click)="abrirEditar(grupo)">
                           <mat-icon style="font-size:18px">edit</mat-icon>
                         </button>
@@ -406,11 +428,17 @@
                 }
               </div>
 
-              <!-- Botón más información -->
-              <div class="card-actions" style="margin-top:12px;padding-top:12px;border-top:1px solid #F0F2F7">
+              <!-- Botón más información y frecuencia -->
+              <div class="card-actions" style="margin-top:12px;padding-top:12px;border-top:1px solid #F0F2F7;display:flex;gap:8px;flex-wrap:wrap">
                 <button mat-stroked-button class="btn-mas-info" (click)="abrirDetalleNinio(ninio)">
                   <mat-icon>info_outline</mat-icon>
                   Más información
+                </button>
+                <button mat-stroked-button
+                        (click)="toggleFrecuenciaNinioCard(ninio)"
+                        style="border-color:#16A34A;color:#16A34A">
+                  <mat-icon>bar_chart</mat-icon>
+                  Ver frecuencia
                 </button>
               </div>
 

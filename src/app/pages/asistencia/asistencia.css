@@ -817,3 +817,139 @@
 .sin-salida { color: #9AA0B9; }
 .td-func { color: #5C6680; font-size: 12px; }
 .td-obs  { color: #6B7280; font-style: italic; max-width: 200px; }
+/* ── Panel de frecuencia dentro del modal de historial ─────────────────── */
+.historial-frecuencia-panel {
+  background: #F8FAFF;
+  border: 1px solid #DBEAFE;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.hfp-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.hfp-icon { color: #1565C0; font-size: 18px; }
+.hfp-title { font-weight: 600; font-size: 13px; color: #1565C0; flex: 1; }
+.hfp-rango {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.hfp-date-input {
+  border: 1px solid #CBD5E1;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: #1A1F36;
+  background: #fff;
+  outline: none;
+}
+.hfp-date-input:focus { border-color: #1565C0; }
+.hfp-sep { color: #9AA0B9; font-size: 12px; }
+.hfp-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #6B7280;
+  padding: 4px 0;
+}
+.hfp-stats {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.hfp-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 8px;
+  min-width: 80px;
+  flex: 1;
+}
+.hfp-stat.presente { background: #DCFCE7; }
+.hfp-stat.ausente  { background: #FEE2E2; }
+.hfp-stat.total    { background: #EFF6FF; }
+.hfp-num  { font-size: 22px; font-weight: 700; line-height: 1; }
+.hfp-stat.presente .hfp-num { color: #15803D; }
+.hfp-stat.ausente  .hfp-num { color: #B91C1C; }
+.hfp-stat.total    .hfp-num { color: #1D4ED8; }
+.hfp-label { font-size: 11px; color: #6B7280; margin-top: 2px; }
+.hfp-pct   { font-size: 12px; font-weight: 600; margin-top: 1px; }
+.hfp-stat.presente .hfp-pct { color: #15803D; }
+.hfp-stat.ausente  .hfp-pct { color: #B91C1C; }
+.hfp-barra-wrap {
+  height: 8px;
+  background: #FEE2E2;
+  border-radius: 99px;
+  overflow: hidden;
+}
+.hfp-barra-presente {
+  height: 100%;
+  background: linear-gradient(90deg, #22C55E, #16A34A);
+  border-radius: 99px;
+  transition: width .4s ease;
+  min-width: 2px;
+}
+.hfp-resumen {
+  font-size: 12px;
+  color: #6B7280;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── Frecuencia mini inline en card de niño ────────────────────────────── */
+.btn-frec-ninio {
+  flex-shrink: 0;
+  width: 28px !important;
+  height: 28px !important;
+  line-height: 28px !important;
+}
+.ninio-frec-mini {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 5px;
+  padding: 6px 8px;
+  background: #F0FFF4;
+  border-radius: 6px;
+  border: 1px solid #BBF7D0;
+}
+.nfm-barra-wrap {
+  height: 5px;
+  background: #FEE2E2;
+  border-radius: 99px;
+  overflow: hidden;
+}
+.nfm-barra-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22C55E, #16A34A);
+  border-radius: 99px;
+  min-width: 2px;
+  transition: width .3s ease;
+}
+.nfm-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.nfm-chip {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 99px;
+}
+.nfm-chip.verde  { background: #DCFCE7; color: #15803D; }
+.nfm-chip.rojo   { background: #FEE2E2; color: #B91C1C; }
+.nfm-periodo     { font-size: 10px; color: #9AA0B9; margin-left: auto; }
+.nfm-label       { font-size: 11px; color: #9AA0B9; }

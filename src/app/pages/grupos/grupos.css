@@ -598,3 +598,99 @@ mat-paginator {
   min-width: 120px;
   text-align: center;
 }
+/* ── Panel frecuencia en card de niño (vista niños) ─────────────────────── */
+.frec-card-panel {
+  margin: 10px 16px 0;
+  background: #F0FFF4;
+  border: 1px solid #BBF7D0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.frec-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.frec-date-input {
+  border: 1px solid #CBD5E1;
+  border-radius: 6px;
+  padding: 3px 7px;
+  font-size: 12px;
+  color: #1A1F36;
+  background: #fff;
+  outline: none;
+}
+.frec-date-input:focus { border-color: #16A34A; }
+.frec-card-btn {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #16A34A;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
+.frec-card-btn:disabled { opacity: .6; cursor: default; }
+.frec-card-stats {
+  display: flex;
+  gap: 8px;
+}
+.frec-card-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 8px;
+  flex: 1;
+  min-width: 60px;
+}
+.frec-card-stat.presente { background: #DCFCE7; }
+.frec-card-stat.ausente  { background: #FEE2E2; }
+.frec-card-stat.total    { background: #EFF6FF; }
+.frec-card-num { font-size: 22px; font-weight: 700; line-height: 1; }
+.frec-card-stat.presente .frec-card-num { color: #15803D; }
+.frec-card-stat.ausente  .frec-card-num { color: #B91C1C; }
+.frec-card-stat.total    .frec-card-num { color: #1D4ED8; }
+.frec-card-lbl { font-size: 11px; color: #6B7280; margin-top: 2px; }
+.frec-card-pct { font-size: 11px; font-weight: 600; margin-top: 1px; }
+.frec-card-stat.presente .frec-card-pct { color: #15803D; }
+.frec-card-stat.ausente  .frec-card-pct { color: #B91C1C; }
+.frec-card-barra-wrap {
+  height: 7px;
+  background: #FEE2E2;
+  border-radius: 99px;
+  overflow: hidden;
+}
+.frec-card-barra-presente {
+  height: 100%;
+  background: linear-gradient(90deg, #22C55E, #16A34A);
+  border-radius: 99px;
+  transition: width .4s ease;
+  min-width: 2px;
+}
+.frec-card-resumen {
+  font-size: 12px;
+  color: #6B7280;
+  margin: 0;
+}
+/* ── Alerta: grupo sin personal ── */
+.badge-sin-personal {
+  display: inline-flex; align-items: center; gap: 3px;
+  background: #FFF3E0; color: #E65100;
+  border: 1px solid #FFCC80; border-radius: 12px;
+  padding: 2px 8px; font-size: 11px; font-weight: 700;
+  white-space: nowrap;
+}
+.grupo-sin-personal {
+  border: 1.5px solid #FFE082 !important;
+  box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.12) !important;
+}
+.grupo-sin-personal .gc-header {
+  background: linear-gradient(180deg, #FFFDE7 0%, transparent 100%);
+}

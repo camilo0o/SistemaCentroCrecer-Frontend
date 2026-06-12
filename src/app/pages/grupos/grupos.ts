@@ -18,11 +18,12 @@ import { MatDividerModule } from '@angular/material/divider';
 import { Router } from '@angular/router';
 import { GrupoService } from '../../services/grupo.service';
 import { NinioService } from '../../services/ninio.service';
+import { AsistenciaService } from '../../services/asistencia.service';
 import { environment } from '../../../environments/environment';
 import { FuncionarioService } from '../../services/funcionario.service';
 import { ToastService } from '../../services/toast.service';
-import { CondicionMedicaResponse, GrupoResponse, GrupoRequest, NinioResponse, FuncionarioResponse, ROL_DISPLAY } from '../../models/models';
-import { NinioCrearDialogComponent, NinioEditarDialogComponent, NinioDetalleDialogComponent } from '../ninios/ninios';
+import { CondicionMedicaResponse, GrupoResponse, GrupoRequest, NinioResponse, FuncionarioResponse, ROL_DISPLAY, FrecuenciaAsistenciaResponse } from '../../models/models';
+import { NinioCrearDialogComponent, NinioEditarDialogComponent, NinioDetalleDialogComponent, NinioFrecuenciaDialogComponent } from '../ninios/ninios';
 import { finalize } from 'rxjs/operators';
 import { forkJoin } from 'rxjs';
 
@@ -35,7 +36,8 @@ type VistaGestion = 'grupos' | 'ninios';
   imports: [
     CommonModule, FormsModule,
     MatButtonModule, MatIconModule, MatDialogModule,
-    MatFormFieldModule, MatInputModule, MatChipsModule, MatTooltipModule
+    MatFormFieldModule, MatInputModule, MatChipsModule, MatTooltipModule,
+    MatProgressSpinnerModule
   ],
   styles: [`
     .dialog-header {
@@ -73,6 +75,47 @@ type VistaGestion = 'grupos' | 'ninios';
     .empty-ninios { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 32px 0; color: #9ca3af; }
     .footer { display: flex; justify-content: flex-end; padding: 12px 24px; border-top: 1px solid #f0f2f7; }
     .count-badge { background: #e3f2fd; color: #1565C0; font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 12px; margin-left: 8px; }
+    /* Frecuencia panel */
+    .frec-panel {
+      margin: 0 24px 8px; background: #F8FAFF;
+      border: 1px solid #DBEAFE; border-radius: 10px;
+      padding: 12px 14px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .frec-panel-header { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .frec-panel-title { font-weight: 600; font-size: 13px; color: #1565C0; flex: 1; }
+    .frec-rango { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+    .frec-date-input {
+      border: 1px solid #CBD5E1; border-radius: 6px;
+      padding: 3px 7px; font-size: 12px; color: #1A1F36;
+      background: #fff; outline: none;
+    }
+    .frec-date-input:focus { border-color: #1565C0; }
+    .frec-sep { color: #9AA0B9; font-size: 12px; }
+    .frec-btn {
+      font-size: 12px; padding: 4px 10px; border-radius: 6px;
+      background: #1565C0; color: #fff; border: none; cursor: pointer;
+      display: flex; align-items: center; gap: 4px; line-height: 1.5;
+    }
+    .frec-btn:disabled { opacity: .6; cursor: default; }
+    .frec-loading { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #6b7280; }
+    .frec-ninio-name { font-size: 13px; font-weight: 600; color: #1a1a2e; }
+    .frec-stats { display: flex; gap: 8px; flex-wrap: wrap; }
+    .frec-stat { display: flex; flex-direction: column; align-items: center; padding: 6px 12px; border-radius: 8px; flex: 1; min-width: 70px; }
+    .frec-stat.presente { background: #DCFCE7; }
+    .frec-stat.ausente  { background: #FEE2E2; }
+    .frec-stat.total    { background: #EFF6FF; }
+    .frec-num { font-size: 20px; font-weight: 700; line-height: 1; }
+    .frec-stat.presente .frec-num { color: #15803D; }
+    .frec-stat.ausente  .frec-num { color: #B91C1C; }
+    .frec-stat.total    .frec-num { color: #1D4ED8; }
+    .frec-lbl { font-size: 11px; color: #6B7280; margin-top: 2px; }
+    .frec-pct { font-size: 11px; font-weight: 600; margin-top: 1px; }
+    .frec-stat.presente .frec-pct { color: #15803D; }
+    .frec-stat.ausente  .frec-pct { color: #B91C1C; }
+    .frec-barra-wrap { height: 7px; background: #FEE2E2; border-radius: 99px; overflow: hidden; }
+    .frec-barra-presente { height: 100%; background: linear-gradient(90deg, #22C55E, #16A34A); border-radius: 99px; transition: width .4s ease; min-width: 2px; }
+    .frec-resumen { font-size: 12px; color: #6B7280; margin: 0; }
+    .frec-error { font-size: 12px; color: #B91C1C; margin: 0; }
   `],
   template: `
     <div class="dialog-header">
@@ -83,7 +126,7 @@ type VistaGestion = 'grupos' | 'ninios';
         </h2>
         <p class="dialog-subtitle">{{ data.rangoLabel }}</p>
       </div>
-      <button mat-icon-button (click)="ref.close()"><mat-icon>close</mat-icon></button>
+      <button mat-icon-button (click)="cerrar()"><mat-icon>close</mat-icon></button>
     </div>
 
     <div class="search-wrap">
@@ -110,6 +153,10 @@ type VistaGestion = 'grupos' | 'ninios';
           <span class="ninio-status" [class.activo]="ninio.activo" [class.inactivo]="!ninio.activo">
             {{ ninio.activo ? 'Activo' : 'Inactivo' }}
           </span>
+          <button mat-icon-button matTooltip="Ver frecuencia de asistencia"
+                  (click)="toggleFrecuencia(ninio)">
+            <mat-icon style="font-size:18px;color:#16A34A">bar_chart</mat-icon>
+          </button>
           <button mat-icon-button matTooltip="Ver detalle" (click)="verDetalle(ninio)">
             <mat-icon style="font-size:18px;color:#1565C0">info_outline</mat-icon>
           </button>
@@ -117,14 +164,86 @@ type VistaGestion = 'grupos' | 'ninios';
       }
     </div>
 
+    <!-- Panel de frecuencia del niño seleccionado -->
+    @if(ninioFrecuenciaActivo){
+      <div class="frec-panel">
+        <div class="frec-panel-header">
+          <mat-icon style="font-size:16px;color:#16A34A">bar_chart</mat-icon>
+          <span class="frec-panel-title">
+            Frecuencia — {{ ninioFrecuenciaActivo.nombre }} {{ ninioFrecuenciaActivo.apellido }}
+          </span>
+          <div class="frec-rango">
+            <input type="date" class="frec-date-input" [(ngModel)]="frecDesde" [max]="hoy">
+            <span class="frec-sep">—</span>
+            <input type="date" class="frec-date-input" [(ngModel)]="frecHasta" [max]="hoy">
+            <button class="frec-btn" (click)="consultarFrecuencia()" [disabled]="frecCargando">
+              <mat-icon style="font-size:14px">search</mat-icon>
+              Consultar
+            </button>
+          </div>
+          <button mat-icon-button (click)="cerrarFrecuencia()">
+            <mat-icon style="font-size:16px">close</mat-icon>
+          </button>
+        </div>
+
+        @if(frecCargando){
+          <div class="frec-loading">
+            <mat-spinner diameter="16"></mat-spinner>
+            <span>Calculando frecuencia...</span>
+          </div>
+        }
+
+        @if(frecError){
+          <p class="frec-error">{{ frecError }}</p>
+        }
+
+        @if(!frecCargando && frecResultado){
+          <div class="frec-stats">
+            <div class="frec-stat presente">
+              <span class="frec-num">{{ frecResultado.diasPresente }}</span>
+              <span class="frec-lbl">días asistió</span>
+              <span class="frec-pct">{{ frecResultado.porcentajeAsistencia }}%</span>
+            </div>
+            <div class="frec-stat ausente">
+              <span class="frec-num">{{ frecResultado.diasAusente }}</span>
+              <span class="frec-lbl">días faltó</span>
+              <span class="frec-pct">{{ frecResultado.porcentajeInasistencia }}%</span>
+            </div>
+            <div class="frec-stat total">
+              <span class="frec-num">{{ frecResultado.totalDiasHabiles }}</span>
+              <span class="frec-lbl">días hábiles</span>
+            </div>
+          </div>
+          <div class="frec-barra-wrap">
+            <div class="frec-barra-presente"
+                 [style.width.%]="frecResultado.porcentajeAsistencia"
+                 [matTooltip]="frecResultado.porcentajeAsistencia + '% asistencia'">
+            </div>
+          </div>
+          <p class="frec-resumen">
+            Concurrió <strong>{{ frecResultado.diasPresente }} de {{ frecResultado.totalDiasHabiles }}</strong> días hábiles en el período.
+          </p>
+        }
+      </div>
+    }
+
     <div class="footer">
-      <button mat-flat-button style="background:#1565C0;color:white" (click)="ref.close()">Cerrar</button>
+      <button mat-flat-button style="background:#1565C0;color:white" (click)="cerrar()">Cerrar</button>
     </div>
   `
 })
 export class NiniosGrupoDialogComponent {
   busqueda = '';
   filtrados: NinioResponse[];
+
+  // Frecuencia por niño
+  ninioFrecuenciaActivo: NinioResponse | null = null;
+  frecDesde: string = '';
+  frecHasta: string = '';
+  frecCargando = false;
+  frecResultado: FrecuenciaAsistenciaResponse | null = null;
+  frecError = '';
+  hoy: string = new Date().toISOString().split('T')[0];
 
   constructor(
     public ref: MatDialogRef<NiniosGrupoDialogComponent>,
@@ -134,9 +253,16 @@ export class NiniosGrupoDialogComponent {
       bg: string;
       rangoLabel: string;
     },
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private asistenciaService: AsistenciaService
   ) {
     this.filtrados = [...(data.grupo.ninios ?? [])];
+    // Rango por defecto: últimos 30 días
+    const hasta = new Date();
+    const desde = new Date();
+    desde.setDate(desde.getDate() - 30);
+    this.frecHasta = hasta.toISOString().split('T')[0];
+    this.frecDesde = desde.toISOString().split('T')[0];
   }
 
   filtrar() {
@@ -152,6 +278,43 @@ export class NiniosGrupoDialogComponent {
     return new Date(f + 'T00:00:00').toLocaleDateString('es-UY', { day: '2-digit', month: '2-digit', year: 'numeric' });
   }
 
+  toggleFrecuencia(ninio: NinioResponse) {
+    if (this.ninioFrecuenciaActivo?.id === ninio.id) {
+      this.cerrarFrecuencia();
+      return;
+    }
+    this.ninioFrecuenciaActivo = ninio;
+    this.frecResultado = null;
+    this.frecError = '';
+    this.consultarFrecuencia();
+  }
+
+  cerrarFrecuencia() {
+    this.ninioFrecuenciaActivo = null;
+    this.frecResultado = null;
+    this.frecError = '';
+  }
+
+  consultarFrecuencia() {
+    if (!this.ninioFrecuenciaActivo || !this.frecDesde || !this.frecHasta) return;
+    this.frecCargando = true;
+    this.frecResultado = null;
+    this.frecError = '';
+    this.asistenciaService.frecuenciaPorCedula(
+      this.ninioFrecuenciaActivo.cedula,
+      this.frecDesde,
+      this.frecHasta
+    ).pipe(finalize(() => this.frecCargando = false))
+      .subscribe({
+        next: r => this.frecResultado = r,
+        error: e => this.frecError = e.error?.message || 'No se pudo obtener la frecuencia.'
+      });
+  }
+
+  cerrar() {
+    this.ref.close();
+  }
+
   verDetalle(ninio: NinioResponse) {
     const detalleRef = this.dialog.open(NinioDetalleDialogComponent, {
       data: { ninio },
@@ -162,7 +325,6 @@ export class NiniosGrupoDialogComponent {
     });
     detalleRef.afterClosed().subscribe(accion => {
       if (accion === 'editar' || accion === 'baja') {
-        // Cerramos este dialog y propagamos la acción al padre
         this.ref.close({ accion, ninio });
       }
     });
@@ -403,7 +565,13 @@ export class FuncionariosGrupoDialogComponent {
                 }
               </div>
             } @else {
-              <p class="empty-sel">Sin funcionarios seleccionados</p>
+              <div style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;
+                          background:#FFF8E1;border:1px solid #FFE082;border-radius:8px;margin-top:4px">
+                <mat-icon style="color:#F9A825;font-size:18px;width:18px;height:18px;flex-shrink:0;margin-top:1px">warning_amber</mat-icon>
+                <span style="font-size:13px;color:#5C4A00;line-height:1.4">
+                  Sin personal asignado. Se recomienda asignar al menos un funcionario responsable.
+                </span>
+              </div>
             }
           </div>
 
@@ -490,6 +658,16 @@ export class GrupoDialogComponent implements OnInit {
 
   guardar() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+
+    if (this.funcionariosSeleccionados.length === 0) {
+      const confirmar = confirm(
+        '⚠️ Este grupo no tiene personal asignado.\n\n' +
+        'Un grupo sin funcionarios responsables no podrá operar correctamente.\n\n' +
+        '¿Desea guardar igual?'
+      );
+      if (!confirmar) return;
+    }
+
     this.guardando = true;
 
     const payload: GrupoRequest = {
@@ -522,7 +700,8 @@ export class GrupoDialogComponent implements OnInit {
     MatCardModule, MatButtonModule, MatIconModule, MatChipsModule,
     MatProgressSpinnerModule, MatTooltipModule, MatExpansionModule,
     MatBadgeModule, MatDividerModule, MatDialogModule,
-    MatFormFieldModule, MatInputModule, MatSelectModule, MatPaginatorModule
+    MatFormFieldModule, MatInputModule, MatSelectModule, MatPaginatorModule,
+    NinioFrecuenciaDialogComponent
   ],
   templateUrl: './grupos.html',
   styleUrl: './grupos.css'
@@ -536,6 +715,7 @@ export class GruposComponent implements OnInit {
   cargandoGrupos = true;
   cargandoNinios = true;
   busqueda = '';
+  ordenAsc: boolean | null = null; // null = sin orden, true = A→Z, false = Z→A
 
   // Paginación de niños
   @ViewChild('fotoInputGrupos') fotoInputGrupos!: ElementRef<HTMLInputElement>;
@@ -560,9 +740,12 @@ export class GruposComponent implements OnInit {
   /** Cuántos funcionarios mostrar en la preview de la card antes del botón "+" */
   readonly PREVIEW_FUNCIONARIOS = 2;
 
+  hoy: string = new Date().toISOString().split('T')[0];
+
   constructor(
     private grupoService: GrupoService,
     private ninioService: NinioService,
+    private asistenciaService: AsistenciaService,
     private dialog: MatDialog,
     private toast: ToastService,
     private cdr: ChangeDetectorRef,
@@ -579,6 +762,7 @@ export class GruposComponent implements OnInit {
   cambiarVista(vista: VistaGestion) {
     this.vista = vista;
     this.busqueda = '';
+    this.ordenAsc = null;
     this.pageIndexNinios = 0;
     this.aplicarFiltrosNinios();
   }
@@ -607,6 +791,13 @@ export class GruposComponent implements OnInit {
     if (this.vista === 'ninios') this.aplicarFiltrosNinios();
   }
 
+  toggleOrden() {
+    if (this.ordenAsc === null) this.ordenAsc = true;
+    else if (this.ordenAsc === true) this.ordenAsc = false;
+    else this.ordenAsc = null;
+    this.aplicarFiltrosNinios();
+  }
+
   aplicarFiltrosNinios() {
     const texto = this.busqueda.trim().toLowerCase();
     this.niniosFiltrados = this.ninios.filter(n => {
@@ -621,6 +812,15 @@ export class GruposComponent implements OnInit {
       ].join(' ').toLowerCase();
       return target.includes(texto);
     });
+    if (this.ordenAsc !== null) {
+      const dir = this.ordenAsc ? 1 : -1;
+      this.niniosFiltrados.sort((a, b) => {
+        const ap = (a.apellido ?? '').toLowerCase();
+        const bp = (b.apellido ?? '').toLowerCase();
+        if (ap !== bp) return ap.localeCompare(bp, 'es') * dir;
+        return (a.nombre ?? '').toLowerCase().localeCompare((b.nombre ?? '').toLowerCase(), 'es') * dir;
+      });
+    }
     this.pageIndexNinios = 0;
     this.actualizarPaginadosNinios();
     this.cdr.markForCheck();
@@ -854,6 +1054,16 @@ export class GruposComponent implements OnInit {
         .then(r => r.json())
         .then(data => { if (data.secure_url) resolve(data.secure_url); else reject(); })
         .catch(reject);
+    });
+  }
+
+  toggleFrecuenciaNinioCard(ninio: NinioResponse) {
+    this.dialog.open(NinioFrecuenciaDialogComponent, {
+      data: { ninio },
+      width: '540px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: false
     });
   }
 

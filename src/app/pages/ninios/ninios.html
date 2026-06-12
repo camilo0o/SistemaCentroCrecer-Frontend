@@ -37,6 +37,14 @@
         </button>
       }
     </mat-form-field>
+
+    <button mat-stroked-button (click)="toggleOrden()"
+            [matTooltip]="ordenAsc === null ? 'Ordenar A→Z' : ordenAsc ? 'Ordenar Z→A' : 'Quitar orden'"
+            style="height:56px;min-width:44px;padding:0 12px;flex-shrink:0">
+      <mat-icon style="margin-right:4px">sort_by_alpha</mat-icon>
+      @if(ordenAsc === true)  { <span style="font-size:12px;font-weight:600">A→Z</span> }
+      @if(ordenAsc === false) { <span style="font-size:12px;font-weight:600">Z→A</span> }
+    </button>
   </div>
 
   <!-- Loading -->
@@ -179,6 +187,10 @@
             <button mat-stroked-button class="btn-mas-info" (click)="abrirDetalle(ninio)">
               <mat-icon>info_outline</mat-icon>
               Más información
+            </button>
+            <button mat-stroked-button class="btn-frecuencia" (click)="abrirFrecuencia(ninio)">
+              <mat-icon>bar_chart</mat-icon>
+              Ver frecuencia
             </button>
             @if(ninio.activo){
               <div style="display:flex;gap:4px">

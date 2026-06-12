@@ -68,4 +68,11 @@ export class AsistenciaService {
     const params = new HttpParams().set('desde', desde).set('hasta', hasta);
     return this.http.get<FrecuenciaAsistenciaResponse>(`${this.apiUrl}/frecuencia/${cedula}`, { params });
   }
+
+  // ── Admin: consulta global de asistencia del personal ────────────────────
+
+  listarAsistenciasFuncionariosPorRango(desde: string, hasta: string): Observable<AsistenciaResponse[]> {
+    const params = new HttpParams().set('desde', desde).set('hasta', hasta);
+    return this.http.get<AsistenciaResponse[]>(`${this.apiUrl}/funcionarios/rango`, { params });
+  }
 }

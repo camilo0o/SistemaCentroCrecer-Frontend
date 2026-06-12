@@ -77,8 +77,8 @@
 
 /* ── Pie de card ── */
 .card-actions {
-  display: flex; justify-content: space-between; align-items: center;
-  padding-top: 12px; margin-top: auto; border-top: 1px solid #F0F2F7;
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+  gap: 8px; padding-top: 12px; margin-top: auto; border-top: 1px solid #F0F2F7;
 }
 .btn-mas-info {
   font-size: 13px; font-weight: 600; color: #1565C0;
@@ -87,6 +87,14 @@
 }
 .btn-mas-info mat-icon { font-size: 16px; width: 16px; height: 16px; }
 .btn-mas-info:hover { background: #E3F2FD; }
+
+.btn-frecuencia {
+  font-size: 13px; font-weight: 600; color: #2E7D32;
+  border-color: #2E7D32; border-radius: 8px; height: 34px;
+  display: flex; align-items: center; gap: 4px;
+}
+.btn-frecuencia mat-icon { font-size: 16px; width: 16px; height: 16px; }
+.btn-frecuencia:hover { background: #E8F5E9; }
 
 /* ── Botón nuevo ── */
 .btn-nuevo {

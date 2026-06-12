@@ -98,6 +98,12 @@ export class AsistenciaComponent implements OnInit {
   historialRegistros: AsistenciaResponse[] = [];
   historialError: string = '';
 
+  // Frecuencia rápida dentro del modal de historial
+  historialFrecuencia: FrecuenciaAsistenciaResponse | null = null;
+  historialFrecuenciaDesde: string = '';
+  historialFrecuenciaHasta: string = '';
+  historialFrecuenciaCargando = false;
+
   // Frecuencia (RF31/RF32)
   frecuenciaCedula: string = '';
   frecuenciaDesde: string = '';
@@ -110,6 +116,7 @@ export class AsistenciaComponent implements OnInit {
     this.historialCedula = '';
     this.historialRegistros = [];
     this.historialError = '';
+    this.historialFrecuencia = null;
     this.modalHistorialVisible = true;
   }
 
@@ -123,15 +130,47 @@ export class AsistenciaComponent implements OnInit {
     this.historialError = '';
     this.historialCargando = true;
     this.historialRegistros = [];
+    this.historialFrecuencia = null;
+
+    // Rango: últimos 90 días
+    const hasta = new Date();
+    const desde = new Date();
+    desde.setDate(desde.getDate() - 90);
+    this.historialFrecuenciaHasta = hasta.toISOString().split('T')[0];
+    this.historialFrecuenciaDesde = desde.toISOString().split('T')[0];
+
     this.asistenciaService.historialPorCedula(ced)
       .pipe(finalize(() => this.historialCargando = false))
       .subscribe({
         next: r => {
           this.historialRegistros = r;
-          if (r.length === 0) this.historialError = 'No se encontraron registros para esta cédula.';
+          if (r.length === 0) {
+            this.historialError = 'No se encontraron registros para esta cédula.';
+          } else {
+            this.cargarFrecuenciaHistorial(ced);
+          }
         },
         error: e => this.historialError = e.error?.message || 'Cédula no encontrada.'
       });
+  }
+
+  cargarFrecuenciaHistorial(cedula: string): void {
+    this.historialFrecuenciaCargando = true;
+    this.asistenciaService.frecuenciaPorCedula(
+      cedula,
+      this.historialFrecuenciaDesde,
+      this.historialFrecuenciaHasta
+    ).pipe(finalize(() => this.historialFrecuenciaCargando = false))
+      .subscribe({
+        next: r => this.historialFrecuencia = r,
+        error: () => {} // silencioso, el historial ya se mostró
+      });
+  }
+
+  actualizarFrecuenciaHistorial(): void {
+    const ced = this.historialCedula.trim();
+    if (!ced || !this.historialFrecuenciaDesde || !this.historialFrecuenciaHasta) return;
+    this.cargarFrecuenciaHistorial(ced);
   }
 
   buscarFrecuencia(): void {
@@ -157,6 +196,34 @@ export class AsistenciaComponent implements OnInit {
     this.frecuenciaHasta = '';
     this.frecuenciaResultado = null;
     this.frecuenciaError = '';
+  }
+
+  // ── Frecuencia inline en card de niño ───────────────────────────────────
+  ninioFrecuenciaSeleccionado: number | null = null;
+  ninioFrecuenciaCargando = false;
+  ninioFrecuenciaData: FrecuenciaAsistenciaResponse | null = null;
+  ninioFrecuenciaError = '';
+
+  toggleFrecuenciaNinio(ninio: NinioConEstado): void {
+    if (this.ninioFrecuenciaSeleccionado === ninio.id) {
+      this.ninioFrecuenciaSeleccionado = null;
+      this.ninioFrecuenciaData = null;
+      return;
+    }
+    this.ninioFrecuenciaSeleccionado = ninio.id;
+    this.ninioFrecuenciaData = null;
+    this.ninioFrecuenciaError = '';
+    this.ninioFrecuenciaCargando = true;
+    const hasta = new Date().toISOString().split('T')[0];
+    const desdeDate = new Date();
+    desdeDate.setDate(desdeDate.getDate() - 30);
+    const desde = desdeDate.toISOString().split('T')[0];
+    this.asistenciaService.frecuenciaPorCedula(ninio.cedula, desde, hasta)
+      .pipe(finalize(() => this.ninioFrecuenciaCargando = false))
+      .subscribe({
+        next: r => this.ninioFrecuenciaData = r,
+        error: () => this.ninioFrecuenciaError = 'sin datos'
+      });
   }
 
   // ── Helpers de puntualidad ───────────────────────────────────────────────

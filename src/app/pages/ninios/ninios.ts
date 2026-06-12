@@ -1,5 +1,5 @@
 import { Component, OnInit, Inject, ChangeDetectorRef, ViewChild, ElementRef, NgZone, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DecimalPipe } from '@angular/common';
 import { MatPaginatorModule, MatPaginator, PageEvent } from '@angular/material/paginator';
 import {
   FormsModule, ReactiveFormsModule, FormBuilder, FormGroup,
@@ -23,8 +23,9 @@ import { MatStepperModule } from '@angular/material/stepper';
 import { MatDividerModule } from '@angular/material/divider';
 import { NinioService } from '../../services/ninio.service';
 import { GrupoService } from '../../services/grupo.service';
+import { AsistenciaService } from '../../services/asistencia.service';
 import { ToastService } from '../../services/toast.service';
-import { CondicionMedicaResponse, GrupoResponse, NinioResponse, ResponsableResumen } from '../../models/models';
+import { CondicionMedicaResponse, FrecuenciaAsistenciaResponse, GrupoResponse, NinioResponse, ResponsableResumen } from '../../models/models';
 import { finalize, switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
 
@@ -975,6 +976,257 @@ export class NinioEditarDialogComponent implements OnInit {
   }
 }
 
+// ─── Dialog: Frecuencia de asistencia ───────────────────────────────────────
+@Component({
+  selector: 'app-ninio-frecuencia-dialog',
+  standalone: true,
+  imports: [
+    CommonModule, FormsModule, DecimalPipe,
+    MatButtonModule, MatIconModule, MatDialogModule,
+    MatProgressSpinnerModule, MatDividerModule,
+    MatFormFieldModule, MatInputModule
+  ],
+  styles: [`
+    .dlg-header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      padding: 24px 24px 0;
+    }
+    .header-left { display: flex; gap: 16px; align-items: flex-start; }
+    .avatar {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: linear-gradient(135deg, #1565C0, #42A5F5);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; overflow: hidden;
+    }
+    .avatar mat-icon { color: white; font-size: 24px; width: 24px; height: 24px; }
+    .header-info { display: flex; flex-direction: column; gap: 4px; }
+    .nombre { font-size: 1.1rem; font-weight: 700; color: #1a2340; margin: 0; }
+    .sub { font-size: 0.82rem; color: #5C6680; }
+    .date-row {
+      display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .date-label { font-size: 12px; font-weight: 600; color: #5C6680; white-space: nowrap; }
+    .date-input {
+      border: 1.5px solid #D0D4E3; border-radius: 8px;
+      padding: 6px 10px; font-size: 14px; color: #1a2340;
+      background: #F7F9FF; outline: none; cursor: pointer;
+    }
+    .date-input:focus { border-color: #1565C0; background: white; }
+    .btn-buscar {
+      background: #1565C0; color: white; border: none; border-radius: 8px;
+      padding: 7px 14px; cursor: pointer; display: flex; align-items: center;
+      gap: 6px; font-size: 13px; font-weight: 600;
+    }
+    .btn-buscar:hover { background: #0d47a1; }
+    .btn-buscar:disabled { background: #90A4AE; cursor: not-allowed; }
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+      margin-bottom: 16px;
+    }
+    .stat-card {
+      background: #F7F9FF; border: 1.5px solid #E8EAF0; border-radius: 12px;
+      padding: 14px 12px; text-align: center; display: flex;
+      flex-direction: column; gap: 6px;
+    }
+    .stat-number { font-size: 2rem; font-weight: 800; line-height: 1; }
+    .stat-number.green  { color: #2E7D32; }
+    .stat-number.red    { color: #C62828; }
+    .stat-number.blue   { color: #1565C0; }
+    .stat-label { font-size: 11px; color: #9AA0B9; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-pct {
+      font-size: 12px; font-weight: 700; border-radius: 10px;
+      padding: 2px 8px; display: inline-block;
+    }
+    .pct-green { background: #E8F5E9; color: #2E7D32; }
+    .pct-red   { background: #FFEBEE; color: #C62828; }
+    .pct-blue  { background: #E3F2FD; color: #1565C0; }
+    .bar-track {
+      height: 10px; background: #FFEBEE; border-radius: 6px; overflow: hidden; margin-bottom: 4px;
+    }
+    .bar-fill {
+      height: 100%; background: #2E7D32; border-radius: 6px; transition: width 0.5s ease;
+    }
+    .bar-label {
+      font-size: 11px; color: #5C6680; text-align: right;
+    }
+    .summary-text {
+      background: #F0F4FF; border-left: 3px solid #1565C0;
+      border-radius: 0 8px 8px 0; padding: 10px 14px;
+      font-size: 0.88rem; color: #1a2340; margin-top: 12px;
+    }
+    .loading-wrap {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 12px; padding: 32px 0; color: #9AA0B9;
+    }
+    .empty-wrap {
+      text-align: center; padding: 28px 0; color: #9AA0B9; font-size: 0.88rem;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+    }
+    .empty-wrap mat-icon { font-size: 36px; width: 36px; height: 36px; color: #D0D4E3; }
+    .actions-bar {
+      display: flex; justify-content: flex-end;
+      padding: 14px 24px; border-top: 1px solid #F0F2F7;
+    }
+    .section-sep { border: none; border-top: 1px solid #F0F2F7; margin: 16px 0; }
+  `],
+  template: `
+    <div class="dlg-header">
+      <div class="header-left">
+        <div class="avatar" style="overflow:hidden">
+          @if(data.ninio.fotoUrl){
+            <img [src]="data.ninio.fotoUrl" alt="Foto" style="width:100%;height:100%;object-fit:cover">
+          } @else {
+            <mat-icon>child_care</mat-icon>
+          }
+        </div>
+        <div class="header-info">
+          <p class="nombre">{{ data.ninio.nombre }} {{ data.ninio.apellido }}</p>
+          <span class="sub">
+            <mat-icon style="font-size:13px;width:13px;height:13px;vertical-align:middle">group</mat-icon>
+            {{ data.ninio.grupo?.nombre || 'Sin grupo' }}
+            &nbsp;·&nbsp;CI: {{ data.ninio.cedula }}
+          </span>
+        </div>
+      </div>
+      <button mat-icon-button (click)="ref.close()" matTooltip="Cerrar">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <mat-dialog-content style="padding: 20px 24px; min-width: 480px; max-height: 70vh; overflow-y: auto;">
+
+      <p style="font-size:11px;font-weight:700;color:#9AA0B9;text-transform:uppercase;letter-spacing:.7px;margin:0 0 14px;display:flex;align-items:center;gap:6px">
+        <mat-icon style="font-size:15px;width:15px;height:15px;color:#1565C0">bar_chart</mat-icon>
+        Frecuencia de asistencia
+      </p>
+
+      <!-- Selector de rango -->
+      <div class="date-row">
+        <span class="date-label">Desde</span>
+        <input class="date-input" type="date" [(ngModel)]="desde">
+        <span class="date-label">Hasta</span>
+        <input class="date-input" type="date" [(ngModel)]="hasta">
+        <button class="btn-buscar" (click)="consultar()" [disabled]="cargando">
+          <mat-icon style="font-size:16px;width:16px;height:16px">search</mat-icon>
+          Buscar
+        </button>
+      </div>
+
+      <!-- Cargando -->
+      @if(cargando){
+        <div class="loading-wrap">
+          <mat-spinner diameter="36"></mat-spinner>
+          <span>Consultando asistencia...</span>
+        </div>
+      }
+
+      <!-- Sin consulta aún -->
+      @if(!cargando && !frecuencia && !error){
+        <div class="empty-wrap">
+          <mat-icon>insert_chart_outlined</mat-icon>
+          <span>Seleccioná un rango de fechas y presioná <strong>Buscar</strong>.</span>
+        </div>
+      }
+
+      <!-- Error -->
+      @if(!cargando && error){
+        <div class="empty-wrap">
+          <mat-icon style="color:#C62828">error_outline</mat-icon>
+          <span style="color:#C62828">{{ error }}</span>
+        </div>
+      }
+
+      <!-- Resultado -->
+      @if(!cargando && frecuencia){
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-number green">{{ frecuencia.diasPresente }}</span>
+            <span class="stat-label">Asistió</span>
+            <span class="stat-pct pct-green">{{ frecuencia.porcentajeAsistencia | number:'1.0-0' }}%</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-number red">{{ frecuencia.diasAusente }}</span>
+            <span class="stat-label">Faltó</span>
+            <span class="stat-pct pct-red">{{ frecuencia.porcentajeInasistencia | number:'1.0-0' }}%</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-number blue">{{ frecuencia.totalDiasHabiles }}</span>
+            <span class="stat-label">Días hábiles</span>
+            <span class="stat-pct pct-blue">en el período</span>
+          </div>
+        </div>
+
+        <!-- Barra de progreso -->
+        <div class="bar-track">
+          <div class="bar-fill"
+               [style.width.%]="frecuencia.porcentajeAsistencia"></div>
+        </div>
+        <div class="bar-label">
+          {{ frecuencia.diasPresente }}/{{ frecuencia.totalDiasHabiles }} días asistidos
+        </div>
+
+        <div class="summary-text">
+          Concurrió <strong>{{ frecuencia.diasPresente }}</strong> de
+          <strong>{{ frecuencia.totalDiasHabiles }}</strong> días hábiles en el período
+          ({{ formatDate(frecuencia.desde) }} — {{ formatDate(frecuencia.hasta) }}).
+        </div>
+      }
+
+    </mat-dialog-content>
+
+    <div class="actions-bar">
+      <button mat-stroked-button (click)="ref.close()">Cerrar</button>
+    </div>
+  `
+})
+export class NinioFrecuenciaDialogComponent implements OnInit {
+  desde = '';
+  hasta = '';
+  cargando = false;
+  frecuencia: FrecuenciaAsistenciaResponse | null = null;
+  error = '';
+
+  constructor(
+    public ref: MatDialogRef<NinioFrecuenciaDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: { ninio: NinioResponse },
+    private asistenciaService: AsistenciaService
+  ) {}
+
+  ngOnInit() {
+    const hoy = new Date();
+    const hace30 = new Date();
+    hace30.setDate(hoy.getDate() - 30);
+    this.hasta = this.toISODate(hoy);
+    this.desde = this.toISODate(hace30);
+    this.consultar();
+  }
+
+  toISODate(d: Date): string {
+    return d.toISOString().split('T')[0];
+  }
+
+  consultar() {
+    if (!this.desde || !this.hasta) return;
+    this.cargando = true;
+    this.frecuencia = null;
+    this.error = '';
+    this.asistenciaService.frecuenciaPorCedula(
+      this.data.ninio.cedula, this.desde, this.hasta
+    ).subscribe({
+      next: (f) => { this.frecuencia = f; this.cargando = false; },
+      error: (err) => {
+        this.error = err.error?.message ?? err.error?.error ?? 'Error al consultar la frecuencia';
+        this.cargando = false;
+      }
+    });
+  }
+
+  formatDate(fecha: string): string {
+    const [y, m, d] = fecha.split('-');
+    return `${d}/${m}/${y}`;
+  }
+}
+
 // ─── Componente principal ────────────────────────────────────────────────────
 @Component({
   selector: 'app-ninios',
@@ -984,7 +1236,7 @@ export class NinioEditarDialogComponent implements OnInit {
     MatToolbarModule, MatCardModule, MatIconModule,
     MatProgressSpinnerModule, MatFormFieldModule, MatInputModule,
     MatChipsModule, MatButtonModule, MatDialogModule, MatTooltipModule,
-    MatPaginatorModule
+    MatPaginatorModule, NinioFrecuenciaDialogComponent
   ],
   templateUrl: './ninios.html',
   styleUrls: ['./ninios.css']
@@ -995,6 +1247,7 @@ export class NiniosComponent implements OnInit {
   paginados: NinioResponse[] = [];
   cargando = true;
   busqueda = '';
+  ordenAsc: boolean | null = null; // null = sin orden, true = A→Z, false = Z→A
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild('fotoInput') fotoInput!: ElementRef<HTMLInputElement>;
@@ -1038,6 +1291,15 @@ export class NiniosComponent implements OnInit {
       ].join(' ').toLowerCase();
       return target.includes(texto);
     });
+    if (this.ordenAsc !== null) {
+      const dir = this.ordenAsc ? 1 : -1;
+      this.filtrados.sort((a, b) => {
+        const apellidoA = (a.apellido ?? '').toLowerCase();
+        const apellidoB = (b.apellido ?? '').toLowerCase();
+        if (apellidoA !== apellidoB) return apellidoA.localeCompare(apellidoB, 'es') * dir;
+        return (a.nombre ?? '').toLowerCase().localeCompare((b.nombre ?? '').toLowerCase(), 'es') * dir;
+      });
+    }
     this.pageIndex = 0;
     if (this.paginator) {
       this.paginator.pageIndex = 0;
@@ -1056,6 +1318,13 @@ export class NiniosComponent implements OnInit {
     this.actualizarPaginados();
   }
 
+  toggleOrden() {
+    if (this.ordenAsc === null) this.ordenAsc = true;
+    else if (this.ordenAsc === true) this.ordenAsc = false;
+    else this.ordenAsc = null;
+    this.aplicarFiltros();
+  }
+
   abrirCrear() {
     const ref = this.dialog.open(NinioCrearDialogComponent, {
       width: '720px',
@@ -1068,8 +1337,17 @@ export class NiniosComponent implements OnInit {
     });
   }
 
-  abrirDetalle(ninio: NinioResponse) {
-    const ref = this.dialog.open(NinioDetalleDialogComponent, {
+  abrirFrecuencia(ninio: NinioResponse) {
+    this.dialog.open(NinioFrecuenciaDialogComponent, {
+      data: { ninio },
+      width: '540px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: false
+    });
+  }
+
+  abrirDetalle(ninio: NinioResponse) {    const ref = this.dialog.open(NinioDetalleDialogComponent, {
       data: { ninio },
       width: '580px',
       maxWidth: '94vw',

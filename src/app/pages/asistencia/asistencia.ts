@@ -28,6 +28,7 @@ interface NinioConEstado extends NinioResponse {
   horaSalida?: string;
   observaciones?: string;
   cargando?: boolean;
+  actividadId?: number;
 }
 
 @Component({
@@ -427,7 +428,8 @@ export class AsistenciaComponent implements OnInit {
       fecha: this.fechaSeleccionada,
       horaEntrada: this.horaEntradaNinioInput || this.horaActual(),
       ninioId: ninio.id,
-      observaciones: this.observacionesEntradaNinioInput || undefined
+      observaciones: this.observacionesEntradaNinioInput || undefined,
+      actividadId: ninio.actividadId ?? undefined
     }).pipe(finalize(() => ninio.cargando = false))
       .subscribe({
         next: r => {
@@ -440,7 +442,7 @@ export class AsistenciaComponent implements OnInit {
           this.observacionesEntradaNinioInput = '';
           this.toast.show(`Asistencia de ${ninio.nombre} registrada`, 'success');
         },
-        error: e => this.toast.show(e.error?.message || 'Error al marcar asistencia', 'error')
+        error: e => this.toast.show(e.error?.message || e.error?.error || 'Error al marcar asistencia', 'error')
       });
   }
 

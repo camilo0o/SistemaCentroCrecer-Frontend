@@ -361,6 +361,7 @@ export interface AsistenciaNinioRequest {
   horaSalida?: string;
   observaciones?: string;
   ninioId: number;
+  actividadId?: number;
 }
 
 export interface RegistroSalidaFuncionarioRequest {

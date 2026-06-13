@@ -92,6 +92,19 @@ import {
         </div>
 
       </form>
+      @if(sugerencias.length > 0){
+        <div style="margin-top:16px;padding:12px;background:#E3F2FD;border-radius:8px">
+          <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#1565C0">
+            Horarios disponibles sugeridos:
+          </p>
+          @for(s of sugerencias; track s.horaInicio){
+            <button mat-stroked-button style="margin:4px;font-size:12px"
+              (click)="aplicarSugerencia(s)">
+              {{ s.horaInicio }} — {{ s.horaFin }}
+            </button>
+          }
+        </div>
+      }
     </mat-dialog-content>
     <div class="dialog-actions">
       <button mat-stroked-button (click)="ref.close()">Cancelar</button>
@@ -106,7 +119,8 @@ import {
 export class AgendaDialogComponent {
   form: FormGroup;
   guardando = false;
-
+  sugerencias: AgendaResponse[] = [];
+  
   constructor(
     private fb: FormBuilder,
     public ref: MatDialogRef<AgendaDialogComponent>,
@@ -117,6 +131,7 @@ export class AgendaDialogComponent {
       funcionarioId: number;
     },
     private agendaService: AgendaService,
+    private cdr: ChangeDetectorRef,
     private toast: ToastService
   ) {
     const a = data.agenda;
@@ -130,24 +145,50 @@ export class AgendaDialogComponent {
   }
 
   guardar() {
-    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
-    this.guardando = true;
-    const v = this.form.value;
-    const payload: AgendaRequest = {
-      ...v,
-      fecha: v.fecha instanceof Date ? v.fecha.toISOString().split('T')[0] : v.fecha,
-      funcionarioId: this.data.funcionarioId,
-    };
-    const op = this.data.modo === 'crear'
-      ? this.agendaService.crear(payload)
-      : this.agendaService.actualizar(this.data.agenda!.id, payload);
-    op.subscribe({
-      next: (r) => { this.guardando = false; this.ref.close(r); },
-      error: (err) => {
-        this.guardando = false;
-        this.toast.error(err.error?.error ?? 'Error al guardar');
+  if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+  this.guardando = true;
+  this.sugerencias = [];
+  const v = this.form.value;
+  const payload: AgendaRequest = {
+    ...v,
+    fecha: v.fecha instanceof Date ? v.fecha.toISOString().split('T')[0] : v.fecha,
+    funcionarioId: this.data.funcionarioId,
+  };
+  const op = this.data.modo === 'crear'
+    ? this.agendaService.crear(payload)
+    : this.agendaService.actualizar(this.data.agenda!.id, payload);
+
+  op.subscribe({
+    next: (r) => { this.guardando = false; this.ref.close(r); },
+    error: (err) => {
+      this.guardando = false;
+      const msg = err.error?.mensaje ?? err.error?.error ?? '';
+      if (msg.includes('ya tiene un evento')) {
+        console.log('Pidiendo sugerencias para:', payload.funcionarioId, payload.fecha, payload.horaInicio, payload.horaFin);
+        this.agendaService.sugerirReprogramacion(
+          payload.funcionarioId,
+          payload.fecha,
+          payload.horaInicio,
+          payload.horaFin
+        ).subscribe({
+          next: s => {
+            console.log('Sugerencias recibidas:', s);
+            this.sugerencias = s;
+            this.cdr.detectChanges();
+          },
+          error: e => console.error('Error en sugerencias:', e)
+        });
+        this.toast.error('Horario ocupado. Ver sugerencias abajo.');
+      } else {
+        this.toast.error(msg || 'Error al guardar');
       }
-    });
+    }
+  });
+  }
+
+  aplicarSugerencia(s: AgendaResponse) {
+    this.form.patchValue({ horaInicio: s.horaInicio, horaFin: s.horaFin });
+    this.sugerencias = [];
   }
 }
 
@@ -290,7 +331,6 @@ export class AgendaDialogComponent {
           </form>
         </div>
       }
-
     </mat-dialog-content>
 
     <div class="dialog-actions">

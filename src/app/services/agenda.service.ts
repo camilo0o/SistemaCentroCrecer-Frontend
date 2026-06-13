@@ -78,4 +78,20 @@ export class AgendaService {
   listarSubtipos(): Observable<SubtipoAgendaResponse[]> {
     return this.http.get<SubtipoAgendaResponse[]>(this.subtiposUrl);
   }
+
+  sugerirReprogramacion(funcionarioId: number, fecha: string, horaInicio: string, horaFin: string): Observable<AgendaResponse[]> {
+  const params = new HttpParams()
+    .set('funcionarioId', funcionarioId)
+    .set('fecha', fecha)
+    .set('horaInicio', horaInicio)
+    .set('horaFin', horaFin);
+  return this.http.get<AgendaResponse[]>(`${this.apiUrl}/sugerencias`, { params });
+  }
+
+  detectarSobrecarga(fecha: string, maxEventos: number = 3): Observable<any> {
+  const params = new HttpParams()
+    .set('fecha', fecha)
+    .set('maxEventos', maxEventos);
+  return this.http.get<any>(`${this.apiUrl}/sobrecarga`, { params });
+  }
 }

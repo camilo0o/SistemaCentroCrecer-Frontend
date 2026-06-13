@@ -18,6 +18,7 @@ import { AsistenciaService } from '../../services/asistencia.service';
 import { FuncionarioService } from '../../services/funcionario.service';
 import { TurnoService } from '../../services/turno.service';
 import { ToastService } from '../../services/toast.service';
+import { AgendaService } from '../../services/agenda.service';
 import {
   AsistenciaResponse, FuncionarioResponse, TurnoResponse,
   ROL_DISPLAY, DIAS_SEMANA, EstadoPuntualidad
@@ -52,22 +53,18 @@ interface FuncionarioCargaHoraria {
 })
 export class AsistenciaAdminComponent implements OnInit {
 
-  // ── Vista activa ──────────────────────────────────────────────────────────
   vista: 'asistencias' | 'carga-horaria' = 'asistencias';
 
-  // ── Filtros ───────────────────────────────────────────────────────────────
   fechaDesde: Date = (() => { const d = new Date(); d.setDate(d.getDate() - 6); return d; })();
   fechaHasta: Date = new Date();
   funcionarioSeleccionadoId: number | null = null;
   filtroEstado: string = '';
 
-  // ── Datos ─────────────────────────────────────────────────────────────────
   funcionarios: FuncionarioResponse[] = [];
   turnos: TurnoResponse[] = [];
   asistencias: AsistenciaResponse[] = [];
   cargaHoraria: FuncionarioCargaHoraria[] = [];
 
-  // ── Estado ────────────────────────────────────────────────────────────────
   cargando = false;
   cargandoFuncionarios = true;
 
@@ -78,6 +75,7 @@ export class AsistenciaAdminComponent implements OnInit {
     private funcionarioService: FuncionarioService,
     private turnoService: TurnoService,
     private toast: ToastService,
+    private agendaService: AgendaService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -109,6 +107,7 @@ export class AsistenciaAdminComponent implements OnInit {
       next: (data) => {
         this.asistencias = data;
         this.construirCargaHoraria(desde, hasta);
+        this.verificarSobrecarga();
         this.cdr.markForCheck();
       },
       error: () => this.toast.error('Error al cargar asistencias')
@@ -271,7 +270,6 @@ export class AsistenciaAdminComponent implements OnInit {
     return n % 1 === 0 ? `${n}h` : `${n.toFixed(1)}h`;
   }
 
-  // ── Resumen global ────────────────────────────────────────────────────────
   get totalRegistros(): number { return this.asistencias.length; }
 
   get totalTardanzas(): number {
@@ -289,5 +287,31 @@ export class AsistenciaAdminComponent implements OnInit {
   get cargaHorariaFiltrada(): FuncionarioCargaHoraria[] {
     if (!this.funcionarioSeleccionadoId) return this.cargaHoraria;
     return this.cargaHoraria.filter(c => c.funcionario.id === this.funcionarioSeleccionadoId);
+  }
+
+  verificarSobrecarga() {
+    const desde = new Date(this.toDateStr(this.fechaDesde) + 'T00:00:00');
+    const hasta = new Date(this.toDateStr(this.fechaHasta) + 'T00:00:00');
+    const fechas: string[] = [];
+
+    const cur = new Date(desde);
+    while (cur <= hasta) {
+      fechas.push(cur.toISOString().split('T')[0]);
+      cur.setDate(cur.getDate() + 1);
+    }
+
+    const llamadas = fechas.map(fecha => this.agendaService.detectarSobrecarga(fecha, 3));
+
+    forkJoin(llamadas).subscribe({
+      next: (resultados) => {
+        const sobrecargadosSet = new Set<string>();
+        resultados.forEach((res: any) => {
+          res.funcionariosSobrecargados.forEach((f: any) => sobrecargadosSet.add(f.nombre));
+        });
+        if (sobrecargadosSet.size > 0) {
+          this.toast.error(`${sobrecargadosSet.size} funcionario(s) con sobrecarga en el período: ${[...sobrecargadosSet].join(', ')}`);
+        }
+      }
+    });
   }
 }

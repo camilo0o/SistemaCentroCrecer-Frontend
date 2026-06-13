@@ -47,36 +47,53 @@ export class LoginComponent {
   togglePassword() { this.mostrarPassword = !this.mostrarPassword; }
 
   iniciarSesion() {
-  if (this.form.invalid) { this.form.markAllAsTouched(); return; }
-  this.cargando = true;
-  this.error = '';
+    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+    this.cargando = true;
+    this.error = '';
 
-  this.authService.loginFuncionario(this.form.value).subscribe({
-    next: (res) => {
-      this.cargando = false;
-      this.toast.success('¡Bienvenido/a, ' + res.nombreCompleto + '!');
-      if (res.mustChangePassword) {
-        setTimeout(() => this.router.navigate(['/perfil']), 0);
-        return;
-      }
-      setTimeout(() => this.redirect(res.rol), 0);
-    },
-    error: () => {
-      this.authService.loginResponsable(this.form.value).subscribe({
-        next: (res) => {
-          this.cargando = false;
-          this.toast.success('¡Bienvenido/a, ' + res.nombreCompleto + '!');
-          setTimeout(() => this.redirect(res.rol), 0);
-        },
-        error: () => {
-          this.cargando = false;
-          this.error = 'Credenciales incorrectas. Intentá de nuevo.';
-          this.cdr.detectChanges();
+    this.authService.loginFuncionario(this.form.value).subscribe({
+      next: (res) => {
+        this.cargando = false;
+        this.toast.success('¡Bienvenido/a, ' + res.nombreCompleto + '!');
+        if (res.mustChangePassword) {
+          setTimeout(() => this.router.navigate(['/perfil']), 0);
+          return;
         }
-      });
-    }
-  });
-}
+        setTimeout(() => this.redirect(res.rol), 0);
+      },
+      error: (errFuncionario) => {
+        const msgFuncionario: string = errFuncionario?.error?.error ?? '';
+
+        // Cuenta desactivada: no intentar como responsable, mostrar mensaje directo
+        if (errFuncionario.status === 403 || msgFuncionario.includes('desactivada')) {
+          this.cargando = false;
+          this.error = msgFuncionario || 'Tu cuenta ha sido desactivada por un administrador o referente del centro.';
+          this.cdr.detectChanges();
+          return;
+        }
+
+        // Credenciales inválidas para funcionario → intentar como responsable
+        this.authService.loginResponsable(this.form.value).subscribe({
+          next: (res) => {
+            this.cargando = false;
+            this.toast.success('¡Bienvenido/a, ' + res.nombreCompleto + '!');
+            setTimeout(() => this.redirect(res.rol), 0);
+          },
+          error: (errResponsable) => {
+            this.cargando = false;
+            const msgResponsable: string = errResponsable?.error?.error ?? '';
+
+            if (errResponsable.status === 403 || msgResponsable.includes('desactivada')) {
+              this.error = msgResponsable || 'Tu cuenta ha sido desactivada por un administrador o referente del centro.';
+            } else {
+              this.error = 'Credenciales incorrectas. Intentá de nuevo.';
+            }
+            this.cdr.detectChanges();
+          }
+        });
+      }
+    });
+  }
 
   private redirect(rol: string | null) {
     if (rol === 'ADMINISTRADOR_SISTEMA') this.router.navigate(['/admin/dashboard']);

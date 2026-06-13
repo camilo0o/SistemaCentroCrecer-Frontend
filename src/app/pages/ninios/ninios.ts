@@ -24,10 +24,283 @@ import { MatDividerModule } from '@angular/material/divider';
 import { NinioService } from '../../services/ninio.service';
 import { GrupoService } from '../../services/grupo.service';
 import { AsistenciaService } from '../../services/asistencia.service';
+import { ResponsableService } from '../../services/responsable.service';
 import { ToastService } from '../../services/toast.service';
-import { CondicionMedicaResponse, FrecuenciaAsistenciaResponse, GrupoResponse, NinioResponse, ResponsableResumen } from '../../models/models';
+import { CondicionMedicaResponse, FrecuenciaAsistenciaResponse, GrupoResponse, NinioResponse, ResponsableResumen, ResponsableResponse, ResponsableNinioResponse } from '../../models/models';
 import { finalize, switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
+
+
+// ─── Dialog: Gestionar responsables del niño ────────────────────────────────
+@Component({
+  selector: 'app-vincular-responsable-dialog',
+  standalone: true,
+  imports: [
+    CommonModule, ReactiveFormsModule, FormsModule,
+    MatButtonModule, MatIconModule, MatDialogModule,
+    MatFormFieldModule, MatInputModule, MatSelectModule,
+    MatProgressSpinnerModule, MatDividerModule, MatCheckboxModule, MatTooltipModule
+  ],
+  styles: [`
+    .dlg-header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      padding: 20px 24px 0;
+    }
+    .dlg-title { margin: 0; font-size: 1.15rem; font-weight: 700; color: #1a2340; }
+    .dlg-subtitle { margin: 2px 0 0; font-size: .85rem; color: #5C6680; }
+    .section-title {
+      font-size: 11px; font-weight: 700; color: #9AA0B9;
+      text-transform: uppercase; letter-spacing: .7px;
+      margin: 0 0 12px; display: flex; align-items: center; gap: 6px;
+    }
+    .section-title mat-icon { font-size: 15px; width: 15px; height: 15px; color: #1565C0; }
+    .rel-card {
+      background: #F7F9FF; border: 1px solid #E8EAF0; border-radius: 10px;
+      padding: 12px 14px; display: flex; align-items: center; gap: 12px;
+      margin-bottom: 10px;
+    }
+    .rel-avatar {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: linear-gradient(135deg,#1565C0,#42A5F5);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; color: white; flex-shrink: 0;
+    }
+    .rel-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+    .rel-nombre { font-size: .9rem; font-weight: 600; color: #1a2340; }
+    .rel-sub { font-size: .8rem; color: #5C6680; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .tag-relacion { background:#E3F2FD; color:#1565C0; border-radius:10px; padding:2px 9px; font-size:11px; font-weight:600; }
+    .tag-retiro-ok { background:#E8F5E9; color:#2E7D32; border-radius:10px; padding:2px 9px; font-size:11px; font-weight:600; }
+    .tag-retiro-no { background:#FFEBEE; color:#C62828; border-radius:10px; padding:2px 9px; font-size:11px; font-weight:600; }
+    .empty-rel {
+      text-align:center; padding:20px 0; color:#9AA0B9; font-size:.88rem;
+      display:flex; flex-direction:column; align-items:center; gap:6px;
+    }
+    .empty-rel mat-icon { font-size:36px; width:36px; height:36px; color:#D0D4E3; }
+    .sep { border:none; border-top:1px solid #F0F2F7; margin:20px 0; }
+    .form-row { display:flex; gap:12px; }
+    .actions-bar {
+      display: flex; justify-content: space-between; gap: 10px;
+      padding: 14px 24px; border-top: 1px solid #F0F2F7;
+    }
+    .btn-desvincular { color: #C62828; }
+  `],
+  template: `
+    <div class="dlg-header">
+      <div>
+        <h2 class="dlg-title">Gestionar responsables</h2>
+        <p class="dlg-subtitle">{{ data.ninio.nombre }} {{ data.ninio.apellido }} · CI {{ data.ninio.cedula }}</p>
+      </div>
+      <button mat-icon-button (click)="ref.close(huboCambios)"><mat-icon>close</mat-icon></button>
+    </div>
+
+    <mat-dialog-content style="padding:20px 24px; min-width:540px; max-height:72vh; overflow-y:auto">
+
+      <!-- Responsables actuales -->
+      <p class="section-title">
+        <mat-icon>link</mat-icon>
+        Responsables vinculados
+        @if(!cargando){ <span style="background:#1565C0;color:white;border-radius:10px;padding:1px 8px;font-size:11px;font-weight:700">{{ relaciones.length }}</span> }
+      </p>
+
+      @if(cargando){
+        <div style="display:flex;justify-content:center;padding:20px 0">
+          <mat-spinner diameter="32"></mat-spinner>
+        </div>
+      } @else if(relaciones.length === 0){
+        <div class="empty-rel">
+          <mat-icon>person_search</mat-icon>
+          <span>Este niño no tiene responsables vinculados</span>
+        </div>
+      } @else {
+        @for(r of relaciones; track r.id){
+          <div class="rel-card">
+            <div class="rel-avatar">{{ r.responsable?.nombre?.[0] ?? '?' }}{{ r.ninio?.nombre?.[0] ?? '' }}</div>
+            <div class="rel-info">
+              <span class="rel-nombre">{{ r.responsable?.nombre }} {{ r.responsable?.apellido }}</span>
+              <div class="rel-sub">
+                @if(r.tipoRelacion){ <span class="tag-relacion">{{ displayRelacion(r.tipoRelacion) }}</span> }
+                <span [class]="r.autorizadoRetiro ? 'tag-retiro-ok' : 'tag-retiro-no'">
+                  <mat-icon style="font-size:11px;width:11px;height:11px;vertical-align:middle">
+                    {{ r.autorizadoRetiro ? 'check_circle' : 'cancel' }}
+                  </mat-icon>
+                  {{ r.autorizadoRetiro ? 'Autorizado retiro' : 'No autorizado' }}
+                </span>
+              </div>
+            </div>
+            <button mat-icon-button class="btn-desvincular"
+                    [disabled]="desvinculando === r.id"
+                    (click)="desvincular(r)"
+                    matTooltip="Desvincular responsable">
+              @if(desvinculando === r.id){
+                <mat-spinner diameter="18"></mat-spinner>
+              } @else {
+                <mat-icon>link_off</mat-icon>
+              }
+            </button>
+          </div>
+        }
+      }
+
+      <hr class="sep">
+
+      <!-- Vincular nuevo responsable -->
+      <p class="section-title">
+        <mat-icon>person_add</mat-icon>
+        Vincular responsable
+      </p>
+
+      <form [formGroup]="form" style="display:flex;flex-direction:column;gap:14px">
+        <mat-form-field appearance="outline">
+          <mat-label>Responsable</mat-label>
+          <mat-icon matPrefix>search</mat-icon>
+          <mat-select formControlName="responsableId">
+            @if(cargandoResponsables){
+              <mat-option disabled>Cargando...</mat-option>
+            }
+            @for(r of responsablesDisponibles; track r.id){
+              <mat-option [value]="r.id">
+                {{ r.nombre }} {{ r.apellido }}
+                @if(r.cedula){ <span style="color:#9AA0B9"> · CI {{ r.cedula }}</span> }
+              </mat-option>
+            }
+          </mat-select>
+          @if(form.get('responsableId')?.invalid && form.get('responsableId')?.touched){
+            <mat-error>Seleccione un responsable</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de relación</mat-label>
+          <mat-select formControlName="tipoRelacion">
+            <mat-option value="PADRE">Padre</mat-option>
+            <mat-option value="MADRE">Madre</mat-option>
+            <mat-option value="ABUELO">Abuelo/a</mat-option>
+            <mat-option value="TIO">Tío/a</mat-option>
+            <mat-option value="HERMANO">Hermano/a</mat-option>
+            <mat-option value="TUTOR">Tutor legal</mat-option>
+            <mat-option value="OTRO">Otro</mat-option>
+          </mat-select>
+          @if(form.get('tipoRelacion')?.invalid && form.get('tipoRelacion')?.touched){
+            <mat-error>Seleccione el tipo de relación</mat-error>
+          }
+        </mat-form-field>
+
+        <div style="display:flex;align-items:center;gap:12px;background:#F7F9FF;border-radius:10px;padding:12px 16px">
+          <mat-checkbox formControlName="autorizadoRetiro" color="primary"></mat-checkbox>
+          <div>
+            <div style="font-size:.9rem;font-weight:500;color:#1a2340">Autorizado para retiro</div>
+            <div style="font-size:.8rem;color:#5C6680">Este responsable puede retirar al niño del centro</div>
+          </div>
+        </div>
+      </form>
+
+    </mat-dialog-content>
+
+    <div class="actions-bar">
+      <button mat-stroked-button (click)="ref.close(huboCambios)">Cerrar</button>
+      <button mat-flat-button style="background:#1565C0;color:white"
+              (click)="vincular()" [disabled]="vinculando">
+        @if(vinculando){ <mat-spinner diameter="18" color="accent"></mat-spinner> }
+        @else {
+          <mat-icon>link</mat-icon>
+          Vincular
+        }
+      </button>
+    </div>
+  `
+})
+export class VincularResponsableDialogComponent implements OnInit {
+  relaciones: ResponsableNinioResponse[] = [];
+  responsables: ResponsableResponse[] = [];
+  cargando = true;
+  cargandoResponsables = true;
+  vinculando = false;
+  desvinculando: number | null = null;
+  huboCambios = false;
+  form: FormGroup;
+
+  constructor(
+    private fb: FormBuilder,
+    public ref: MatDialogRef<VincularResponsableDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: { ninio: NinioResponse },
+    private responsableService: ResponsableService,
+    private toast: ToastService
+  ) {
+    this.form = this.fb.group({
+      responsableId:   [null, Validators.required],
+      tipoRelacion:    ['', Validators.required],
+      autorizadoRetiro:[false]
+    });
+  }
+
+  ngOnInit() {
+    this.cargarRelaciones();
+    this.responsableService.listarActivos().pipe(
+      finalize(() => this.cargandoResponsables = false)
+    ).subscribe({
+      next: (rs) => this.responsables = rs,
+      error: () => this.toast.error('Error al cargar responsables')
+    });
+  }
+
+  cargarRelaciones() {
+    this.cargando = true;
+    this.responsableService.listarRelacionesPorNinio(this.data.ninio.id).pipe(
+      finalize(() => this.cargando = false)
+    ).subscribe({
+      next: (rels) => this.relaciones = rels,
+      error: () => this.toast.error('Error al cargar relaciones')
+    });
+  }
+
+  get responsablesDisponibles(): ResponsableResponse[] {
+    const vinculadosIds = new Set(this.relaciones.map(r => r.responsable?.id));
+    return this.responsables.filter(r => !vinculadosIds.has(r.id));
+  }
+
+  vincular() {
+    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+    this.vinculando = true;
+    const v = this.form.value;
+    this.responsableService.vincular({
+      ninioId: this.data.ninio.id,
+      responsableId: v.responsableId,
+      tipoRelacion: v.tipoRelacion,
+      autorizadoRetiro: v.autorizadoRetiro ?? false
+    }).pipe(finalize(() => this.vinculando = false)).subscribe({
+      next: () => {
+        this.toast.success('Responsable vinculado correctamente');
+        this.form.reset({ autorizadoRetiro: false });
+        this.huboCambios = true;
+        this.cargarRelaciones();
+      },
+      error: (err) => this.toast.error(err.error?.message ?? err.error?.error ?? 'Error al vincular')
+    });
+  }
+
+  desvincular(rel: ResponsableNinioResponse) {
+    if (!confirm(`¿Desvincular a ${rel.responsable?.nombre} ${rel.responsable?.apellido} de ${this.data.ninio.nombre}?`)) return;
+    this.desvinculando = rel.id;
+    this.responsableService.desvincular(rel.id).pipe(
+      finalize(() => this.desvinculando = null)
+    ).subscribe({
+      next: () => {
+        this.toast.success('Responsable desvinculado');
+        this.huboCambios = true;
+        this.relaciones = this.relaciones.filter(r => r.id !== rel.id);
+      },
+      error: (err) => this.toast.error(err.error?.message ?? 'Error al desvincular')
+    });
+  }
+
+  displayRelacion(rel: string): string {
+    const map: Record<string, string> = {
+      PADRE: 'Padre', MADRE: 'Madre', ABUELO: 'Abuelo/a',
+      TIO: 'Tío/a', HERMANO: 'Hermano/a', TUTOR: 'Tutor legal', OTRO: 'Otro'
+    };
+    return map[rel] ?? rel;
+  }
+}
 
 // ─── Dialog: Ver detalle del niño ───────────────────────────────────────────
 @Component({
@@ -36,7 +309,7 @@ import { of } from 'rxjs';
   imports: [
     CommonModule,
     MatButtonModule, MatIconModule, MatDialogModule,
-    MatChipsModule, MatDividerModule
+    MatChipsModule, MatDividerModule, MatTooltipModule
   ],
   styles: [`
     .dlg-header {
@@ -308,6 +581,11 @@ import { of } from 'rxjs';
     <!-- Pie -->
     <div class="actions-bar">
       @if(data.ninio.activo){
+        <button mat-stroked-button color="primary"
+                (click)="abrirResponsables()" matTooltip="Vincular o desvincular responsables">
+          <mat-icon>family_restroom</mat-icon>
+          Responsables
+        </button>
         <button mat-stroked-button color="warn"
                 (click)="ref.close('baja')" matTooltip="Dar de baja al niño">
           <mat-icon>person_off</mat-icon>
@@ -328,8 +606,35 @@ import { of } from 'rxjs';
 export class NinioDetalleDialogComponent {
   constructor(
     public ref: MatDialogRef<NinioDetalleDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { ninio: NinioResponse }
+    @Inject(MAT_DIALOG_DATA) public data: { ninio: NinioResponse },
+    private dialog: MatDialog,
+    private ninioService: NinioService
   ) {}
+
+  abrirResponsables() {
+    const refResp = this.dialog.open(VincularResponsableDialogComponent, {
+      data: { ninio: this.data.ninio },
+      width: '620px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: false
+    });
+    refResp.afterClosed().subscribe((huboCambios: boolean) => {
+      if (huboCambios) {
+        // Recargar el niño desde la API para reflejar los nuevos responsables en el detalle
+        this.ninioService.listarTodos().subscribe({
+          next: (ninios) => {
+            const actualizado = ninios.find(n => n.id === this.data.ninio.id);
+            if (actualizado) {
+              this.data.ninio.responsables = actualizado.responsables;
+            }
+          }
+        });
+        // Señalizar al padre que recargue la lista
+        this.ref.close('refresh');
+      }
+    });
+  }
 
   get condiciones(): CondicionMedicaResponse[] {
     return this.data.ninio.condicionesMedicas ?? [];
@@ -1236,7 +1541,7 @@ export class NinioFrecuenciaDialogComponent implements OnInit {
     MatToolbarModule, MatCardModule, MatIconModule,
     MatProgressSpinnerModule, MatFormFieldModule, MatInputModule,
     MatChipsModule, MatButtonModule, MatDialogModule, MatTooltipModule,
-    MatPaginatorModule, NinioFrecuenciaDialogComponent
+    MatPaginatorModule, NinioFrecuenciaDialogComponent, VincularResponsableDialogComponent
   ],
   templateUrl: './ninios.html',
   styleUrls: ['./ninios.css']
@@ -1259,6 +1564,7 @@ export class NiniosComponent implements OnInit {
 
   constructor(
     private ninioService: NinioService,
+    private responsableService: ResponsableService,
     private toast: ToastService,
     private dialog: MatDialog,
     private cdr: ChangeDetectorRef,
@@ -1355,8 +1661,23 @@ export class NiniosComponent implements OnInit {
       disableClose: true
     });
     ref.afterClosed().subscribe(accion => {
-      if (accion === 'editar') this.abrirEditar(ninio);
-      if (accion === 'baja')   this.darDeBaja(ninio);
+      if (accion === 'editar')   this.abrirEditar(ninio);
+      if (accion === 'baja')     this.darDeBaja(ninio);
+      if (accion === 'refresh')  this.cargarNinios();
+    });
+  }
+
+  abrirResponsables(ninio: NinioResponse) {
+    const ref = this.dialog.open(VincularResponsableDialogComponent, {
+      data: { ninio },
+      width: '620px',
+      maxWidth: '94vw',
+      panelClass: 'app-dialog-panel',
+      disableClose: false
+    });
+    ref.afterClosed().subscribe(() => {
+      // Recargar para reflejar cambios en responsables del niño
+      this.cargarNinios();
     });
   }
 

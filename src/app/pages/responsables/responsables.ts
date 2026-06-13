@@ -153,6 +153,7 @@ export class RetiroDialogComponent {
     MatChipsModule, MatToolbarModule, MatProgressSpinnerModule,
     MatFormFieldModule, MatInputModule, MatDialogModule,
     MatTooltipModule, MatDividerModule, MatExpansionModule,
+    MatSlideToggleModule,
     Sidebar
   ],
   templateUrl: './responsables.html',
@@ -163,6 +164,9 @@ export class ResponsablesComponent implements OnInit {
   relaciones: ResponsableNinioResponse[] = [];
   cargando = true;
   busqueda = '';
+  mostrarInactivos = false;
+  esAdmin = false;        // puede activar/desactivar
+  esAdminSistema = false; // ve todos (activos + inactivos)
 
   constructor(
     private responsableService: ResponsableService,
@@ -171,12 +175,33 @@ export class ResponsablesComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    // Detectar roles que pueden gestionar (activar/desactivar) responsables
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const rol: string = payload.rol || payload.role || '';
+        const ROLES_GESTION = [
+          'ADMINISTRADOR_SISTEMA', 'COORDINADORA', 'ASISTENTE_SOCIAL', 'PSICOLOGO'
+        ];
+        this.esAdmin = ROLES_GESTION.includes(rol);
+        // Solo el admin del sistema ve todos (activos + inactivos)
+        this.esAdminSistema = rol === 'ADMINISTRADOR_SISTEMA';
+      } catch {
+        this.esAdmin = false;
+        this.esAdminSistema = false;
+      }
+    }
     this.cargar();
   }
 
   cargar() {
     this.cargando = true;
-    this.responsableService.listarActivos().subscribe({
+    const lista$ = this.esAdminSistema
+      ? this.responsableService.listarTodos()
+      : this.responsableService.listarActivos();
+
+    lista$.subscribe({
       next: r => {
         this.responsables = r;
         this.responsableService.listarRelaciones().subscribe({
@@ -190,8 +215,12 @@ export class ResponsablesComponent implements OnInit {
 
   get responsablesFiltrados(): ResponsableResponse[] {
     const q = this.busqueda.toLowerCase().trim();
-    if (!q) return this.responsables;
-    return this.responsables.filter(r =>
+    let lista = this.responsables;
+    if (!this.esAdminSistema || !this.mostrarInactivos) {
+      lista = lista.filter(r => r.activo);
+    }
+    if (!q) return lista;
+    return lista.filter(r =>
       `${r.nombre} ${r.apellido}`.toLowerCase().includes(q) ||
       r.cedula.includes(q) ||
       r.email?.toLowerCase().includes(q)
@@ -204,6 +233,21 @@ export class ResponsablesComponent implements OnInit {
 
   iniciales(r: ResponsableResponse): string {
     return `${r.nombre[0]}${r.apellido[0]}`.toUpperCase();
+  }
+
+  toggleEstado(r: ResponsableResponse) {
+    const accion$ = r.activo
+      ? this.responsableService.desactivar(r.id)
+      : this.responsableService.activar(r.id);
+
+    accion$.subscribe({
+      next: () => {
+        r.activo = !r.activo;
+        const msg = r.activo ? 'Responsable activado.' : 'Responsable desactivado.';
+        this.toast.success(msg);
+      },
+      error: err => this.toast.error(err.error?.error || 'Error al cambiar estado.')
+    });
   }
 
   abrirEdicion(responsable: ResponsableResponse, relacion: ResponsableNinioResponse) {

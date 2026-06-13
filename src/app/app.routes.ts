@@ -68,6 +68,8 @@ export const routes: Routes = [
           import('./pages/usuarios/usuarios').then(m => m.UsuariosComponent) },
       { path: 'asistencia-personal', loadComponent: () =>
           import('./pages/asistencia-admin/asistencia-admin').then(m => m.AsistenciaAdminComponent) },
+      { path: 'responsables', loadComponent: () =>
+          import('./pages/responsables/responsables').then(m => m.ResponsablesComponent) },
     ]
   },
 

@@ -6,25 +6,36 @@
       <mat-chip-set>
         <mat-chip>
           <mat-icon matChipAvatar>family_restroom</mat-icon>
-          {{ responsables.length }} registrados
+          {{ responsablesFiltrados.length }} / {{ responsables.length }} registrados
         </mat-chip>
       </mat-chip-set>
     </mat-toolbar>
 
     <div class="page-content">
 
-      <!-- Buscador -->
-      <div class="search-bar">
-        <mat-icon class="search-icon">search</mat-icon>
-        <input
-          class="search-input"
-          placeholder="Buscar por nombre, cédula o email..."
-          [(ngModel)]="busqueda"
-        />
-        @if (busqueda) {
-          <button class="clear-btn" (click)="busqueda = ''">
-            <mat-icon>close</mat-icon>
-          </button>
+      <!-- Buscador + filtro de inactivos -->
+      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:4px">
+        <div class="search-bar" style="flex:1; min-width:220px">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            class="search-input"
+            placeholder="Buscar por nombre, cédula o email..."
+            [(ngModel)]="busqueda"
+          />
+          @if (busqueda) {
+            <button class="clear-btn" (click)="busqueda = ''">
+              <mat-icon>close</mat-icon>
+            </button>
+          }
+        </div>
+
+        @if (esAdminSistema) {
+          <mat-slide-toggle
+            [(ngModel)]="mostrarInactivos"
+            color="warn"
+            style="font-size:13px; white-space:nowrap">
+            Mostrar inactivos
+          </mat-slide-toggle>
         }
       </div>
 
@@ -47,12 +58,12 @@
         <div class="responsables-grid">
           @for (r of responsablesFiltrados; track r.id) {
 
-            <mat-card appearance="outlined" class="responsable-card">
+            <mat-card appearance="outlined" class="responsable-card" [class.card-inactivo]="!r.activo">
               <mat-card-content>
 
                 <!-- Header del responsable -->
                 <div class="resp-header">
-                  <div class="resp-avatar">{{ iniciales(r) }}</div>
+                  <div class="resp-avatar" [class.avatar-inactivo]="!r.activo">{{ iniciales(r) }}</div>
                   <div class="resp-info">
                     <div class="resp-nombre">{{ r.nombre }} {{ r.apellido }}</div>
                     <div class="resp-cedula">CI {{ r.cedula }}</div>
@@ -61,6 +72,23 @@
                         <mat-icon style="font-size:13px;vertical-align:middle">email</mat-icon>
                         {{ r.email }}
                       </div>
+                    }
+                  </div>
+                  <!-- Badge de estado + botón toggle (solo admin) -->
+                  <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px">
+                    <span class="retiro-badge" [class.autorizado]="r.activo" [class.no-autorizado]="!r.activo">
+                      <mat-icon>{{ r.activo ? 'check_circle' : 'cancel' }}</mat-icon>
+                      {{ r.activo ? 'Activo' : 'Inactivo' }}
+                    </span>
+                    @if (esAdmin) {
+                      <button mat-stroked-button
+                              [color]="r.activo ? 'warn' : 'primary'"
+                              style="font-size:12px; height:28px; line-height:28px; padding:0 10px"
+                              [matTooltip]="r.activo ? 'Desactivar responsable' : 'Activar responsable'"
+                              (click)="toggleEstado(r)">
+                        <mat-icon style="font-size:16px; margin-right:4px">{{ r.activo ? 'person_off' : 'person' }}</mat-icon>
+                        {{ r.activo ? 'Desactivar' : 'Activar' }}
+                      </button>
                     }
                   </div>
                 </div>

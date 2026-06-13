@@ -38,6 +38,22 @@ export class NinioService {
     return this.http.put<NinioResponse>(`${this.apiUrl}/${id}/foto`, { fotoUrl });
   }
 
+  misNinios(responsableId: number): Observable<NinioResponse[]> {
+    return this.http.get<NinioResponse[]>(`${this.apiUrl}/mis-ninios`, {
+      params: { responsableId: responsableId.toString() }
+    });
+  }
+
+  actualizarPorResponsable(ninioId: number, responsableId: number, dto: {
+    direccion?: string;
+    observaciones?: string;
+    condicionesMedicas?: { condicionId?: number; condicion: string; observacion?: string; esCronica: boolean }[];
+  }): Observable<NinioResponse> {
+    return this.http.put<NinioResponse>(`${this.apiUrl}/${ninioId}/responsable-actualizar`, dto, {
+      params: { responsableId: responsableId.toString() }
+    });
+  }
+
   subirFotoCloudinary(file: File): Observable<string> {
     const formData = new FormData();
     formData.append('file', file);

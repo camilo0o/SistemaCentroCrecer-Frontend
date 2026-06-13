@@ -2,10 +2,14 @@
 
     <!-- ── Toolbar ──────────────────────────────────────────────────────── -->
     <mat-toolbar color="primary" class="toolbar">
-      <button mat-icon-button *ngIf="vista === 'nueva-inscripcion'" (click)="volver()" matTooltip="Volver al dashboard">
+      <button mat-icon-button *ngIf="vista !== 'dashboard'" (click)="volver()" matTooltip="Volver al dashboard">
         <mat-icon>arrow_back</mat-icon>
       </button>
-      <span>{{ vista === 'dashboard' ? saludoHora + ', ' + nombre.split(' ')[0] : 'Nueva solicitud de inscripción' }}</span>
+      <span>{{
+        vista === 'dashboard' ? saludoHora + ', ' + nombre.split(' ')[0] :
+        vista === 'nueva-inscripcion' ? 'Nueva solicitud de inscripción' :
+        'Mis niños'
+      }}</span>
       <span class="spacer"></span>
       <mat-chip-set>
         <mat-chip>
@@ -82,6 +86,19 @@
               <div class="action-text">
                 <div class="action-titulo">Solicitar nueva inscripción</div>
                 <div class="action-desc">Ingresá los datos de un nuevo niño o niña</div>
+              </div>
+              <mat-icon class="action-arrow">chevron_right</mat-icon>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="action-card" appearance="outlined" (click)="irAMisNinios()" style="margin-top:10px">
+            <mat-card-content>
+              <div class="action-icon" style="background:#FFF7ED">
+                <mat-icon style="color:#F59E0B">edit_note</mat-icon>
+              </div>
+              <div class="action-text">
+                <div class="action-titulo">Actualizar datos de mis niños</div>
+                <div class="action-desc">Modificá nombre, apellido, dirección u observaciones</div>
               </div>
               <mat-icon class="action-arrow">chevron_right</mat-icon>
             </mat-card-content>
@@ -360,6 +377,164 @@
             </div>
 
           </form>
+        }
+
+      }
+
+      @if(vista === 'mis-ninios') {
+
+        <!-- Cargando -->
+        @if(cargandoNinios) {
+          <div class="loading-center">
+            <mat-spinner diameter="44"></mat-spinner>
+            <p>Cargando tus niños...</p>
+          </div>
+        }
+
+        @if(!cargandoNinios) {
+
+          @if(misNinios.length === 0) {
+            <mat-card appearance="outlined" class="empty-card">
+              <mat-card-content>
+                <mat-icon class="empty-icon">child_care</mat-icon>
+                <p>No tenés niños registrados aún.</p>
+              </mat-card-content>
+            </mat-card>
+          }
+
+          @if(misNinios.length > 0) {
+            <div class="section-label" style="margin-top:8px">NIÑOS REGISTRADOS</div>
+            <div class="insc-list">
+              @for(ninio of misNinios; track ninio.id) {
+                <mat-card class="insc-card" appearance="outlined">
+                  <mat-card-content>
+                    <div class="insc-header">
+                      <div class="insc-avatar">
+                        {{ (ninio.nombre || 'N')[0] }}{{ (ninio.apellido || '')[0] }}
+                      </div>
+                      <div class="insc-info">
+                        <div class="insc-nombre">{{ ninio.nombre }} {{ ninio.apellido }}</div>
+                        <div class="insc-meta">
+                          <span><mat-icon>badge</mat-icon>CI {{ ninio.cedula }}</span>
+                          @if(ninio.fechaNacimiento) {
+                            <span><mat-icon>cake</mat-icon>{{ calcularEdad(ninio.fechaNacimiento) }}</span>
+                          }
+                          @if(ninio.grupoNombre) {
+                            <span><mat-icon>groups</mat-icon>{{ ninio.grupoNombre }}</span>
+                          }
+                        </div>
+                        @if(ninio.direccion) {
+                          <div class="insc-meta" style="margin-top:4px">
+                            <span><mat-icon>home</mat-icon>{{ ninio.direccion }}</span>
+                          </div>
+                        }
+                        @if(ninio.observaciones) {
+                          <div class="insc-meta" style="margin-top:4px">
+                            <span><mat-icon>notes</mat-icon>{{ ninio.observaciones }}</span>
+                          </div>
+                        }
+                      </div>
+                      <button mat-icon-button color="primary" (click)="abrirEdicion(ninio)"
+                              matTooltip="Editar datos">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+              }
+            </div>
+          }
+
+        }
+
+        <!-- ── Modal de edición ─────────────────────────────────────────── -->
+        @if(ninioEditando) {
+          <div class="modal-overlay" (click)="cerrarEdicion()">
+            <mat-card class="modal-card" appearance="outlined" (click)="$event.stopPropagation()">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>edit</mat-icon>
+                  Editar datos de {{ ninioEditando.nombre }}
+                </mat-card-title>
+                <button mat-icon-button (click)="cerrarEdicion()" style="margin-left:auto">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </mat-card-header>
+              <mat-card-content>
+                <p class="modal-nota">
+                  <mat-icon style="font-size:16px;vertical-align:middle">info_outline</mat-icon>
+                  Podés modificar la dirección, observaciones y condiciones médicas.
+                  El nombre, apellido y datos de grupo son gestionados por el centro.
+                </p>
+                @if(editForm) {
+                  <form [formGroup]="editForm" class="form-col" style="gap:12px">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Dirección</mat-label>
+                      <mat-icon matPrefix>home</mat-icon>
+                      <input matInput formControlName="direccion" placeholder="Ej: Av. 18 de Julio 1234">
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>Observaciones</mat-label>
+                      <mat-icon matPrefix>notes</mat-icon>
+                      <textarea matInput formControlName="observaciones" rows="2"
+                                placeholder="Ej: duerme siesta, come con asistencia..."></textarea>
+                    </mat-form-field>
+
+                    <!-- Condiciones médicas -->
+                    <div class="condiciones-section">
+                      <div class="condiciones-header">
+                        <span class="condiciones-titulo">
+                          <mat-icon>medical_services</mat-icon> Condiciones médicas
+                        </span>
+                        <button mat-stroked-button type="button" color="primary"
+                                (click)="agregarCondicionEdit()" class="btn-agregar-cond">
+                          <mat-icon>add</mat-icon> Agregar
+                        </button>
+                      </div>
+                      <div formArrayName="condicionesMedicas">
+                        @for(cond of condicionesEditArray.controls; track $index; let ci = $index) {
+                          <div [formGroupName]="ci" class="condicion-row">
+                            <mat-form-field appearance="outline" class="cond-field-main">
+                              <mat-label>Condición</mat-label>
+                              <input matInput formControlName="condicion" placeholder="Ej: Asma, alergia...">
+                              @if(cond.get('condicion')?.invalid && cond.get('condicion')?.touched){
+                                <mat-error>Requerido</mat-error>
+                              }
+                            </mat-form-field>
+                            <mat-form-field appearance="outline" class="cond-field-obs">
+                              <mat-label>Observación (opcional)</mat-label>
+                              <input matInput formControlName="observacion" placeholder="Medicación, dosis...">
+                            </mat-form-field>
+                            <div class="cond-cronica">
+                              <mat-checkbox formControlName="esCronica">Crónica</mat-checkbox>
+                            </div>
+                            <button mat-icon-button type="button" color="warn"
+                                    (click)="eliminarCondicionEdit(ci)" matTooltip="Eliminar condición">
+                              <mat-icon>remove_circle_outline</mat-icon>
+                            </button>
+                          </div>
+                        }
+                        @if(condicionesEditArray.length === 0){
+                          <p class="sin-condiciones">Sin condiciones médicas registradas</p>
+                        }
+                      </div>
+                    </div>
+                  </form>
+                }
+              </mat-card-content>
+              <mat-card-actions align="end" style="padding:16px">
+                <button mat-stroked-button (click)="cerrarEdicion()">Cancelar</button>
+                <button mat-flat-button color="primary" (click)="guardarEdicion()"
+                        [disabled]="guardandoEdicion" style="margin-left:8px">
+                  @if(guardandoEdicion) {
+                    <mat-spinner diameter="18" style="display:inline-block"></mat-spinner>
+                  } @else {
+                    <mat-icon>save</mat-icon> Guardar cambios
+                  }
+                </button>
+              </mat-card-actions>
+            </mat-card>
+          </div>
         }
 
       }

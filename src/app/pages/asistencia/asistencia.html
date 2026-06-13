@@ -365,7 +365,7 @@
 
   </div>
 
-  <!-- ── Sección consultas RF30/RF31/RF32 ──────────────────────────────── -->
+  @if (!esAuxiliar) {
   <div class="consultas-section">
 
     <div class="consultas-header">
@@ -463,6 +463,7 @@
 
     </div>
   </div>
+  } <!-- fin @if (!esAuxiliar) -->
 
   <!-- ── Modal: Historial RF30 ─────────────────────────────────────────── -->
   @if (modalHistorialVisible) {

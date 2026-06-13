@@ -49,9 +49,10 @@ export class Sidebar implements OnInit, OnDestroy {
   private pollSub?: Subscription;
 
   adminItems: NavItem[] = [
-    { label: 'Dashboard',           icon: 'dashboard',  route: '/admin/dashboard' },
-    { label: 'Usuarios',            icon: 'groups',     route: '/admin/usuarios' },
-    { label: 'Asistencia Personal', icon: 'badge',      route: '/admin/asistencia-personal' },
+    { label: 'Dashboard',           icon: 'dashboard',        route: '/admin/dashboard' },
+    { label: 'Usuarios',            icon: 'groups',            route: '/admin/usuarios' },
+    { label: 'Responsables',        icon: 'family_restroom',   route: '/admin/responsables' },
+    { label: 'Asistencia Personal', icon: 'badge',             route: '/admin/asistencia-personal' },
   ];
 
   funcionarioItems: NavItem[] = [

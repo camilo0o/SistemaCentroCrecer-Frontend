@@ -24,13 +24,15 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { Sidebar } from '../../shared/components/sidebar/sidebar';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
+import { NinioService } from '../../services/ninio.service';
+import { NinioResponse } from '../../models/models';
 import {
   InscripcionService,
   InscripcionSolicitudResponse,
   NinioSolicitudRequest
 } from '../../services/inscripcion.service';
 
-type Vista = 'dashboard' | 'nueva-inscripcion';
+type Vista = 'dashboard' | 'nueva-inscripcion' | 'mis-ninios';
 
 const ESTADO_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
   PENDIENTE:  { label: 'Pendiente',  color: '#F59E0B', icon: 'schedule' },
@@ -65,12 +67,20 @@ export class DashboardResponsableComponent implements OnInit {
 
   inscripciones: InscripcionSolicitudResponse[] = [];
 
+  // ── Mis niños ────────────────────────────────────────────────────────────
+  misNinios: NinioResponse[] = [];
+  cargandoNinios = false;
+  ninioEditando: NinioResponse | null = null;
+  editForm!: FormGroup;
+  guardandoEdicion = false;
+
   niniosForm!: FormGroup;
   mostrarExito = false;
 
   constructor(
     private auth: AuthService,
     private inscripcionService: InscripcionService,
+    private ninioService: NinioService,
     private toast: ToastService,
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef
@@ -111,7 +121,92 @@ export class DashboardResponsableComponent implements OnInit {
     this.vista = 'nueva-inscripcion';
   }
 
-  volver() { this.vista = 'dashboard'; }
+  irAMisNinios() {
+    this.vista = 'mis-ninios';
+    this.cargarMisNinios();
+  }
+
+  volver() { this.vista = 'dashboard'; this.ninioEditando = null; }
+
+  // ── Mis niños ─────────────────────────────────────────────────────────────
+
+  cargarMisNinios() {
+    if (!this.responsableId) return;
+    this.cargandoNinios = true;
+    this.ninioService.misNinios(this.responsableId).subscribe({
+      next: data => { this.misNinios = data; this.cargandoNinios = false; },
+      error: () => { this.toast.error('No se pudieron cargar los niños.'); this.cargandoNinios = false; }
+    });
+  }
+
+  abrirEdicion(ninio: NinioResponse) {
+    this.ninioEditando = ninio;
+    const condiciones = this.fb.array(
+      (ninio.condicionesMedicas || []).map(c => this.fb.group({
+        condicionId:  [c.condicionId],
+        condicion:    [c.condicion,  Validators.required],
+        observacion:  [c.observacion || ''],
+        esCronica:    [c.esCronica ?? false]
+      }))
+    );
+    this.editForm = this.fb.group({
+      direccion:     [ninio.direccion     || ''],
+      observaciones: [ninio.observaciones || ''],
+      condicionesMedicas: condiciones
+    });
+  }
+
+  cerrarEdicion() { this.ninioEditando = null; }
+
+  get condicionesEditArray(): FormArray {
+    return this.editForm?.get('condicionesMedicas') as FormArray;
+  }
+
+  agregarCondicionEdit() {
+    this.condicionesEditArray.push(this.fb.group({
+      condicionId:  [null],
+      condicion:    ['', Validators.required],
+      observacion:  [''],
+      esCronica:    [false]
+    }));
+  }
+
+  eliminarCondicionEdit(i: number) {
+    this.condicionesEditArray.removeAt(i);
+  }
+
+  guardarEdicion() {
+    if (!this.editForm || this.editForm.invalid) { this.editForm?.markAllAsTouched(); return; }
+    if (!this.ninioEditando || !this.responsableId) return;
+    this.guardandoEdicion = true;
+
+    const v = this.editForm.value;
+    const dto = {
+      direccion:     v.direccion     || undefined,
+      observaciones: v.observaciones || undefined,
+      condicionesMedicas: (v.condicionesMedicas as any[]).map(c => ({
+        condicionId:  c.condicionId || undefined,
+        condicion:    c.condicion,
+        observacion:  c.observacion || undefined,
+        esCronica:    c.esCronica
+      }))
+    };
+
+    this.ninioService.actualizarPorResponsable(this.ninioEditando.id, this.responsableId, dto).subscribe({
+      next: updated => {
+        const idx = this.misNinios.findIndex(n => n.id === updated.id);
+        if (idx !== -1) this.misNinios[idx] = updated;
+        this.ninioEditando = null;
+        this.guardandoEdicion = false;
+        this.toast.success('Datos del niño actualizados correctamente.');
+        this.cdr.detectChanges();
+      },
+      error: err => {
+        this.guardandoEdicion = false;
+        this.toast.error(err.error?.message || 'Error al guardar los cambios.');
+      }
+    });
+  }
 
   estadoConfig(estado: string) {
     return ESTADO_CONFIG[estado] ?? { label: estado, color: '#9CA3AF', icon: 'info' };

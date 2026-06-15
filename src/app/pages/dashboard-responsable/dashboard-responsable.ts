@@ -19,6 +19,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { finalize } from 'rxjs/operators';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatBadgeModule } from '@angular/material/badge';
 import { Sidebar } from '../../shared/components/sidebar/sidebar';
@@ -104,13 +105,15 @@ export class DashboardResponsableComponent implements OnInit {
   }
 
   cargarInscripciones() {
-    if (!this.responsableId) return;
-    this.cargando = true;
-    this.inscripcionService.listarPorResponsable(this.responsableId).subscribe({
-      next: data => { this.inscripciones = data; this.cargando = false; },
-      error: () => { this.toast.error('No se pudieron cargar las inscripciones.'); this.cargando = false; }
+  if (!this.responsableId) { this.cargando = false; return; }
+  this.cargando = true;
+  this.inscripcionService.listarPorResponsable(this.responsableId)
+    .pipe(finalize(() => { this.cargando = false; this.cdr.detectChanges(); }))
+    .subscribe({
+      next: data => { this.inscripciones = data; },
+      error: () => { this.toast.error('No se pudieron cargar las inscripciones.'); }
     });
-  }
+}
 
   get saludoHora(): string {
     const h = new Date().getHours();
@@ -326,27 +329,28 @@ export class DashboardResponsableComponent implements OnInit {
   }
 
   cargarPermisos() {
-  if (!this.responsableId) return;
-  this.cargandoPermisos = true;
-  this.http.get<PermisoResponsableResponse[]>(
-    `${environment.apiUrl}/permisos/responsable/${this.responsableId}`
-  ).subscribe({
-    next: data => { this.permisos = data; this.cargandoPermisos = false; },
-    error: () => { this.cargandoPermisos = false; }
-  });
-}
+    if (!this.responsableId) return;
+    this.cargandoPermisos = true;
+    this.http.get<PermisoResponsableResponse[]>(
+      `${environment.apiUrl}/permisos/responsable/${this.responsableId}`
+    ).pipe(finalize(() => { this.cargandoPermisos = false; this.cdr.detectChanges(); }))
+    .subscribe({
+      next: data => { this.permisos = data; },
+      error: () => {}
+    });
+  }
 
-autorizarPermiso(id: number) {
-  this.actividadService.autorizarPermiso(id).subscribe({
-    next: () => { this.toast.success('Permiso autorizado.'); this.cargarPermisos(); },
-    error: () => this.toast.error('Error al autorizar.')
-  });
-}
+  autorizarPermiso(id: number) {
+    this.actividadService.autorizarPermiso(id).subscribe({
+      next: () => { this.toast.success('Permiso autorizado.'); this.cargarPermisos(); },
+      error: () => this.toast.error('Error al autorizar.')
+    });
+  }
 
-rechazarPermiso(id: number) {
-  this.actividadService.rechazarPermiso(id).subscribe({
-    next: () => { this.toast.success('Permiso rechazado.'); this.cargarPermisos(); },
-    error: () => this.toast.error('Error al rechazar.')
-  });
-}
+  rechazarPermiso(id: number) {
+    this.actividadService.rechazarPermiso(id).subscribe({
+      next: () => { this.toast.success('Permiso rechazado.'); this.cargarPermisos(); },
+      error: () => this.toast.error('Error al rechazar.')
+    });
+  }
 }

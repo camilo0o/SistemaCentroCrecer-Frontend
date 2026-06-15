@@ -423,13 +423,13 @@ export class ActividadDetalleDialogComponent implements OnInit {
       next: () => {
         this.asistenciasHoy[ninio.id] = true;
         this.marcandoAsistencia[ninio.id] = false;
-        this.cdr.detectChanges();
         this.toast.success(`Asistencia de ${ninio.nombre} registrada`);
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.marcandoAsistencia[ninio.id] = false;
-        this.cdr.detectChanges();
         this.toast.error(err.error?.mensaje || err.error?.message || 'Error al marcar asistencia');
+        this.cdr.detectChanges();
       }
     });
   }

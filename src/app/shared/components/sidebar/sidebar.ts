@@ -6,7 +6,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatBadgeModule } from '@angular/material/badge';
 import { filter } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
-import { interval, Subscription } from 'rxjs';
+import { interval, Subscription, forkJoin } from 'rxjs';
 import { AuthService } from '../../../services/auth.service';
 import { ROL_DISPLAY } from '../../../models/models';
 import { environment } from '../../../../environments/environment';
@@ -46,6 +46,7 @@ export class Sidebar implements OnInit, OnDestroy {
   notificaciones: Notificacion[] = [];
   noLeidas = 0;
   panelAbierto = false;
+  seleccionadas = new Set<number>();
   private pollSub?: Subscription;
 
   adminItems: NavItem[] = [
@@ -62,8 +63,8 @@ export class Sidebar implements OnInit, OnDestroy {
     { label: 'Turnos',         icon: 'calendar_month',    route: '/funcionario/turnos' },
     { label: 'Reportes',       icon: 'analytics',         route: '/funcionario/reportes' },
     { label: 'Actividades',    icon: 'event',             route: '/funcionario/actividades' },
-    { label: 'Agenda',         icon: 'calendar_month', route: '/funcionario/agenda' },
-    { label: 'Asistencia',     icon: 'how_to_reg',     route: '/funcionario/asistencia' },
+    { label: 'Agenda',         icon: 'calendar_month',    route: '/funcionario/agenda' },
+    { label: 'Asistencia',     icon: 'how_to_reg',        route: '/funcionario/asistencia' },
   ];
 
   auxiliarLimpiezaItems: NavItem[] = [
@@ -74,7 +75,7 @@ export class Sidebar implements OnInit, OnDestroy {
   ];
 
   responsableItems: NavItem[] = [
-    { label: 'Dashboard', icon: 'dashboard', route: '/dashboard/responsable' },
+    { label: 'Dashboard', icon: 'dashboard',   route: '/dashboard/responsable' },
     { label: 'Reportes',  icon: 'description', route: '/responsable/reportes' },
   ];
 
@@ -124,7 +125,6 @@ export class Sidebar implements OnInit, OnDestroy {
 
     this.currentRoute = this.router.url;
 
-    // Iniciar polling de notificaciones solo para funcionarios
     if (this.esFuncionario) {
       this.cargarNotificaciones();
       this.pollSub = interval(30000).subscribe(() => this.cargarNotificaciones());
@@ -143,6 +143,11 @@ export class Sidebar implements OnInit, OnDestroy {
         next: (data) => {
           this.notificaciones = data;
           this.noLeidas = data.filter(n => !n.leida).length;
+          // Limpiar selecciones que ya no existen como no-leídas
+          this.seleccionadas.forEach(id => {
+            const notif = this.notificaciones.find(n => n.id === id);
+            if (!notif || notif.leida) this.seleccionadas.delete(id);
+          });
         },
         error: () => {}
       });
@@ -150,11 +155,46 @@ export class Sidebar implements OnInit, OnDestroy {
 
   togglePanel() {
     this.panelAbierto = !this.panelAbierto;
-    if (this.panelAbierto) this.cargarNotificaciones();
+    if (this.panelAbierto) {
+      this.cargarNotificaciones();
+    } else {
+      // Al cerrar: aplicar leídas localmente y limpiar selección
+      this.seleccionadas.clear();
+    }
   }
 
   cerrarPanel() {
-    this.panelAbierto = false;
+    if (this.panelAbierto) {
+      this.seleccionadas.clear();
+      this.panelAbierto = false;
+    }
+  }
+
+  toggleSeleccion(id: number) {
+    if (this.seleccionadas.has(id)) {
+      this.seleccionadas.delete(id);
+    } else {
+      this.seleccionadas.add(id);
+    }
+  }
+
+  marcarSeleccionadas() {
+    if (this.seleccionadas.size === 0) return;
+    const ids = Array.from(this.seleccionadas);
+    const requests = ids.map(id =>
+      this.http.put(`${environment.apiUrl}/notificaciones/${id}/leida`, {})
+    );
+    forkJoin(requests).subscribe({
+      next: () => {
+        ids.forEach(id => {
+          const n = this.notificaciones.find(x => x.id === id);
+          if (n) n.leida = true;
+        });
+        this.seleccionadas.clear();
+        this.noLeidas = this.notificaciones.filter(n => !n.leida).length;
+      },
+      error: () => {}
+    });
   }
 
   marcarTodas() {
@@ -164,6 +204,7 @@ export class Sidebar implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.notificaciones.forEach(n => n.leida = true);
+          this.seleccionadas.clear();
           this.noLeidas = 0;
         },
         error: () => {}

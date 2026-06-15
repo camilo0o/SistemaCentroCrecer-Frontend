@@ -373,6 +373,125 @@
 
   </div>
 
+  <section class="panel mi-historial-panel">
+    <div class="panel-header historial-funcionario-header">
+      <mat-icon class="panel-icon blue">history</mat-icon>
+      <h2 class="panel-title">Mi historial de asistencia</h2>
+      <div class="mi-historial-filtros">
+        <label>
+          Desde
+          <input type="date" [(ngModel)]="miHistorialDesde" [max]="hoy" class="consulta-input">
+        </label>
+        <label>
+          Hasta
+          <input type="date" [(ngModel)]="miHistorialHasta" [max]="hoy" class="consulta-input">
+        </label>
+        <button mat-flat-button class="btn-consulta btn-blue"
+                (click)="cargarMiHistorial()"
+                [disabled]="miHistorialCargando">
+          @if (miHistorialCargando) { <mat-spinner diameter="16"></mat-spinner> }
+          @else { <mat-icon>search</mat-icon> }
+          Consultar
+        </button>
+      </div>
+    </div>
+
+    @if (miHistorialError) {
+      <p class="consulta-error">{{ miHistorialError }}</p>
+    }
+
+    @if (miHistorialCargando) {
+      <div class="loading-center">
+        <mat-spinner diameter="32"></mat-spinner>
+        <p>Cargando tu historial...</p>
+      </div>
+    } @else {
+      <div class="mi-historial-resumen">
+        <div class="mi-historial-chip">
+          <mat-icon>event_available</mat-icon>
+          <div>
+            <span class="chip-label">Registros</span>
+            <strong>{{ miHistorialRegistros.length }}</strong>
+          </div>
+        </div>
+        <div class="mi-historial-chip">
+          <mat-icon>timer</mat-icon>
+          <div>
+            <span class="chip-label">Horas registradas</span>
+            <strong>{{ miHistorialTotalHoras }}</strong>
+          </div>
+        </div>
+        <div class="mi-historial-chip" [class.warn]="miHistorialPendientesSalida > 0">
+          <mat-icon>logout</mat-icon>
+          <div>
+            <span class="chip-label">Salidas pendientes</span>
+            <strong>{{ miHistorialPendientesSalida }}</strong>
+          </div>
+        </div>
+      </div>
+
+      @if (miHistorialRegistros.length === 0) {
+        <div class="empty-registro historial-empty">
+          <mat-icon class="empty-icon">event_busy</mat-icon>
+          <p>No tenes registros de asistencia en el periodo seleccionado.</p>
+        </div>
+      } @else {
+        <div class="historial-table-wrapper mi-historial-table">
+          <table class="historial-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Entrada</th>
+                <th>Estado entrada</th>
+                <th>Salida</th>
+                <th>Estado salida</th>
+                <th>Horas</th>
+                <th>Observaciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of miHistorialRegistros; track r.id) {
+                <tr>
+                  <td class="td-fecha">{{ r.fecha | date:'dd/MM/yyyy' }}</td>
+                  <td class="td-hora entrada">
+                    <mat-icon style="font-size:13px;vertical-align:middle">login</mat-icon>
+                    {{ formatHora(r.horaEntrada) }}
+                  </td>
+                  <td>
+                    <span class="puntualidad-badge {{ puntualidadClase(r.estadoEntrada) }}">
+                      <mat-icon>{{ puntualidadIcono(r.estadoEntrada) }}</mat-icon>
+                      {{ puntualidadLabel(r.estadoEntrada) || '-' }}
+                    </span>
+                  </td>
+                  <td class="td-hora salida">
+                    @if (r.horaSalida) {
+                      <mat-icon style="font-size:13px;vertical-align:middle">logout</mat-icon>
+                      {{ formatHora(r.horaSalida) }}
+                    } @else {
+                      <span class="sin-salida">-</span>
+                    }
+                  </td>
+                  <td>
+                    @if (r.horaSalida) {
+                      <span class="puntualidad-badge {{ puntualidadClase(r.estadoSalida) }}">
+                        <mat-icon>{{ puntualidadIcono(r.estadoSalida) }}</mat-icon>
+                        {{ puntualidadLabel(r.estadoSalida) || '-' }}
+                      </span>
+                    } @else {
+                      <span class="puntualidad-badge puntualidad-sin-turno">Sin registrar</span>
+                    }
+                  </td>
+                  <td class="td-hora">{{ formatDuracion(minutosTrabajados(r)) }}</td>
+                  <td class="td-obs">{{ r.observaciones || '-' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+  </section>
+
   @if (!esAuxiliar) {
   <div class="consultas-section">
 

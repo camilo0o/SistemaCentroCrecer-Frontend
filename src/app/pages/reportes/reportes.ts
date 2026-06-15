@@ -22,8 +22,9 @@ import { Sidebar } from '../../shared/components/sidebar/sidebar';
 import { ToastService } from '../../services/toast.service';
 import { FuncionarioService } from '../../services/funcionario.service';
 import { AuthService } from '../../services/auth.service';
+import { ReporteService } from '../../services/reporte.service';
 import { environment } from '../../../environments/environment';
-import { ReporteResponse, FuncionarioResponse, NinioResponse, GrupoResponse } from '../../models/models';
+import { ReporteRequest, ReporteResponse, FuncionarioResponse, NinioResponse, GrupoResponse } from '../../models/models';
 import { finalize } from 'rxjs/operators';
 import { forkJoin } from 'rxjs';
 
@@ -141,6 +142,7 @@ export class ReporteDialogComponent implements OnInit {
     public ref: MatDialogRef<ReporteDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { funcionarioId: number; reporte?: ReporteResponse },
     private http: HttpClient,
+    private reporteService: ReporteService,
     private toast: ToastService,
     private cdr: ChangeDetectorRef
   ) {
@@ -187,7 +189,7 @@ export class ReporteDialogComponent implements OnInit {
   guardar() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.guardando = true;
-    const payload = {
+    const payload: ReporteRequest = {
       ...this.form.value,
       funcionarioId: this.data.funcionarioId,
       gruposIds: this.gruposSeleccionados,
@@ -195,8 +197,8 @@ export class ReporteDialogComponent implements OnInit {
     };
 
     const req = this.data.reporte
-      ? this.http.put(`${environment.apiUrl}/reportes/${this.data.reporte.id}/actualizar`, payload)
-      : this.http.post(`${environment.apiUrl}/reportes`, payload);
+      ? this.reporteService.actualizar(this.data.reporte.id, payload)
+      : this.reporteService.crear(payload);
 
     req.subscribe({
       next: (r) => { this.guardando = false; this.ref.close(r); },
@@ -332,9 +334,9 @@ export class ReportesComponent implements OnInit {
   userId: number | null = null;
 
   constructor(
-    private http: HttpClient,
     private auth: AuthService,
     private funcionarioService: FuncionarioService,
+    private reporteService: ReporteService,
     private dialog: MatDialog,
     private cdr: ChangeDetectorRef,
     private toast: ToastService
@@ -348,7 +350,7 @@ export class ReportesComponent implements OnInit {
 
   cargarReportes() {
     this.cargando = true;
-    this.http.get<ReporteResponse[]>(`${environment.apiUrl}/reportes`).pipe(
+    this.reporteService.listarTodos().pipe(
       finalize(() => { this.cargando = false; this.cdr.detectChanges(); })
     ).subscribe({
       next: (r) => { this.reportes = r; this.aplicarFiltros(); },
@@ -384,7 +386,7 @@ export class ReportesComponent implements OnInit {
 
   abrirCrear() {
     const ref = this.dialog.open(ReporteDialogComponent, {
-      data: { funcionarioId: this.userId },
+      data: { funcionarioId: this.userId ?? 0 },
       width: '640px',
       maxWidth: '94vw',
       panelClass: 'app-dialog-panel',
@@ -395,7 +397,7 @@ export class ReportesComponent implements OnInit {
 
   abrirEditar(reporte: ReporteResponse) {
     const ref = this.dialog.open(ReporteDialogComponent, {
-      data: { funcionarioId: this.userId, reporte },
+      data: { funcionarioId: this.userId ?? 0, reporte },
       width: '640px',
       maxWidth: '94vw',
       panelClass: 'app-dialog-panel',
@@ -415,7 +417,7 @@ export class ReportesComponent implements OnInit {
   }
 
   exportarPDF(id: number) {
-    this.http.get(`${environment.apiUrl}/reportes/${id}/pdf`, { responseType: 'blob' }).subscribe({
+    this.reporteService.exportarPdf(id).subscribe({
       next: (blob) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -428,7 +430,7 @@ export class ReportesComponent implements OnInit {
   }
 
   darDeBaja(id: number) {
-    this.http.delete(`${environment.apiUrl}/reportes/${id}`).subscribe({
+    this.reporteService.darDeBaja(id).subscribe({
       next: () => { this.toast.success('Reporte dado de baja'); this.cargarReportes(); },
       error: (err) => this.toast.error(err.error?.error ?? 'Error')
     });

@@ -62,6 +62,11 @@ export class AsistenciaComponent implements OnInit {
   horaEntradaInput: string = '';
   horaSalidaInput: string = '';
   observacionesInput: string = '';
+  miHistorialDesde: string = '';
+  miHistorialHasta: string = '';
+  miHistorialRegistros: AsistenciaResponse[] = [];
+  miHistorialCargando = false;
+  miHistorialError = '';
 
   ninios: NinioConEstado[] = [];
   cargandoNinios = false;
@@ -256,11 +261,13 @@ export class AsistenciaComponent implements OnInit {
 
   ngOnInit(): void {
     this.horaEntradaInput = this.horaActual();
+    this.inicializarRangoMiHistorial();
     this.actividadService.listarActivas().subscribe({
       next: a => { this.actividades = a; this.cdr.detectChanges(); },
       error: () => {}
     });
     this.cargarDatos();
+    this.cargarMiHistorial();
   }
 
   horaActual(): string {
@@ -287,6 +294,94 @@ export class AsistenciaComponent implements OnInit {
   cargarDatos(): void {
     this.cargarMiRegistro();
     this.cargarNinios();
+  }
+
+  inicializarRangoMiHistorial(): void {
+    const hasta = new Date();
+    const desde = new Date();
+    desde.setDate(desde.getDate() - 30);
+    this.miHistorialHasta = hasta.toISOString().split('T')[0];
+    this.miHistorialDesde = desde.toISOString().split('T')[0];
+  }
+
+  cargarMiHistorial(): void {
+    if (!this.miHistorialDesde || !this.miHistorialHasta) {
+      this.miHistorialError = 'Seleccione el rango de fechas.';
+      return;
+    }
+
+    const desde = new Date(this.miHistorialDesde + 'T00:00:00');
+    const hasta = new Date(this.miHistorialHasta + 'T00:00:00');
+
+    if (desde > hasta) {
+      this.miHistorialError = 'La fecha desde no puede ser posterior a la fecha hasta.';
+      return;
+    }
+
+    const dias = this.fechasEnRango(this.miHistorialDesde, this.miHistorialHasta);
+    if (dias.length > 90) {
+      this.miHistorialError = 'El historial permite consultar hasta 90 dias por vez.';
+      return;
+    }
+
+    this.miHistorialError = '';
+    this.miHistorialCargando = true;
+    this.miHistorialRegistros = [];
+
+    forkJoin(dias.map(fecha => this.asistenciaService.obtenerMiRegistroDelDia(fecha)))
+      .pipe(finalize(() => {
+        this.miHistorialCargando = false;
+        this.cdr.detectChanges();
+      }))
+      .subscribe({
+        next: registros => {
+          this.miHistorialRegistros = registros
+            .filter((r): r is AsistenciaResponse => !!r)
+            .sort((a, b) => b.fecha.localeCompare(a.fecha));
+        },
+        error: e => {
+          this.miHistorialError = e.error?.message || 'Error al cargar tu historial de asistencia.';
+        }
+      });
+  }
+
+  fechasEnRango(desde: string, hasta: string): string[] {
+    const fechas: string[] = [];
+    const actual = new Date(desde + 'T00:00:00');
+    const fin = new Date(hasta + 'T00:00:00');
+    while (actual <= fin) {
+      fechas.push(actual.toISOString().split('T')[0]);
+      actual.setDate(actual.getDate() + 1);
+    }
+    return fechas;
+  }
+
+  formatHora(h?: string): string {
+    return h ? h.substring(0, 5) : '-';
+  }
+
+  minutosTrabajados(registro: AsistenciaResponse): number {
+    if (!registro.horaEntrada || !registro.horaSalida) return 0;
+    const [he, me] = registro.horaEntrada.split(':').map(Number);
+    const [hs, ms] = registro.horaSalida.split(':').map(Number);
+    return Math.max(0, (hs * 60 + ms) - (he * 60 + me));
+  }
+
+  formatDuracion(minutos: number): string {
+    const horas = Math.floor(minutos / 60);
+    const mins = minutos % 60;
+    if (horas === 0) return `${mins}m`;
+    if (mins === 0) return `${horas}h`;
+    return `${horas}h ${mins}m`;
+  }
+
+  get miHistorialTotalHoras(): string {
+    const total = this.miHistorialRegistros.reduce((acc, r) => acc + this.minutosTrabajados(r), 0);
+    return this.formatDuracion(total);
+  }
+
+  get miHistorialPendientesSalida(): number {
+    return this.miHistorialRegistros.filter(r => !r.horaSalida).length;
   }
 
   // ── Mi Registro ──────────────────────────────────────────────────────────
@@ -329,6 +424,7 @@ export class AsistenciaComponent implements OnInit {
         next: r => {
           this.miRegistro = r;
           this.modoEntrada = false;
+          this.cargarMiHistorial();
           this.toast.show('Entrada registrada correctamente', 'success');
         },
         error: e => this.toast.show(e.error?.message || 'Error al registrar entrada', 'error')
@@ -355,6 +451,7 @@ export class AsistenciaComponent implements OnInit {
           this.miRegistro = r;
           this.horaSalidaInput = '';
           this.observacionesSalidaInput = '';
+          this.cargarMiHistorial();
           this.toast.show('Salida registrada correctamente', 'success');
         },
         error: e => this.toast.show(e.error?.message || 'Error al registrar salida', 'error')

@@ -81,6 +81,78 @@
   margin: 0 auto;
 }
 
+.mi-historial-panel {
+  margin-top: 24px;
+}
+
+.historial-funcionario-header {
+  align-items: flex-end;
+}
+
+.mi-historial-filtros {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.mi-historial-filtros label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #5C6680;
+  font-weight: 500;
+}
+
+.mi-historial-filtros .consulta-input {
+  min-width: 150px;
+}
+
+.mi-historial-resumen {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.mi-historial-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.mi-historial-chip mat-icon {
+  color: #1565C0;
+}
+
+.mi-historial-chip.warn mat-icon,
+.mi-historial-chip.warn strong {
+  color: #C62828;
+}
+
+.mi-historial-chip strong {
+  display: block;
+  color: #1A1F36;
+  font-size: 18px;
+  line-height: 1.15;
+}
+
+.mi-historial-table {
+  margin-top: 8px;
+}
+
+.historial-empty {
+  background: #F8FAFC;
+  border: 1px dashed #CBD5E1;
+  border-radius: 10px;
+}
+
 /* Panel */
 .panel {
   background: #fff;
@@ -420,6 +492,23 @@
   }
   .asistencia-page {
     padding: 16px;
+  }
+  .content-grid.solo-panel {
+    max-width: none;
+  }
+  .historial-funcionario-header {
+    align-items: flex-start;
+  }
+  .mi-historial-filtros {
+    width: 100%;
+    margin-left: 0;
+  }
+  .mi-historial-filtros label,
+  .mi-historial-filtros .btn-consulta {
+    flex: 1 1 160px;
+  }
+  .mi-historial-resumen {
+    grid-template-columns: 1fr;
   }
 }
 /* ── Selector de grupo ──────────────────────────────────────────────────── */

@@ -26,6 +26,10 @@ import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 import { NinioService } from '../../services/ninio.service';
 import { NinioResponse } from '../../models/models';
+import { PermisoResponsableResponse } from '../../models/models';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
+import { ActividadService } from '../../services/actividad.service';
 import {
   InscripcionService,
   InscripcionSolicitudResponse,
@@ -51,7 +55,7 @@ const ESTADO_CONFIG: Record<string, { label: string; color: string; icon: string
     MatFormFieldModule, MatInputModule, MatSelectModule,
     MatDatepickerModule, MatNativeDateModule, MatCheckboxModule,
     MatTooltipModule, MatExpansionModule, MatBadgeModule,
-    Sidebar
+    Sidebar, 
   ],
   templateUrl: './dashboard-responsable.html',
   styleUrl: './dashboard-responsable.css',
@@ -77,13 +81,18 @@ export class DashboardResponsableComponent implements OnInit {
   niniosForm!: FormGroup;
   mostrarExito = false;
 
+  permisos: PermisoResponsableResponse[] = [];
+  cargandoPermisos = false;
+
   constructor(
     private auth: AuthService,
     private inscripcionService: InscripcionService,
     private ninioService: NinioService,
+    private actividadService: ActividadService,
     private toast: ToastService,
     private fb: FormBuilder,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private http: HttpClient
   ) {}
 
   ngOnInit() {
@@ -91,6 +100,7 @@ export class DashboardResponsableComponent implements OnInit {
     this.responsableId = this.auth.getUserId();
     this.inicializarFormulario();
     this.cargarInscripciones();
+    this.cargarPermisos();
   }
 
   cargarInscripciones() {
@@ -314,4 +324,29 @@ export class DashboardResponsableComponent implements OnInit {
     if (c.hasError('pattern'))   return 'Solo números';
     return 'Campo inválido';
   }
+
+  cargarPermisos() {
+  if (!this.responsableId) return;
+  this.cargandoPermisos = true;
+  this.http.get<PermisoResponsableResponse[]>(
+    `${environment.apiUrl}/permisos/responsable/${this.responsableId}`
+  ).subscribe({
+    next: data => { this.permisos = data; this.cargandoPermisos = false; },
+    error: () => { this.cargandoPermisos = false; }
+  });
+}
+
+autorizarPermiso(id: number) {
+  this.actividadService.autorizarPermiso(id).subscribe({
+    next: () => { this.toast.success('Permiso autorizado.'); this.cargarPermisos(); },
+    error: () => this.toast.error('Error al autorizar.')
+  });
+}
+
+rechazarPermiso(id: number) {
+  this.actividadService.rechazarPermiso(id).subscribe({
+    next: () => { this.toast.success('Permiso rechazado.'); this.cargarPermisos(); },
+    error: () => this.toast.error('Error al rechazar.')
+  });
+}
 }

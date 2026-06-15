@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -20,6 +20,8 @@ import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 import { AsistenciaResponse, EstadoPuntualidad, FrecuenciaAsistenciaResponse, NinioResponse } from '../../models/models';
 import { GetPresentesPipe } from '../../pipes/get-presentes-pipe';
+import { ActividadResponse } from '../../models/models';
+import { ActividadService } from '../../services/actividad.service';
 
 interface NinioConEstado extends NinioResponse {
   asistenciaId?: number;
@@ -54,7 +56,6 @@ export class AsistenciaComponent implements OnInit {
 
   get esAuxiliar(): boolean { return this.authService.getRol() === 'AUXILIAR_LIMPIEZA'; }
 
-  // ── Mi Registro ──────────────────────────────────────────────────────────
   miRegistro: AsistenciaResponse | null = null;
   cargandoMiRegistro = false;
   modoEntrada = false;
@@ -62,50 +63,46 @@ export class AsistenciaComponent implements OnInit {
   horaSalidaInput: string = '';
   observacionesInput: string = '';
 
-  // ── Niños de mis grupos ──────────────────────────────────────────────────
   ninios: NinioConEstado[] = [];
   cargandoNinios = false;
   gruposConNinios: { nombre: string; ninios: NinioConEstado[] }[] = [];
 
-  // ── Filtro por grupo ─────────────────────────────────────────────────────
   grupoSeleccionado: string = '';
 
-  // ── Ingreso manual de hora de salida nino ────────────────────────────────
   ninioConSalidaAbierta: number | null = null;
   horaSalidaNinioInput: string = '';
   observacionesSalidaNinioInput: string = '';
 
-  // ── Observaciones al marcar presente ────────────────────────────────────
   ninioConObsAbierta: number | null = null;
   horaEntradaNinioInput: string = '';
   observacionesEntradaNinioInput: string = '';
 
-  // ── Observaciones al registrar salida propia ─────────────────────────────
+  actividades: ActividadResponse[] = [];
+  actividadSeleccionadaId: number | null = null;
+
   observacionesSalidaInput: string = '';
 
   constructor(
     private asistenciaService: AsistenciaService,
     private authService: AuthService,
     private toast: ToastService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private actividadService: ActividadService,
+    private cdr: ChangeDetectorRef
   ) {}
 
-  // ── RF30/RF31/RF32: Consultas por cédula ─────────────────────────────────
 
-  // Historial (RF30)
   modalHistorialVisible = false;
   historialCedula: string = '';
   historialCargando = false;
   historialRegistros: AsistenciaResponse[] = [];
   historialError: string = '';
 
-  // Frecuencia rápida dentro del modal de historial
   historialFrecuencia: FrecuenciaAsistenciaResponse | null = null;
   historialFrecuenciaDesde: string = '';
   historialFrecuenciaHasta: string = '';
   historialFrecuenciaCargando = false;
 
-  // Frecuencia (RF31/RF32)
   frecuenciaCedula: string = '';
   frecuenciaDesde: string = '';
   frecuenciaHasta: string = '';
@@ -259,6 +256,10 @@ export class AsistenciaComponent implements OnInit {
 
   ngOnInit(): void {
     this.horaEntradaInput = this.horaActual();
+    this.actividadService.listarActivas().subscribe({
+      next: a => { this.actividades = a; this.cdr.detectChanges(); },
+      error: () => {}
+    });
     this.cargarDatos();
   }
 
@@ -368,7 +369,7 @@ export class AsistenciaComponent implements OnInit {
       ninios: this.asistenciaService.listarNiniosDisponibles(),
       asistencias: this.asistenciaService.listarAsistenciasDeNinosPorFecha(this.fechaSeleccionada)
     })
-      .pipe(finalize(() => this.cargandoNinios = false))
+      .pipe(finalize(() => { this.cargandoNinios = false; this.cdr.detectChanges(); }))
       .subscribe({
         next: ({ ninios, asistencias }) => {
           this.ninios = ninios.map(n => {
@@ -396,7 +397,6 @@ export class AsistenciaComponent implements OnInit {
   agruparPorGrupo(): void {
     const mapa = new Map<string, NinioConEstado[]>();
     for (const n of this.ninios) {
-      // El backend envía grupoNombre como campo plano; grupo?.nombre como fallback
       const gNombre = n.grupoNombre ?? n.grupo?.nombre ?? 'Sin grupo';
       if (!mapa.has(gNombre)) mapa.set(gNombre, []);
       mapa.get(gNombre)!.push(n);
@@ -413,12 +413,19 @@ export class AsistenciaComponent implements OnInit {
     this.ninioConObsAbierta = ninio.id;
     this.horaEntradaNinioInput = this.horaActual();
     this.observacionesEntradaNinioInput = '';
+
+    const actividadHoy = this.actividades.find(a =>
+      a.fechaDesde <= this.fechaSeleccionada &&
+      !!a.fechaHasta && a.fechaHasta >= this.fechaSeleccionada &&
+      a.ninios?.some(n => n.id === ninio.id)
+    );
   }
 
   cancelarFormPresente(): void {
     this.ninioConObsAbierta = null;
     this.horaEntradaNinioInput = '';
     this.observacionesEntradaNinioInput = '';
+    this.actividadSeleccionadaId = null;
   }
 
   confirmarPresente(ninio: NinioConEstado): void {
@@ -429,7 +436,7 @@ export class AsistenciaComponent implements OnInit {
       horaEntrada: this.horaEntradaNinioInput || this.horaActual(),
       ninioId: ninio.id,
       observaciones: this.observacionesEntradaNinioInput || undefined,
-      actividadId: ninio.actividadId ?? undefined
+      actividadId: this.actividadSeleccionadaId ?? undefined
     }).pipe(finalize(() => ninio.cargando = false))
       .subscribe({
         next: r => {
@@ -442,7 +449,7 @@ export class AsistenciaComponent implements OnInit {
           this.observacionesEntradaNinioInput = '';
           this.toast.show(`Asistencia de ${ninio.nombre} registrada`, 'success');
         },
-        error: e => this.toast.show(e.error?.message || e.error?.error || 'Error al marcar asistencia', 'error')
+        error: e => this.toast.show(e.error?.mensaje || e.error?.message || 'Error al marcar asistencia', 'error')
       });
   }
 

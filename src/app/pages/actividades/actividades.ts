@@ -20,6 +20,11 @@ import { finalize } from 'rxjs/operators';
 import { Sidebar } from '../../shared/components/sidebar/sidebar';
 import { ActividadService } from '../../services/actividad.service';
 import { ToastService } from '../../services/toast.service';
+import { NinioResponse } from '../../models/models';
+import { ParticipanteResponse } from '../../models/models';
+import { NinioService } from '../../services/ninio.service';
+import { AsistenciaService } from '../../services/asistencia.service';
+import { DatePipe } from '@angular/common';
 import {
   ActividadRequest,
   ActividadResponse,
@@ -29,7 +34,6 @@ import {
 
 type Vista = 'tabla' | 'calendario';
 
-// ─── Dialog Crear/Editar Actividad ───────────────────────────────────────────
 @Component({
   selector: 'app-actividad-dialog',
   standalone: true,
@@ -147,13 +151,13 @@ export class ActividadDialogComponent {
   }
 }
 
-// ─── Dialog Detalle ──────────────────────────────────────────────────────────
 @Component({
   selector: 'app-actividad-detalle-dialog',
   standalone: true,
   imports: [
     CommonModule, MatButtonModule, MatIconModule, MatDialogModule,
-    MatTabsModule, MatChipsModule
+    MatTabsModule, MatChipsModule,
+    FormsModule, MatSelectModule, MatTooltipModule, MatProgressSpinnerModule
   ],
   template: `
     <div class="dialog-header">
@@ -162,6 +166,7 @@ export class ActividadDialogComponent {
     </div>
     <mat-dialog-content style="padding:24px;min-width:520px;max-height:70vh">
       <mat-tab-group>
+        
         <mat-tab label="Participantes ({{ data.actividad.ninios?.length ?? 0 }})">
           <div style="padding:16px 0">
             @if(!data.actividad.ninios?.length){
@@ -179,29 +184,103 @@ export class ActividadDialogComponent {
                 }
               </div>
             }
+            <!-- Selector para agregar niño -->
+            <div style="margin-top:16px;display:flex;gap:8px;align-items:center">
+              <mat-select [(ngModel)]="ninioSeleccionadoId" placeholder="Agregar niño"
+                          style="flex:1;font-size:13px">
+                @for(n of niniosDisponibles; track n.id){
+                  <mat-option [value]="n.id">{{ n.nombre }} {{ n.apellido }}</mat-option>
+                }
+              </mat-select>
+              <button mat-flat-button style="background:#1565C0;color:white;height:36px"
+                      (click)="agregarNinio()" [disabled]="!ninioSeleccionadoId || agregando">
+                @if(agregando){<mat-spinner diameter="16" color="accent"></mat-spinner>}
+                @else{<mat-icon>add</mat-icon>}
+              </button>
+            </div>
+          </div>
+        </mat-tab>
+        
+        <mat-tab label="Asistencia">
+          <div style="padding:16px 0">
+            @if(!data.actividad.ninios?.length){
+              <div class="empty-tab">
+                <mat-icon>event_busy</mat-icon>
+                <p>Sin participantes asignados</p>
+              </div>
+            } @else {
+              <div class="participantes-list">
+                @for(p of data.actividad.ninios; track p.id){
+                  <div class="participante-row">
+                    <div class="avatar-sm" [style.background]="asistenciasHoy[p.id] ? '#2E7D32' : '#1565C0'">
+                      {{ p.nombre[0].toUpperCase() }}
+                    </div>
+                    <div style="flex:1">
+                      <div class="part-nombre">{{ p.nombre }} {{ p.apellido }}</div>
+                      @if(p.grupoNombre){<div class="part-grupo">{{ p.grupoNombre }}</div>}
+                    </div>
+                    @if(asistenciasHoy[p.id]){
+                      <span class="badge badge-success">Presente</span>
+                    } @else {
+                      <button mat-flat-button
+                              style="background:#1565C0;color:white;height:32px;font-size:12px"
+                              [disabled]="marcandoAsistencia[p.id]"
+                              (click)="marcarAsistencia(p)">
+                        @if(marcandoAsistencia[p.id]){
+                          <mat-spinner diameter="14" color="accent"></mat-spinner>
+                        } @else {
+                          <mat-icon style="font-size:16px">check</mat-icon> Marcar presente
+                        }
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            }
           </div>
         </mat-tab>
 
-        @if(data.actividad.permisos?.length){
-          <mat-tab label="Permisos ({{ data.actividad.permisos?.length ?? 0 }})">
-            <div style="padding:16px 0">
+        <mat-tab label="Permisos ({{ permisos.length }})">
+          <div style="padding:16px 0">
+            @if(!permisos.length){
+              <div class="empty-tab"><mat-icon>lock</mat-icon><p>Sin permisos registrados</p></div>
+            } @else {
               <div class="permisos-list">
-                @for(p of data.actividad.permisos; track p.id){
+                @for(p of permisos; track p.id){
                   <div class="permiso-row">
-                    <div class="avatar-sm">{{ p.ninioNombre ? p.ninioNombre[0].toUpperCase() : '?' }}</div>
+                    <div class=\"avatar-sm\">{{ p.ninio?.nombre ? p.ninio!.nombre[0].toUpperCase() : '?' }}</div>
                     <div style="flex:1">
-                      <div class="part-nombre">{{ p.ninioNombre ?? '—' }}</div>
+                      <div class=\"part-nombre\">{{ p.ninio ? (p.ninio.nombre + ' ' + p.ninio.apellido) : '—' }}</div>
                       @if(p.observaciones){<div class="part-grupo">{{ p.observaciones }}</div>}
                     </div>
                     <span class="badge" [class.badge-success]="p.autorizado" [class.badge-danger]="!p.autorizado">
                       {{ p.autorizado ? 'Autorizado' : 'No autorizado' }}
                     </span>
+                    @if(!p.autorizado){
+                      <button mat-icon-button matTooltip="Autorizar"
+                              (click)="autorizarPermiso(p.id)">
+                        <mat-icon style="color:#2E7D32">check_circle</mat-icon>
+                      </button>
+                    }
                   </div>
                 }
               </div>
+            }
+            <div style="margin-top:16px;display:flex;gap:8px;align-items:center">
+              <mat-select [(ngModel)]="ninioPermisoId" placeholder="Niño para permiso"
+                          style="flex:1;font-size:13px">
+                @for(n of data.actividad.ninios ?? []; track n.id){
+                  <mat-option [value]="n.id">{{ n.nombre }} {{ n.apellido }}</mat-option>
+                }
+              </mat-select>
+              <button mat-flat-button style="background:#388E3C;color:white;height:36px"
+                      (click)="crearPermiso()" [disabled]="!ninioPermisoId || creandoPermiso">
+                @if(creandoPermiso){<mat-spinner diameter="16" color="accent"></mat-spinner>}
+                @else{ Crear permiso }
+              </button>
             </div>
-          </mat-tab>
-        }
+          </div>
+        </mat-tab>
 
         <mat-tab label="Detalle">
           <div style="padding:16px 0;display:flex;flex-direction:column;gap:12px">
@@ -247,19 +326,116 @@ export class ActividadDialogComponent {
     .badge-danger  { background:#FFEBEE;color:#C62828 }
   `]
 })
-export class ActividadDetalleDialogComponent {
+export class ActividadDetalleDialogComponent implements OnInit {
+  niniosDisponibles: NinioResponse[] = [];
+  ninioSeleccionadoId: number | null = null;
+  agregando = false;
+
+  permisos: PermisoResponse[] = [];
+  ninioPermisoId: number | null = null;
+  creandoPermiso = false;
+  marcandoAsistencia: { [ninioId: number]: boolean } = {};
+  asistenciasHoy: { [ninioId: number]: boolean } = {}; 
+
   constructor(
     public ref: MatDialogRef<ActividadDetalleDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { actividad: ActividadResponse }
+    @Inject(MAT_DIALOG_DATA) public data: { actividad: ActividadResponse },
+    private actividadService: ActividadService,
+    private asistenciaService: AsistenciaService, 
+    private ninioService: NinioService,
+    private toast: ToastService,
+    private cdr: ChangeDetectorRef 
   ) {}
+
+  ngOnInit() {
+    this.ninioService.listarTodos().subscribe(n => this.niniosDisponibles = n);
+    this.cargarPermisos();
+  }
+
+  cargarPermisos() {
+    this.actividadService.listarPermisosPorActividad(this.data.actividad.id)
+      .subscribe(p => this.permisos = p);
+  }
+
+  agregarNinio() {
+    if (!this.ninioSeleccionadoId) return;
+    const idsActuales = (this.data.actividad.ninios ?? []).map(n => n.id);
+    const nuevosIds = [...idsActuales, this.ninioSeleccionadoId];
+    this.agregando = true;
+    this.actividadService.asignarNinios(this.data.actividad.id, nuevosIds).subscribe({
+      next: (a) => {
+        this.data.actividad.ninios = a.ninios;
+        this.ninioSeleccionadoId = null;
+        this.agregando = false;
+        this.toast.success('Niño agregado a la actividad');
+      },
+      error: (err) => {
+        this.agregando = false;
+        this.toast.error(err.error?.error ?? 'Error al agregar niño');
+      }
+    });
+  }
+
+  crearPermiso() {
+    if (!this.ninioPermisoId) return;
+    const ninio = this.data.actividad.ninios?.find(n => n.id === this.ninioPermisoId);
+    if (!ninio) return;
+    this.creandoPermiso = true;
+    this.actividadService.registrarPermiso({
+      ninioCedula: ninio.cedula,
+      actividadId: this.data.actividad.id,
+      autorizado: false,
+      observaciones: ''
+    }).subscribe({
+      next: () => {
+        this.ninioPermisoId = null;
+        this.creandoPermiso = false;
+        this.cargarPermisos();
+        this.toast.success('Permiso creado');
+      },
+      error: (err) => {
+        this.creandoPermiso = false;
+        this.toast.error(err.error?.error ?? 'Error al crear permiso');
+      }
+    });
+  }
+
+  autorizarPermiso(permisoId: number) {
+    this.actividadService.autorizarPermiso(permisoId).subscribe({
+      next: () => { this.cargarPermisos(); this.toast.success('Permiso autorizado'); },
+      error: (err) => this.toast.error(err.error?.error ?? 'Error al autorizar')
+    });
+  }
 
   formatFechaEs(f?: string): string {
     if (!f) return '—';
     return new Date(f + 'T00:00:00').toLocaleDateString('es-UY', { day: '2-digit', month: '2-digit', year: 'numeric' });
   }
+
+  marcarAsistencia(ninio: ParticipanteResponse) {
+    if (this.marcandoAsistencia[ninio.id]) return;
+    this.marcandoAsistencia[ninio.id] = true;
+    this.asistenciaService.marcarAsistenciaNinio({
+      ninioId: ninio.id,
+      horaEntrada: new Date().toTimeString().slice(0, 5),
+      actividadId: this.data.actividad.id
+    }).subscribe({
+      next: () => {
+        this.asistenciasHoy[ninio.id] = true;
+        this.marcandoAsistencia[ninio.id] = false;
+        this.cdr.detectChanges();
+        this.toast.success(`Asistencia de ${ninio.nombre} registrada`);
+      },
+      error: (err) => {
+        this.marcandoAsistencia[ninio.id] = false;
+        this.cdr.detectChanges();
+        this.toast.error(err.error?.mensaje || err.error?.message || 'Error al marcar asistencia');
+      }
+    });
+  }
+
 }
 
-// ─── Componente principal ────────────────────────────────────────────────────
 @Component({
   selector: 'app-actividades',
   standalone: true,
@@ -267,20 +443,19 @@ export class ActividadDetalleDialogComponent {
     CommonModule, FormsModule, ReactiveFormsModule, Sidebar,
     MatTableModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatDialogModule, MatTooltipModule, MatProgressSpinnerModule,
-    MatChipsModule, MatPaginatorModule
+    MatChipsModule, MatPaginatorModule,
+    DatePipe
   ],
   templateUrl: './actividades.html',
   styleUrl: './actividades.css'
 })
 export class ActividadesComponent implements OnInit {
 
-  // ── Estado compartido ──────────────────────────────────────────────────
   actividades: ActividadResponse[] = [];
   empresas: EmpresaExternaResponse[] = [];
   cargando = true;
   vista: Vista = 'tabla';
 
-  // ── Estado tabla ───────────────────────────────────────────────────────
   filtrados: ActividadResponse[] = [];
   pagina: ActividadResponse[] = [];
   busqueda = '';
@@ -289,7 +464,6 @@ export class ActividadesComponent implements OnInit {
   pageSize = 10;
   pageIndex = 0;
 
-  // ── Estado calendario ──────────────────────────────────────────────────
   fechaActual = new Date();
   readonly diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
@@ -317,7 +491,6 @@ export class ActividadesComponent implements OnInit {
 
   cambiarVista(v: Vista) { this.vista = v; }
 
-  // ── Tabla ──────────────────────────────────────────────────────────────
   aplicarFiltros() {
     let res = [...this.actividades];
     if (this.busqueda) {
@@ -351,7 +524,6 @@ export class ActividadesComponent implements OnInit {
       : texto;
   }
 
-  // ── Calendario ─────────────────────────────────────────────────────────
   get diasDeSemana(): Date[] {
     const lunes = new Date(this.fechaActual);
     const dia = lunes.getDay();
@@ -364,7 +536,6 @@ export class ActividadesComponent implements OnInit {
     });
   }
 
-  /** Devuelve actividades cuyo rango fechaDesde–fechaHasta incluye el día dado */
   actividadesDelDia(fecha: Date): ActividadResponse[] {
     const iso = this.toISODate(fecha);
     return this.actividades
@@ -423,7 +594,6 @@ export class ActividadesComponent implements OnInit {
     }).length;
   }
 
-  // ── Acciones compartidas ───────────────────────────────────────────────
   abrirCrear() {
     const ref = this.dialog.open(ActividadDialogComponent, {
       data: { modo: 'crear', empresas: this.empresas },

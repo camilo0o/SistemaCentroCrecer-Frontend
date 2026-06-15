@@ -630,17 +630,17 @@ export class GrupoDialogComponent implements OnInit {
 
   ngOnInit() {
     this.funcionarioService.listarActivos().pipe(
-      finalize(() => { this.cargandoDatos = false; })
-    ).subscribe({
-      next: (fs) => {
-        this.funcionarios = fs;
-        // Pre-cargar funcionarios seleccionados al editar
-        if (this.data.modo === 'editar' && this.data.grupo?.funcionarios) {
-          this.funcionariosSeleccionados = this.data.grupo.funcionarios.map(f => f.id);
-        }
-      },
-      error: () => this.toast.error('Error al cargar funcionarios')
-    });
+    finalize(() => { this.cargandoDatos = false; this.cdr.markForCheck(); })
+  ).subscribe({
+    next: (fs) => {
+      this.funcionarios = fs;
+      if (this.data.modo === 'editar' && this.data.grupo?.funcionarios) {
+        this.funcionariosSeleccionados = this.data.grupo.funcionarios.map(f => f.id);
+      }
+      this.cdr.markForCheck();
+    },
+    error: () => this.toast.error('Error al cargar funcionarios')
+  });
   }
 
   getRolDisplay(nombre?: string): string {

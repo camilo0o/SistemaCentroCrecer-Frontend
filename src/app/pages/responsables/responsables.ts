@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject } from '@angular/core';
+import { Component, OnInit, Inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -16,13 +16,12 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { Sidebar } from '../../shared/components/sidebar/sidebar';
+import { forkJoin } from 'rxjs';
 import { ToastService } from '../../services/toast.service';
+import { finalize } from 'rxjs/operators';
 import { ResponsableResponse, ResponsableNinioResponse, ResponsableNinioRequest } from '../../models/models';
 import { ResponsableService } from '../../services/responsable.service';
 
-// ═══════════════════════════════════════════════════════════════════
-// DIALOG: Editar autorización de retiro
-// ═══════════════════════════════════════════════════════════════════
 @Component({
   selector: 'app-retiro-dialog',
   standalone: true,
@@ -140,9 +139,7 @@ export class RetiroDialogComponent {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// PÁGINA PRINCIPAL: Responsables
-// ═══════════════════════════════════════════════════════════════════
+
 @Component({
   selector: 'app-responsables',
   standalone: true,
@@ -171,11 +168,11 @@ export class ResponsablesComponent implements OnInit {
   constructor(
     private responsableService: ResponsableService,
     private dialog: MatDialog,
-    private toast: ToastService
+    private toast: ToastService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
-    // Detectar roles que pueden gestionar (activar/desactivar) responsables
     const token = localStorage.getItem('token');
     if (token) {
       try {
@@ -185,7 +182,6 @@ export class ResponsablesComponent implements OnInit {
           'ADMINISTRADOR_SISTEMA', 'COORDINADORA', 'ASISTENTE_SOCIAL', 'PSICOLOGO'
         ];
         this.esAdmin = ROLES_GESTION.includes(rol);
-        // Solo el admin del sistema ve todos (activos + inactivos)
         this.esAdminSistema = rol === 'ADMINISTRADOR_SISTEMA';
       } catch {
         this.esAdmin = false;
@@ -201,16 +197,19 @@ export class ResponsablesComponent implements OnInit {
       ? this.responsableService.listarTodos()
       : this.responsableService.listarActivos();
 
-    lista$.subscribe({
-      next: r => {
-        this.responsables = r;
-        this.responsableService.listarRelaciones().subscribe({
-          next: rel => { this.relaciones = rel; this.cargando = false; },
-          error: () => this.cargando = false
-        });
+    forkJoin({
+      responsables: lista$,
+      relaciones: this.responsableService.listarRelaciones()
+    }).pipe(
+      finalize(() => { this.cargando = false; this.cdr.detectChanges(); })
+    ).subscribe({
+      next: ({ responsables, relaciones }) => {
+        this.responsables = responsables;
+        this.relaciones = relaciones;
       },
-      error: () => this.cargando = false
+      error: () => {}
     });
+  
   }
 
   get responsablesFiltrados(): ResponsableResponse[] {

@@ -301,7 +301,15 @@
                           <textarea [(ngModel)]="observacionesEntradaNinioInput" rows="2"
                                     placeholder="Observaciones (opcional)..."
                                     class="obs-input obs-ninio"></textarea>
-                        </div>
+                          <mat-select [(ngModel)]="actividadSeleccionadaId"
+                                    placeholder="Actividad (opcional)"
+                                    style="margin-top:8px;width:100%;font-size:13px">
+                          <mat-option [value]="null" [disabled]="actividadSeleccionadaId !== null">Sin actividad</mat-option>
+                          @for(a of actividades; track a.id){
+                            <mat-option [value]="a.id">{{ a.nombre }}</mat-option>
+                          }
+                        </mat-select>
+                      </div>
                       } @else {
                         <button mat-flat-button class="btn-marcar"
                                 (click)="marcarPresente(ninio)"

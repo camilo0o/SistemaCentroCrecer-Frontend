@@ -104,6 +104,64 @@
             </mat-card-content>
           </mat-card>
 
+          <!-- ── Permisos pendientes ──────────────────────────────────────────── -->
+          <div class="section-label" style="margin-top:28px">PERMISOS DE ACTIVIDADES</div>
+
+          @if(cargandoPermisos) {
+            <div class="loading-center"><mat-spinner diameter="32"></mat-spinner></div>
+          }
+
+          @if(!cargandoPermisos && permisos.length === 0) {
+            <mat-card appearance="outlined" class="empty-card">
+              <mat-card-content>
+                <mat-icon class="empty-icon">lock_open</mat-icon>
+                <p>No hay permisos de actividades pendientes.</p>
+              </mat-card-content>
+            </mat-card>
+          }
+
+          @if(!cargandoPermisos && permisos.length > 0) {
+            <div class="insc-list">
+              @for(p of permisos; track p.id) {
+                <mat-card class="insc-card" appearance="outlined">
+                  <mat-card-content>
+                    <div class="insc-header">
+                      <div class="insc-avatar" [style.background]="p.autorizado ? '#10B981' : '#F59E0B'">
+                        <mat-icon style="color:white;font-size:20px">{{ p.autorizado ? 'check' : 'schedule' }}</mat-icon>
+                      </div>
+                      <div class="insc-info">
+                        <div class="insc-nombre">{{ p.actividad?.nombre }}</div>
+                        <div class="insc-meta">
+                          <span><mat-icon>child_care</mat-icon>{{ p.ninio?.nombre }} {{ p.ninio?.apellido }}</span>
+                          @if(p.actividad?.fechaDesde) {
+                            <span><mat-icon>calendar_today</mat-icon>{{ p.actividad!.fechaDesde | date:'dd-MM-yyyy' }}</span>
+                          }
+                          @if(p.actividad?.lugar) {
+                            <span><mat-icon>place</mat-icon>{{ p.actividad!.lugar }}</span>
+                          }
+                        </div>
+                      </div>
+                      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+                        @if(!p.autorizado) {
+                          <button mat-flat-button color="primary" (click)="autorizarPermiso(p.id)">
+                            <mat-icon>check_circle</mat-icon> Autorizar
+                          </button>
+                          <button mat-stroked-button color="warn" (click)="rechazarPermiso(p.id)">
+                            <mat-icon>cancel</mat-icon> Rechazar
+                          </button>
+                        } @else {
+                          <span style="color:#10B981;font-weight:600;display:flex;align-items:center;gap:4px">
+                            <mat-icon>check_circle</mat-icon> Autorizado
+                          </span>
+                        }
+                      </div>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+              }
+            </div>
+          }
+
           <!-- ── Listado de inscripciones ─────────────────────────────────── -->
           <div class="section-label" style="margin-top:28px">MIS INSCRIPCIONES</div>
 

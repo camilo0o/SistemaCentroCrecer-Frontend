@@ -243,20 +243,47 @@ export interface EmpresaExternaResponse {
 
 
 export interface PermisoRequest {
-  ninioId: number;
+  ninioId?: number;
+  ninioCedula: string;
+  actividadId: number;
   autorizado: boolean;
   observaciones?: string;
 }
 
 export interface PermisoResponse {
   id: number;
-  ninioId: number;
-  ninioNombre?: string;
+  ninioCedula: string;
+  ninio?: {
+    id: number;
+    nombre: string;
+    apellido: string;
+    cedula: string;
+    fotoUrl?: string;
+  };
   autorizado: boolean;
-  observaciones?: string;
-  fechaRegistro: string;
+  activo: boolean;
+  fechaBaja?: string;
+  observaciones?: string; 
 }
 
+export interface PermisoResponsableResponse {
+  id: number;
+  autorizado: boolean;
+  activo: boolean;
+  ninio?: {
+    id: number;
+    nombre: string;
+    apellido: string;
+    cedula: string;
+  };
+  actividad?: {
+    id: number;
+    nombre: string;
+    fechaDesde: string;
+    fechaHasta?: string;
+    lugar?: string;
+  };
+}
 
 export type EstadoActividad = 'PLANIFICADA' | 'EN_CURSO' | 'FINALIZADA' | 'CANCELADA';
 
@@ -290,6 +317,7 @@ export interface ParticipanteResponse {
   nombre: string;
   apellido: string;
   grupoNombre?: string;
+  cedula: string;
 }
 
 export const ESTADO_ACTIVIDAD_DISPLAY: Record<EstadoActividad, string> = {

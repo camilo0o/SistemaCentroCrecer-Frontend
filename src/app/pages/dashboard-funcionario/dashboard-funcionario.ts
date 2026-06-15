@@ -20,6 +20,7 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { Sidebar } from '../../shared/components/sidebar/sidebar';
 import { DashboardService } from '../../services/dashboard.service';
 import { AuthService } from '../../services/auth.service';
+import { finalize } from 'rxjs/operators';
 import { GrupoService } from '../../services/grupo.service';
 import { InscripcionService, InscripcionSolicitudResponse } from '../../services/inscripcion.service';
 import { ToastService } from '../../services/toast.service';
@@ -536,7 +537,8 @@ export class DashboardFuncionarioComponent implements OnInit {
     private grupoService: GrupoService,
     private inscripcionService: InscripcionService,
     private dialog: MatDialog,
-    private toast: ToastService
+    private toast: ToastService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -544,20 +546,23 @@ export class DashboardFuncionarioComponent implements OnInit {
     this.rol = this.auth.getRol() ?? '';
     this.rolDisplay = ROL_DISPLAY[this.rol] ?? this.rol;
 
-    this.dashService.getFuncionarioStats().subscribe({
-      next: (s) => {
-        this.stats = s;
-        this.statCards = [
-          { icon: 'child_care', label: 'Niños registrados', value: s.niniosTotales,   bg: '#E8F5E9', color: '#2E7D32' },
-          { icon: 'event',      label: 'Actividades',       value: s.actividadesTotal, bg: '#FFF3E0', color: '#FF6F00' },
-          { icon: 'groups',     label: 'Grupos activos',    value: s.gruposActivos,    bg: '#F3E5F5', color: '#7B1FA2' },
-        ];
+    this.dashService.getFuncionarioStats()
+      .pipe(finalize(() => {
         this.cargando = false;
-      },
-      error: () => { this.cargando = false; }
+        this.cdr.markForCheck();
+      }))
+      .subscribe({
+        next: (s) => {
+          this.stats = s;
+          this.statCards = [
+              { icon: 'child_care', label: 'Niños registrados', value: s.niniosTotales,   bg: '#E8F5E9', color: '#2E7D32' },
+              { icon: 'event',      label: 'Actividades',       value: s.actividadesTotal, bg: '#FFF3E0', color: '#FF6F00' },
+              { icon: 'groups',     label: 'Grupos activos',    value: s.gruposActivos,    bg: '#F3E5F5', color: '#7B1FA2' },
+            ];
+          },
+          error: () => {}
     });
 
-    // Cargar solicitudes pendientes y grupos si puede gestionar niños
     if (this.puedeGestionarInscripciones) {
       this.cargarSolicitudesPendientes();
       this.grupoService.listarActivos().subscribe({
@@ -572,12 +577,17 @@ export class DashboardFuncionarioComponent implements OnInit {
   }
 
   cargarSolicitudesPendientes() {
-    this.cargandoSolicitudes = true;
-    this.inscripcionService.listarPendientes().subscribe({
-      next: s => { this.solicitudesPendientes = s; this.cargandoSolicitudes = false; },
-      error: () => { this.cargandoSolicitudes = false; }
+  this.cargandoSolicitudes = true;
+  this.inscripcionService.listarPendientes()
+    .pipe(finalize(() => {
+      this.cargandoSolicitudes = false;
+      this.cdr.markForCheck();  // ← fuerza la detección
+    }))
+    .subscribe({
+      next: s => { this.solicitudesPendientes = s; },
+      error: () => {}
     });
-  }
+}
 
   abrirDarDeAlta(solicitud: InscripcionSolicitudResponse) {
     const ref = this.dialog.open(DarDeAltaDialogComponent, {

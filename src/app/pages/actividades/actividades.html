@@ -78,7 +78,7 @@
                     <div>
                       <div class="act-nombre">{{ a.nombre }}</div>
                       @if(a.descripcion){
-                        <div class="act-desc">{{ limitarPalabras(a.descripcion, 40) }}</div>
+                        <div class="act-desc">{{ a.descripcion && a.descripcion.length > 80 ? (a.descripcion | slice:0:80) + '...' : a.descripcion }}</div>
                       }
                     </div>
                   </div>
@@ -90,7 +90,7 @@
                 <td mat-cell *matCellDef="let a">
                   <span class="fecha-chip">
                     <mat-icon>calendar_today</mat-icon>
-                    {{ a.fechaDesde }}{{ a.fechaHasta && a.fechaHasta !== a.fechaDesde ? ' → ' + a.fechaHasta : '' }}
+                    {{ a.fechaDesde | date:'dd-MM-yyyy' }}{{ a.fechaHasta && a.fechaHasta !== a.fechaDesde ? ' → ' + (a.fechaHasta | date:'dd-MM-yyyy') : '' }}
                   </span>
                 </td>
               </ng-container>
@@ -232,7 +232,7 @@
                     }
                     @if(esMultidia(a)){
                       <div class="ev-meta multidia-label">
-                        <mat-icon>date_range</mat-icon>{{ a.fechaDesde }} → {{ a.fechaHasta }}
+                        <mat-icon>date_range</mat-icon>{{ a.fechaDesde | date:'dd-MM-yyyy' }} → {{ a.fechaHasta | date:'dd-MM-yyyy' }}
                       </div>
                     }
                     @if(a.ninios?.length){

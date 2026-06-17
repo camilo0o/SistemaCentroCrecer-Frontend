@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
-import { observeOn, asyncScheduler } from 'rxjs';
 
 export interface Toast {
   id: number;
@@ -12,9 +11,7 @@ export interface Toast {
 @Injectable({ providedIn: 'root' })
 export class ToastService {
   private toastSubject = new Subject<Toast>();
-  // observeOn(asyncScheduler) hace que cada emisión se procese
-  // en el siguiente macrotask, nunca durante un ciclo de CD activo.
-  toasts$ = this.toastSubject.asObservable().pipe(observeOn(asyncScheduler));
+  toasts$ = this.toastSubject.asObservable();
   private counter = 0;
 
   show(message: string, type: Toast['type'] = 'info', duration = 4000) {

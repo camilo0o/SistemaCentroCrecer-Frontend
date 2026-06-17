@@ -94,6 +94,16 @@ type Vista = 'tabla' | 'calendario';
           <mat-icon matPrefix>location_on</mat-icon>
           @if(form.get('lugar')?.invalid && form.get('lugar')?.touched){<mat-error>Requerido</mat-error>}
         </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Días límite para cambiar autorización</mat-label>
+          <input matInput type="number" min="0" formControlName="diasLimiteModificacion" placeholder="Ej: 2">
+          <mat-icon matPrefix>event_busy</mat-icon>
+          <mat-hint>Días antes de la actividad hasta los que se puede cambiar la decisión. Dejar vacío para sin límite.</mat-hint>
+          @if(form.get('diasLimiteModificacion')?.invalid && form.get('diasLimiteModificacion')?.touched){
+            <mat-error>Debe ser 0 o mayor</mat-error>
+          }
+        </mat-form-field>
       </form>
     </mat-dialog-content>
     <div class="dialog-actions">
@@ -128,6 +138,7 @@ export class ActividadDialogComponent {
       horaInicio:  [a?.horaInicio ?? '',  Validators.required],
       horaSalida:  [a?.horaSalida ?? ''],
       lugar:       [a?.lugar ?? '',       Validators.required],
+      diasLimiteModificacion: [a?.diasLimiteModificacion ?? null, [Validators.min(0)]],
     });
   }
 
@@ -140,6 +151,7 @@ export class ActividadDialogComponent {
       ...v,
       fechaDesde: toISO(v.fechaDesde),
       fechaHasta: v.fechaHasta ? toISO(v.fechaHasta) : '',
+      diasLimiteModificacion: v.diasLimiteModificacion !== '' && v.diasLimiteModificacion !== null ? Number(v.diasLimiteModificacion) : null,
     };
     const op = this.data.modo === 'crear'
       ? this.actividadService.crear(payload)
@@ -221,7 +233,7 @@ export class ActividadDialogComponent {
                     </div>
                     @if(asistenciasHoy[p.id]){
                       <span class="badge badge-success">Presente</span>
-                    } @else {
+                    } @else if(tienePermisoAutorizado(p.id)){
                       <button mat-flat-button
                               style="background:#1565C0;color:white;height:32px;font-size:12px"
                               [disabled]="marcandoAsistencia[p.id]"
@@ -232,53 +244,13 @@ export class ActividadDialogComponent {
                           <mat-icon style="font-size:16px">check</mat-icon> Marcar presente
                         }
                       </button>
+                    } @else {
+                      <span class="badge badge-danger" matTooltip="Sin permiso autorizado">Sin permiso</span>
                     }
                   </div>
                 }
               </div>
             }
-          </div>
-        </mat-tab>
-
-        <mat-tab label="Permisos ({{ permisos.length }})">
-          <div style="padding:16px 0">
-            @if(!permisos.length){
-              <div class="empty-tab"><mat-icon>lock</mat-icon><p>Sin permisos registrados</p></div>
-            } @else {
-              <div class="permisos-list">
-                @for(p of permisos; track p.id){
-                  <div class="permiso-row">
-                    <div class=\"avatar-sm\">{{ p.ninio?.nombre ? p.ninio!.nombre[0].toUpperCase() : '?' }}</div>
-                    <div style="flex:1">
-                      <div class=\"part-nombre\">{{ p.ninio ? (p.ninio.nombre + ' ' + p.ninio.apellido) : '—' }}</div>
-                      @if(p.observaciones){<div class="part-grupo">{{ p.observaciones }}</div>}
-                    </div>
-                    <span class="badge" [class.badge-success]="p.autorizado" [class.badge-danger]="!p.autorizado">
-                      {{ p.autorizado ? 'Autorizado' : 'No autorizado' }}
-                    </span>
-                    @if(!p.autorizado){
-                      <button mat-icon-button matTooltip="Autorizar"
-                              (click)="autorizarPermiso(p.id)">
-                        <mat-icon style="color:#2E7D32">check_circle</mat-icon>
-                      </button>
-                    }
-                  </div>
-                }
-              </div>
-            }
-            <div style="margin-top:16px;display:flex;gap:8px;align-items:center">
-              <mat-select [(ngModel)]="ninioPermisoId" placeholder="Niño para permiso"
-                          style="flex:1;font-size:13px">
-                @for(n of data.actividad.ninios ?? []; track n.id){
-                  <mat-option [value]="n.id">{{ n.nombre }} {{ n.apellido }}</mat-option>
-                }
-              </mat-select>
-              <button mat-flat-button style="background:#388E3C;color:white;height:36px"
-                      (click)="crearPermiso()" [disabled]="!ninioPermisoId || creandoPermiso">
-                @if(creandoPermiso){<mat-spinner diameter="16" color="accent"></mat-spinner>}
-                @else{ Crear permiso }
-              </button>
-            </div>
           </div>
         </mat-tab>
 
@@ -314,8 +286,8 @@ export class ActividadDialogComponent {
   styles: [`
     .empty-tab { display:flex;flex-direction:column;align-items:center;padding:32px;color:#9AA0B9;gap:8px }
     .empty-tab mat-icon { font-size:40px;width:40px;height:40px }
-    .participantes-list, .permisos-list { display:flex;flex-direction:column;gap:8px }
-    .participante-row, .permiso-row { display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid #F0F1F5 }
+    .participantes-list { display:flex;flex-direction:column;gap:8px }
+    .participante-row { display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid #F0F1F5 }
     .avatar-sm { width:36px;height:36px;border-radius:50%;background:#1565C0;color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0 }
     .part-nombre { font-weight:600;font-size:14px }
     .part-grupo { font-size:12px;color:#5C6680 }
@@ -332,8 +304,6 @@ export class ActividadDetalleDialogComponent implements OnInit {
   agregando = false;
 
   permisos: PermisoResponse[] = [];
-  ninioPermisoId: number | null = null;
-  creandoPermiso = false;
   marcandoAsistencia: { [ninioId: number]: boolean } = {};
   asistenciasHoy: { [ninioId: number]: boolean } = {}; 
 
@@ -350,6 +320,24 @@ export class ActividadDetalleDialogComponent implements OnInit {
   ngOnInit() {
     this.ninioService.listarTodos().subscribe(n => this.niniosDisponibles = n);
     this.cargarPermisos();
+    this.cargarAsistenciasHoy();
+  }
+
+  cargarAsistenciasHoy() {
+    const hoy = new Date().toISOString().slice(0, 10);
+    const idsParticipantes = (this.data.actividad.ninios ?? []).map(n => n.id);
+    if (idsParticipantes.length === 0) return;
+    this.asistenciaService.listarAsistenciasPorNinios(idsParticipantes, hoy).subscribe({
+      next: (asistencias) => {
+        asistencias.forEach(a => {
+          if (a.ninioId != null) {
+            this.asistenciasHoy[a.ninioId] = true;
+          }
+        });
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('[asistenciasHoy] error:', err)
+    });
   }
 
   cargarPermisos() {
@@ -376,40 +364,13 @@ export class ActividadDetalleDialogComponent implements OnInit {
     });
   }
 
-  crearPermiso() {
-    if (!this.ninioPermisoId) return;
-    const ninio = this.data.actividad.ninios?.find(n => n.id === this.ninioPermisoId);
-    if (!ninio) return;
-    this.creandoPermiso = true;
-    this.actividadService.registrarPermiso({
-      ninioCedula: ninio.cedula,
-      actividadId: this.data.actividad.id,
-      autorizado: false,
-      observaciones: ''
-    }).subscribe({
-      next: () => {
-        this.ninioPermisoId = null;
-        this.creandoPermiso = false;
-        this.cargarPermisos();
-        this.toast.success('Permiso creado');
-      },
-      error: (err) => {
-        this.creandoPermiso = false;
-        this.toast.error(err.error?.error ?? 'Error al crear permiso');
-      }
-    });
-  }
-
-  autorizarPermiso(permisoId: number) {
-    this.actividadService.autorizarPermiso(permisoId).subscribe({
-      next: () => { this.cargarPermisos(); this.toast.success('Permiso autorizado'); },
-      error: (err) => this.toast.error(err.error?.error ?? 'Error al autorizar')
-    });
-  }
-
   formatFechaEs(f?: string): string {
     if (!f) return '—';
     return new Date(f + 'T00:00:00').toLocaleDateString('es-UY', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+
+  tienePermisoAutorizado(ninioId: number): boolean {
+    return this.permisos.some(p => p.ninio?.id === ninioId && p.autorizado && p.activo !== false);
   }
 
   marcarAsistencia(ninio: ParticipanteResponse) {

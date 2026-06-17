@@ -72,7 +72,6 @@ export class DashboardResponsableComponent implements OnInit {
 
   inscripciones: InscripcionSolicitudResponse[] = [];
 
-  // ── Mis niños ────────────────────────────────────────────────────────────
   misNinios: NinioResponse[] = [];
   cargandoNinios = false;
   ninioEditando: NinioResponse | null = null;
@@ -141,7 +140,6 @@ export class DashboardResponsableComponent implements OnInit {
 
   volver() { this.vista = 'dashboard'; this.ninioEditando = null; }
 
-  // ── Mis niños ─────────────────────────────────────────────────────────────
 
   cargarMisNinios() {
     if (!this.responsableId) return;
@@ -242,7 +240,6 @@ export class DashboardResponsableComponent implements OnInit {
   get cantidadActivas():   number { return this.inscripciones.filter(i => i.estadoInscripcion === 'ACTIVA').length; }
   get cantidadPendientes():number { return this.inscripciones.filter(i => i.estadoInscripcion === 'PENDIENTE').length; }
 
-  // ─── Formulario ───────────────────────────────────────────────────────────
 
   inicializarFormulario() {
     this.niniosForm = this.fb.group({ ninos: this.fb.array([this.crearNinioGroup()]) });
@@ -343,14 +340,52 @@ export class DashboardResponsableComponent implements OnInit {
   autorizarPermiso(id: number) {
     this.actividadService.autorizarPermiso(id).subscribe({
       next: () => { this.toast.success('Permiso autorizado.'); this.cargarPermisos(); },
-      error: () => this.toast.error('Error al autorizar.')
+      error: (err) => {
+        this.toast.error(err.error?.mensaje || 'Error al autorizar.');
+        this.cargarPermisos();
+      }
     });
   }
 
   rechazarPermiso(id: number) {
     this.actividadService.rechazarPermiso(id).subscribe({
       next: () => { this.toast.success('Permiso rechazado.'); this.cargarPermisos(); },
-      error: () => this.toast.error('Error al rechazar.')
+      error: (err) => {
+        this.toast.error(err.error?.mensaje || 'Error al rechazar.');
+        this.cargarPermisos();
+      }
     });
+  }
+
+
+  private soloFecha(d: Date): Date {
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+
+  eventoVencido(actividad?: PermisoResponsableResponse['actividad']): boolean {
+    if (!actividad) return false;
+    const hoy = this.soloFecha(new Date());
+    const fechaRef = actividad.fechaHasta ? new Date(actividad.fechaHasta) : new Date(actividad.fechaDesde);
+    return this.soloFecha(fechaRef) < hoy;
+  }
+
+  puedeModificarPermiso(p: PermisoResponsableResponse): boolean {
+    if (!p.actividad) return true;
+    if (this.eventoVencido(p.actividad)) return false;
+    if (p.actividad.diasLimiteModificacion == null) return true;
+
+    const hoy = this.soloFecha(new Date());
+    const limite = new Date(p.actividad.fechaDesde);
+    limite.setDate(limite.getDate() - p.actividad.diasLimiteModificacion);
+
+    return hoy <= this.soloFecha(limite);
+  }
+
+  get permisosVigentes(): PermisoResponsableResponse[] {
+    return this.permisos.filter(p => !this.eventoVencido(p.actividad));
+  }
+
+  get permisosVencidos(): PermisoResponsableResponse[] {
+    return this.permisos.filter(p => this.eventoVencido(p.actividad));
   }
 }

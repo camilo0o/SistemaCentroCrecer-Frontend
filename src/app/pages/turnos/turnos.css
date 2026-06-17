@@ -225,3 +225,45 @@
 }
 .turno-item-acciones button { width: 28px; height: 28px; line-height: 28px; }
 .turno-item-acciones mat-icon { font-size: 16px; width: 16px; height: 16px; }
+/* ── Visibilidad por roles ──────────────────────────── */
+.visibility-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: #FFF8E1;
+  border: 1px solid #FFE082;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #795548;
+  margin-bottom: 4px;
+}
+.visibility-banner mat-icon {
+  color: #F9A825;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.badge-coordinacion {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: #EDE7F6;
+  color: #6A1B9A;
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
+.badge-coordinacion-table {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  color: #6A1B9A;
+  background: #EDE7F6;
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-top: 2px;
+  width: fit-content;
+}

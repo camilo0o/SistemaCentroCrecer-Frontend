@@ -42,7 +42,6 @@ export class Sidebar implements OnInit, OnDestroy {
   initials = '';
   fotoPerfil: string | null = null;
 
-  // Notificaciones
   notificaciones: Notificacion[] = [];
   noLeidas = 0;
   panelAbierto = false;
@@ -53,6 +52,7 @@ export class Sidebar implements OnInit, OnDestroy {
     { label: 'Dashboard',           icon: 'dashboard',        route: '/admin/dashboard' },
     { label: 'Usuarios',            icon: 'groups',            route: '/admin/usuarios' },
     { label: 'Responsables',        icon: 'family_restroom',   route: '/admin/responsables' },
+    { label: 'Turnos',              icon: 'schedule',          route: '/funcionario/turnos' },
     { label: 'Asistencia Personal', icon: 'badge',             route: '/admin/asistencia-personal' },
   ];
 
@@ -143,7 +143,6 @@ export class Sidebar implements OnInit, OnDestroy {
         next: (data) => {
           this.notificaciones = data;
           this.noLeidas = data.filter(n => !n.leida).length;
-          // Limpiar selecciones que ya no existen como no-leídas
           this.seleccionadas.forEach(id => {
             const notif = this.notificaciones.find(n => n.id === id);
             if (!notif || notif.leida) this.seleccionadas.delete(id);
@@ -158,7 +157,6 @@ export class Sidebar implements OnInit, OnDestroy {
     if (this.panelAbierto) {
       this.cargarNotificaciones();
     } else {
-      // Al cerrar: aplicar leídas localmente y limpiar selección
       this.seleccionadas.clear();
     }
   }

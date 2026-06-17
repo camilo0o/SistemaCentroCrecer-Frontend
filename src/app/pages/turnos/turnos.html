@@ -12,26 +12,36 @@
 
     <div class="page-content">
 
-      <!-- Summary -->
       <div class="summary-row">
-        <div class="chip-stat"><span class="chip-num">{{ turnos.length }}</span><span class="chip-lbl">Total</span></div>
+        <div class="chip-stat"><span class="chip-num">{{ turnos.length }}</span><span class="chip-lbl">Total visibles</span></div>
         <div class="chip-stat active"><span class="chip-num">{{ totalActivos }}</span><span class="chip-lbl">Activos</span></div>
       </div>
 
-      <!-- Coverage reminder -->
       <div class="coverage-banner">
         <mat-icon>info</mat-icon>
         <span>El centro opera de <strong>7:00 a 19:00 hs</strong>. Los turnos deben garantizar cobertura completa en ese horario.</span>
       </div>
 
-      <!-- Filters -->
+
       <div class="card filters-card">
         <div class="filters-row">
+          @if(esAdminOCoordinadora){
           <mat-form-field appearance="outline" class="search-field">
             <mat-label>Buscar por funcionario</mat-label>
             <input matInput [(ngModel)]="busqueda" (ngModelChange)="aplicarFiltros()" placeholder="Nombre...">
             <mat-icon matPrefix>search</mat-icon>
           </mat-form-field>
+
+            <mat-form-field appearance="outline" class="filter-field">
+              <mat-label>Filtrar por funcionario</mat-label>
+              <mat-select [(ngModel)]="filtroFuncionarioId" (ngModelChange)="aplicarFiltros()">
+                <mat-option [value]="null">Todos</mat-option>
+                @for(f of funcionarios; track f.id){
+                  <mat-option [value]="f.id">{{ f.nombre }} {{ f.apellido }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          }
 
           <mat-form-field appearance="outline" class="filter-field">
             <mat-label>Estado</mat-label>
@@ -42,7 +52,6 @@
             </mat-select>
           </mat-form-field>
 
-          <!-- Toggle de vista -->
           <div class="vista-toggle">
             <button type="button" [class.active]="vistaActual === 'semana'" (click)="vistaActual = 'semana'">
               <mat-icon>calendar_view_week</mat-icon> Por día
@@ -61,7 +70,6 @@
         </div>
       } @else {
 
-        <!-- ═══════════════════════════════════════════════ VISTA POR DÍA -->
         @if(vistaActual === 'semana'){
           <div class="semana-grid">
             @for(dia of diasSemana; track dia.valor){
@@ -87,6 +95,9 @@
                         <span class="func-nombre-sm">{{ t.funcionarioNombre ?? '—' }}</span>
                         @if(!t.activo){
                           <span class="badge-inactivo-sm">Baja</span>
+                        }
+                        @if(!esAdminOCoordinadora && t.funcionarioId !== funcionarioIdPropio){
+                          <span class="badge-coordinacion">Coord.</span>
                         }
                       </div>
                       <div class="turno-horario">
@@ -129,23 +140,25 @@
           }
         }
 
-        <!-- ═══════════════════════════════════════════════ VISTA TABLA -->
         @if(vistaActual === 'tabla'){
           <div class="card table-card">
             <table mat-table [dataSource]="pagina" class="mat-elevation-z0">
 
-              <!-- Funcionario -->
               <ng-container matColumnDef="funcionario">
                 <th mat-header-cell *matHeaderCellDef>Funcionario</th>
                 <td mat-cell *matCellDef="let t">
                   <div class="user-cell">
                     <div class="avatar-sm">{{ t.funcionarioNombre ? t.funcionarioNombre[0].toUpperCase() : '?' }}</div>
-                    <span class="func-name">{{ t.funcionarioNombre ?? '—' }}</span>
+                    <div>
+                      <span class="func-name">{{ t.funcionarioNombre ?? '—' }}</span>
+                      @if(!esAdminOCoordinadora && t.funcionarioId !== funcionarioIdPropio){
+                        <span class="badge-coordinacion-table">Coordinación</span>
+                      }
+                    </div>
                   </div>
                 </td>
               </ng-container>
 
-              <!-- Días -->
               <ng-container matColumnDef="dias">
                 <th mat-header-cell *matHeaderCellDef>Días</th>
                 <td mat-cell *matCellDef="let t">
@@ -161,7 +174,6 @@
                 </td>
               </ng-container>
 
-              <!-- Hora inicio -->
               <ng-container matColumnDef="horaInicio">
                 <th mat-header-cell *matHeaderCellDef>Entrada</th>
                 <td mat-cell *matCellDef="let t">
@@ -169,7 +181,6 @@
                 </td>
               </ng-container>
 
-              <!-- Hora fin -->
               <ng-container matColumnDef="horaFin">
                 <th mat-header-cell *matHeaderCellDef>Salida</th>
                 <td mat-cell *matCellDef="let t">
@@ -177,7 +188,6 @@
                 </td>
               </ng-container>
 
-              <!-- Duración -->
               <ng-container matColumnDef="duracion">
                 <th mat-header-cell *matHeaderCellDef>Duración</th>
                 <td mat-cell *matCellDef="let t">
@@ -185,7 +195,6 @@
                 </td>
               </ng-container>
 
-              <!-- Estado -->
               <ng-container matColumnDef="estado">
                 <th mat-header-cell *matHeaderCellDef>Estado</th>
                 <td mat-cell *matCellDef="let t">
@@ -195,7 +204,6 @@
                 </td>
               </ng-container>
 
-              <!-- Acciones -->
               <ng-container matColumnDef="acciones">
                 <th mat-header-cell *matHeaderCellDef>Acciones</th>
                 <td mat-cell *matCellDef="let t">

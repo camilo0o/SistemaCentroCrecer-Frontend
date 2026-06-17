@@ -121,46 +121,131 @@
           }
 
           @if(!cargandoPermisos && permisos.length > 0) {
-            <div class="insc-list">
-              @for(p of permisos; track p.id) {
-                <mat-card class="insc-card" appearance="outlined">
-                  <mat-card-content>
-                    <div class="insc-header">
-                      <div class="insc-avatar" [style.background]="p.autorizado ? '#10B981' : '#F59E0B'">
-                        <mat-icon style="color:white;font-size:20px">{{ p.autorizado ? 'check' : 'schedule' }}</mat-icon>
-                      </div>
-                      <div class="insc-info">
-                        <div class="insc-nombre">{{ p.actividad?.nombre }}</div>
-                        <div class="insc-meta">
-                          <span><mat-icon>child_care</mat-icon>{{ p.ninio?.nombre }} {{ p.ninio?.apellido }}</span>
-                          @if(p.actividad?.fechaDesde) {
-                            <span><mat-icon>calendar_today</mat-icon>{{ p.actividad!.fechaDesde | date:'dd-MM-yyyy' }}</span>
-                          }
-                          @if(p.actividad?.lugar) {
-                            <span><mat-icon>place</mat-icon>{{ p.actividad!.lugar }}</span>
-                          }
-                        </div>
-                      </div>
-                      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
-                        @if(!p.autorizado) {
-                          <button mat-flat-button color="primary" (click)="autorizarPermiso(p.id)">
-                            <mat-icon>check_circle</mat-icon> Autorizar
-                          </button>
-                          <button mat-stroked-button color="warn" (click)="rechazarPermiso(p.id)">
-                            <mat-icon>cancel</mat-icon> Rechazar
-                          </button>
-                        } @else {
-                          <span style="color:#10B981;font-weight:600;display:flex;align-items:center;gap:4px">
-                            <mat-icon>check_circle</mat-icon> Autorizado
+
+            @if(permisosVigentes.length === 0) {
+              <mat-card appearance="outlined" class="empty-card">
+                <mat-card-content>
+                  <mat-icon class="empty-icon">lock_open</mat-icon>
+                  <p>No hay permisos de próximas actividades.</p>
+                </mat-card-content>
+              </mat-card>
+            }
+
+            @if(permisosVigentes.length > 0) {
+              <div class="insc-list">
+                @for(p of permisosVigentes; track p.id) {
+                  <ng-container *ngTemplateOutlet="permisoCard; context: { $implicit: p }"></ng-container>
+                }
+              </div>
+            }
+
+            @if(permisosVencidos.length > 0) {
+              <mat-accordion style="margin-top:14px;display:block">
+                <mat-expansion-panel>
+                  <mat-expansion-panel-header>
+                    <mat-panel-title>
+                      <mat-icon style="margin-right:6px;color:#9CA3AF">history</mat-icon>
+                      Actividades anteriores
+                    </mat-panel-title>
+                    <mat-panel-description>
+                      {{ permisosVencidos.length }} actividad{{ permisosVencidos.length !== 1 ? 'es' : '' }}
+                    </mat-panel-description>
+                  </mat-expansion-panel-header>
+                  <div class="insc-list" style="margin-top:8px">
+                    @for(p of permisosVencidos; track p.id) {
+                      <ng-container *ngTemplateOutlet="permisoCard; context: { $implicit: p }"></ng-container>
+                    }
+                  </div>
+                </mat-expansion-panel>
+              </mat-accordion>
+            }
+
+          }
+
+          <!-- ── Tarjeta de permiso (reutilizada para vigentes y vencidas) ──────── -->
+          <ng-template #permisoCard let-p>
+            <mat-card class="insc-card" appearance="outlined">
+              <mat-card-content>
+                <div class="insc-header">
+                  <div class="insc-avatar" [style.background]="!p.respondido ? '#F59E0B' : p.autorizado ? '#10B981' : '#EF4444'">
+                    <mat-icon style="color:white;font-size:20px">{{ !p.respondido ? 'schedule' : p.autorizado ? 'check' : 'close' }}</mat-icon>
+                  </div>
+                  <div class="insc-info">
+                    <div class="insc-nombre">{{ p.actividad?.nombre }}</div>
+                    <div class="insc-meta">
+                      <span><mat-icon>child_care</mat-icon>{{ p.ninio?.nombre }} {{ p.ninio?.apellido }}</span>
+                      @if(p.actividad?.fechaDesde) {
+                        <span><mat-icon>calendar_today</mat-icon>{{ p.actividad!.fechaDesde | date:'dd-MM-yyyy' }}</span>
+                      }
+                      @if(p.actividad?.lugar) {
+                        <span><mat-icon>place</mat-icon>{{ p.actividad!.lugar }}</span>
+                      }
+                    </div>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+                    @if(!p.respondido) {
+                      <!-- Aún no respondió -->
+                      @if(puedeModificarPermiso(p)) {
+                        <span style="font-size:13px;font-weight:600;color:#555;margin-bottom:2px">¿Autoriza?</span>
+                        @if(p.actividad?.diasLimiteModificacion != null) {
+                          <span style="font-size:11px;color:#888;margin-top:-4px;margin-bottom:2px">
+                            Podés cambiar hasta {{ p.actividad!.diasLimiteModificacion }} días antes
                           </span>
                         }
-                      </div>
-                    </div>
-                  </mat-card-content>
-                </mat-card>
-              }
-            </div>
-          }
+                        <div style="display:flex;gap:8px">
+                          <button mat-flat-button color="primary" (click)="autorizarPermiso(p.id)">
+                            <mat-icon>check_circle</mat-icon> Sí
+                          </button>
+                          <button mat-stroked-button color="warn" (click)="rechazarPermiso(p.id)">
+                            <mat-icon>cancel</mat-icon> No
+                          </button>
+                        </div>
+                      } @else if(eventoVencido(p.actividad)) {
+                        <span style="color:#9CA3AF;font-weight:600;display:flex;align-items:center;gap:4px;font-size:13px;text-align:right">
+                          <mat-icon style="font-size:18px">event_busy</mat-icon> Se pasó la fecha y no se optó por ninguna opción
+                        </span>
+                      } @else {
+                        <span style="color:#9CA3AF;font-weight:600;display:flex;align-items:center;gap:4px;font-size:13px;text-align:right">
+                          <mat-icon style="font-size:18px">lock_clock</mat-icon> El plazo para responder venció
+                        </span>
+                      }
+                    } @else if(p.autorizado) {
+                      <!-- Autorizó -->
+                      <span style="color:#10B981;font-weight:600;display:flex;align-items:center;gap:4px">
+                        <mat-icon>check_circle</mat-icon> Autorizado
+                      </span>
+                      @if(puedeModificarPermiso(p)) {
+                        @if(p.actividad?.diasLimiteModificacion != null) {
+                          <span style="font-size:11px;color:#888">
+                            Podés cambiar hasta {{ p.actividad!.diasLimiteModificacion }} días antes
+                          </span>
+                        }
+                        <button mat-stroked-button color="warn" style="font-size:12px;height:32px" (click)="rechazarPermiso(p.id)">
+                          <mat-icon style="font-size:15px">cancel</mat-icon> Cambiar a No
+                        </button>
+                      }
+                    } @else {
+                      <!-- Rechazó -->
+                      <span style="color:#EF4444;font-weight:600;display:flex;align-items:center;gap:4px">
+                        <mat-icon>cancel</mat-icon> No autorizado
+                      </span>
+                      @if(puedeModificarPermiso(p)) {
+                        @if(p.actividad?.diasLimiteModificacion != null) {
+                          <span style="font-size:11px;color:#888">
+                            Podés cambiar hasta {{ p.actividad!.diasLimiteModificacion }} días antes
+                          </span>
+                        }
+                        <button mat-flat-button color="primary" style="font-size:12px;height:32px" (click)="autorizarPermiso(p.id)">
+                          <mat-icon style="font-size:15px">check_circle</mat-icon> Cambiar a Sí
+                        </button>
+                      }
+                    }
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </ng-template>
+
 
           <!-- ── Listado de inscripciones ─────────────────────────────────── -->
           <div class="section-label" style="margin-top:28px">MIS INSCRIPCIONES</div>

@@ -76,7 +76,10 @@
                   <div class="nombre-cell">
                     <div class="act-icon"><mat-icon>celebration</mat-icon></div>
                     <div>
-                      <div class="act-nombre">{{ a.nombre }}</div>
+                      <div class="act-nombre">
+                        <span class="act-fecha"><mat-icon>calendar_today</mat-icon>{{ a.fechaDesde | date:'dd-MM-yyyy' }}{{ a.fechaHasta && a.fechaHasta !== a.fechaDesde ? ' → ' + (a.fechaHasta | date:'dd-MM-yyyy') : '' }}</span>
+                        - {{ a.nombre }}
+                      </div>
                       @if(a.descripcion){
                         <div class="act-desc">{{ a.descripcion && a.descripcion.length > 80 ? (a.descripcion | slice:0:80) + '...' : a.descripcion }}</div>
                       }

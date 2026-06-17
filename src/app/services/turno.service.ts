@@ -14,6 +14,11 @@ export class TurnoService {
     return this.http.get<TurnoResponse[]>(this.apiUrl);
   }
 
+  /** Devuelve los turnos visibles según el rol del usuario autenticado */
+  listarVisibles(): Observable<TurnoResponse[]> {
+    return this.http.get<TurnoResponse[]>(`${this.apiUrl}/visibles`);
+  }
+
   listarActivos(): Observable<TurnoResponse[]> {
     return this.http.get<TurnoResponse[]>(`${this.apiUrl}/activos`);
   }

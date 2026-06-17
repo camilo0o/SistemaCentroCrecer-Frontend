@@ -147,14 +147,11 @@ import { finalize } from 'rxjs/operators';
         <!-- Días de la semana -->
         <div>
           <div class="dias-label">Días de la semana *</div>
-
-          <!-- Atajos rápidos -->
           <div class="semana-atajos">
             <button type="button" class="atajo-btn" (click)="seleccionarLunesViernes()">Lun – Vie</button>
             <button type="button" class="atajo-btn" (click)="seleccionarTodos()">Todos</button>
             <button type="button" class="atajo-btn" (click)="limpiarDias()">Ninguno</button>
           </div>
-
           <div class="dias-grid">
             @for(d of diasSemana; track d.valor){
               <div class="dia-toggle" [class.selected]="isDiaSelected(d.valor)" (click)="toggleDia(d.valor)">
@@ -165,7 +162,6 @@ import { finalize } from 'rxjs/operators';
               </div>
             }
           </div>
-
           @if(diasError){
             <div class="dias-error">
               <mat-icon style="font-size:14px;width:14px;height:14px">error</mat-icon>
@@ -210,14 +206,12 @@ export class TurnoDialogComponent {
       modo: 'crear' | 'editar';
       turno?: TurnoResponse;
       funcionarios: FuncionarioResponse[];
-      /** Si está definido, el select de funcionario queda bloqueado con este valor */
       funcionarioIdFijo?: number | null;
     },
     private turnoService: TurnoService,
     private toast: ToastService
   ) {
     const t = data.turno;
-    // Preseleccionar: en edición usar el del turno, en creación usar el fijo si existe
     const funcionarioInicial = t?.funcionarioId ?? data.funcionarioIdFijo ?? null;
     this.form = this.fb.group({
       funcionarioId: [funcionarioInicial, Validators.required],
@@ -293,6 +287,8 @@ export class TurnosComponent implements OnInit {
   busqueda = '';
   filtroEstado = 'todos';
   filtroDia = 'todos';
+  /** Solo para Admin/Coordinadora: id del funcionario seleccionado en el selector (null = todos) */
+  filtroFuncionarioId: number | null = null;
   columnas = ['funcionario', 'dias', 'horaInicio', 'horaFin', 'duracion', 'estado', 'acciones'];
   pageSize = 10;
   pageIndex = 0;
@@ -309,13 +305,15 @@ export class TurnosComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.funcionarioService.listarActivos().subscribe(f => this.funcionarios = f);
+    if (this.esAdminOCoordinadora) {
+      this.funcionarioService.listarActivos().subscribe(f => this.funcionarios = f);
+    }
     this.cargarTurnos();
   }
 
   cargarTurnos() {
     this.cargando = true;
-    this.turnoService.listarTodos().pipe(
+    this.turnoService.listarVisibles().pipe(
       finalize(() => { this.cargando = false; this.cdr.detectChanges(); })
     ).subscribe({
       next: (t) => { this.turnos = t; this.aplicarFiltros(); },
@@ -325,15 +323,25 @@ export class TurnosComponent implements OnInit {
 
   aplicarFiltros() {
     let res = [...this.turnos];
+
+    // Filtro por nombre
     if (this.busqueda) {
       const b = this.busqueda.toLowerCase();
       res = res.filter(t => t.funcionarioNombre?.toLowerCase().includes(b));
     }
+
+    // Filtro por funcionario (solo Admin/Coordinadora)
+    if (this.esAdminOCoordinadora && this.filtroFuncionarioId) {
+      res = res.filter(t => t.funcionarioId === this.filtroFuncionarioId);
+    }
+
     if (this.filtroEstado === 'activos') res = res.filter(t => t.activo);
     else if (this.filtroEstado === 'inactivos') res = res.filter(t => !t.activo);
+
     if (this.filtroDia !== 'todos') {
       res = res.filter(t => t.dias?.includes(this.filtroDia as DiaSemana));
     }
+
     this.filtrados = res;
     this.pageIndex = 0;
     this.actualizarPagina();
@@ -346,7 +354,6 @@ export class TurnosComponent implements OnInit {
 
   onPage(e: PageEvent) { this.pageIndex = e.pageIndex; this.pageSize = e.pageSize; this.actualizarPagina(); }
 
-  /** Devuelve turnos filtrados que incluyen el día dado */
   turnosPorDia(dia: DiaSemana): TurnoResponse[] {
     return this.filtrados.filter(t => t.dias?.includes(dia));
   }
@@ -362,20 +369,22 @@ export class TurnosComponent implements OnInit {
     return h > 0 ? `${h}h${m > 0 ? ' ' + m + 'm' : ''}` : `${m}m`;
   }
 
-  /** Devuelve la abreviación del día en español */
   getDiaLabel(dia: string): string {
     return DIAS_SEMANA.find(d => d.valor === dia)?.abrev ?? dia;
   }
 
-  /** Ordena días en orden natural de la semana */
   ordenarDias(dias: DiaSemana[]): DiaSemana[] {
     const orden = DIAS_SEMANA.map(d => d.valor);
     return [...(dias ?? [])].sort((a, b) => orden.indexOf(a) - orden.indexOf(b));
   }
 
+  /** Etiqueta que indica de quién son los turnos que se están viendo (para roles bajos) */
+  get etiquetaVisibilidad(): string {
+    if (this.esAdminOCoordinadora) return '';
+    return 'Estás viendo tus turnos y los de Coordinación';
+  }
+
   abrirCrear() {
-    // Si es un funcionario raso, solo puede crear su propio turno:
-    // se le pasa la lista con solo su propio registro (o toda si es admin/coordinadora)
     const funcionariosFiltrados = this.esAdminOCoordinadora
       ? this.funcionarios
       : this.funcionarios.filter(f => f.id === this.funcionarioIdPropio);
@@ -435,25 +444,21 @@ export class TurnosComponent implements OnInit {
     });
   }
 
-  /** Admin y coordinadora pueden gestionar cualquier turno; un funcionario solo puede gestionar el suyo */
   puedeGestionar(t: TurnoResponse): boolean {
     const rol = this.authService.getRol();
     if (rol === 'ADMINISTRADOR_SISTEMA' || rol === 'COORDINADORA') return true;
     return t.funcionarioId === this.authService.getUserId();
   }
 
-  /** Mantiene compatibilidad: dar de alta solo si puede gestionar */
   puedeReactivar(t: TurnoResponse): boolean {
     return this.puedeGestionar(t);
   }
 
-  /** True si el usuario logueado es admin o coordinadora */
   get esAdminOCoordinadora(): boolean {
     const rol = this.authService.getRol();
     return rol === 'ADMINISTRADOR_SISTEMA' || rol === 'COORDINADORA';
   }
 
-  /** ID del funcionario logueado (null si es admin sin registro de funcionario) */
   get funcionarioIdPropio(): number | null {
     return this.authService.getUserId();
   }

@@ -19,8 +19,6 @@ export class AsistenciaService {
 
   constructor(private http: HttpClient) {}
 
-  // ── Mi entrada/salida (funcionario autenticado) ──────────────────────────
-
   registrarMiEntrada(dto: RegistroEntradaFuncionarioRequest): Observable<AsistenciaResponse> {
     return this.http.post<AsistenciaResponse>(`${this.apiUrl}/mi-entrada`, dto);
   }
@@ -40,8 +38,6 @@ export class AsistenciaService {
     );
   }
 
-  // ── Niños de mis grupos ──────────────────────────────────────────────────
-
   listarNiniosDisponibles(): Observable<NinioResponse[]> {
     return this.http.get<NinioResponse[]>(`${this.apiUrl}/mis-ninios-disponibles`);
   }
@@ -56,6 +52,13 @@ export class AsistenciaService {
     return this.http.get<AsistenciaResponse[]>(`${this.apiUrl}/mis-ninios`, { params });
   }
 
+  listarAsistenciasPorNinios(ninioIds: number[], fecha?: string): Observable<AsistenciaResponse[]> {
+    let params = new HttpParams();
+    ninioIds.forEach(id => params = params.append('ninioIds', id));
+    if (fecha) params = params.set('fecha', fecha);
+    return this.http.get<AsistenciaResponse[]>(`${this.apiUrl}/por-ninios`, { params });
+  }
+
   registrarSalidaNinio(asistenciaId: number, dto: RegistroSalidaNinioRequest): Observable<AsistenciaResponse> {
     return this.http.put<AsistenciaResponse>(`${this.apiUrl}/ninio/${asistenciaId}/salida`, dto);
   }
@@ -68,8 +71,6 @@ export class AsistenciaService {
     const params = new HttpParams().set('desde', desde).set('hasta', hasta);
     return this.http.get<FrecuenciaAsistenciaResponse>(`${this.apiUrl}/frecuencia/${cedula}`, { params });
   }
-
-  // ── Admin: consulta global de asistencia del personal ────────────────────
 
   listarAsistenciasFuncionariosPorRango(desde: string, hasta: string): Observable<AsistenciaResponse[]> {
     const params = new HttpParams().set('desde', desde).set('hasta', hasta);

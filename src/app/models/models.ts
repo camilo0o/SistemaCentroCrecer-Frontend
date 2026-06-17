@@ -269,6 +269,7 @@ export interface PermisoResponse {
 export interface PermisoResponsableResponse {
   id: number;
   autorizado: boolean;
+  respondido: boolean;
   activo: boolean;
   ninio?: {
     id: number;
@@ -282,6 +283,7 @@ export interface PermisoResponsableResponse {
     fechaDesde: string;
     fechaHasta?: string;
     lugar?: string;
+    diasLimiteModificacion?: number | null;
   };
 }
 
@@ -295,6 +297,7 @@ export interface ActividadRequest {
   horaInicio: string;
   horaSalida?: string;   
   lugar: string;
+  diasLimiteModificacion?: number | null;
 }
 
 export interface ActividadResponse {
@@ -308,6 +311,7 @@ export interface ActividadResponse {
   lugar?: string;
   activo: boolean;
   fechaBaja?: string;
+  diasLimiteModificacion?: number | null;
   ninios?: ParticipanteResponse[];
   permisos?: PermisoResponse[];
   empresasExternas?: EmpresaExternaResponse[];

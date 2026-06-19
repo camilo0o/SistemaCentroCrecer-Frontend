@@ -265,6 +265,11 @@
                               </span>
                               <span class="nfm-periodo">30 días</span>
                             </div>
+                            <!-- Aclaración sobre qué son los días hábiles -->
+                            <p class="nfm-habiles-nota">
+                              <mat-icon style="font-size:10px;vertical-align:middle">info</mat-icon>
+                              Sobre {{ ninioFrecuenciaData.totalDiasHabiles }} días que el centro abrió
+                            </p>
                           }
                           @if (!ninioFrecuenciaCargando && ninioFrecuenciaError) {
                             <span class="nfm-label">Sin registros</span>
@@ -284,7 +289,7 @@
                       <mat-spinner diameter="20"></mat-spinner>
                     }
 
-                    @if (!ninio.cargando && !ninio.presente) {
+                    @if (!ninio.cargando && !ninio.presente && esHoy) {
                       @if (ninioConObsAbierta === ninio.id) {
                         <div class="form-presente-inline">
                           <div class="hora-obs-row">
@@ -317,6 +322,12 @@
                           <mat-icon>how_to_reg</mat-icon> Presente
                         </button>
                       }
+                    }
+
+                    @if (!ninio.cargando && !ninio.presente && !esHoy) {
+                      <span class="badge-ausente" matTooltip="Solo se puede marcar asistencia el día de hoy">
+                        <mat-icon>block</mat-icon> No registrado
+                      </span>
                     }
 
                     @if (!ninio.cargando && ninio.presente && !ninio.horaSalida && esHoy) {
@@ -520,7 +531,11 @@
           <mat-icon class="consulta-icon green">bar_chart</mat-icon>
           <span class="consulta-title">Frecuencia de asistencia / inasistencia</span>
         </div>
-        <p class="consulta-desc">Consultar cuántos días asistió o faltó un niño en un período determinado.</p>
+        <p class="consulta-desc">
+          Consultar cuántos días asistió o faltó un niño en un período.
+          Los días hábiles son los días en que el centro efectivamente abrió (al menos un niño fue marcado como presente),
+          por lo que feriados, fines de semana y vacaciones no se cuentan.
+        </p>
 
         <div class="frecuencia-form">
           <input class="consulta-input" type="text" [(ngModel)]="frecuenciaCedula"
@@ -572,9 +587,11 @@
                 <span class="frec-label">días ausente</span>
                 <span class="frec-pct">{{ frecuenciaResultado.porcentajeInasistencia }}%</span>
               </div>
-              <div class="frec-stat total">
+              <div class="frec-stat total"
+                   matTooltip="Solo se cuentan días en que el centro abrió (al menos un niño fue marcado presente). Fines de semana, feriados y vacaciones no se incluyen.">
                 <span class="frec-num">{{ frecuenciaResultado.totalDiasHabiles }}</span>
                 <span class="frec-label">días hábiles</span>
+                <mat-icon class="frec-info-icon">info_outline</mat-icon>
               </div>
             </div>
             <!-- Barra de progreso visual -->
@@ -584,6 +601,63 @@
                    [matTooltip]="frecuenciaResultado.porcentajeAsistencia + '% asistencia'">
               </div>
             </div>
+
+            <!-- Nota explicativa sobre días hábiles -->
+            <p class="frec-habiles-nota">
+              <mat-icon style="font-size:13px;vertical-align:middle">info</mat-icon>
+              Los <strong>{{ frecuenciaResultado.totalDiasHabiles }} días hábiles</strong> son los días
+              en que el centro estuvo abierto en el período (fines de semana, feriados y vacaciones excluidos automáticamente).
+            </p>
+
+            <!-- Botón Ver calendario -->
+            <button mat-stroked-button class="btn-ver-calendario"
+                    (click)="toggleFrecuenciaCalendario()">
+              <mat-icon>calendar_month</mat-icon>
+              {{ frecuenciaCalendarioVisible ? 'Ocultar calendario' : 'Ver calendario' }}
+            </button>
+
+            <!-- Calendario de frecuencia -->
+            @if (frecuenciaCalendarioVisible && frecuenciaCalendarioMeses.length > 0) {
+              <div class="frec-calendario">
+                <!-- Leyenda -->
+                <div class="cal-leyenda">
+                  <span class="cal-ley-item">
+                    <span class="cal-ley-dot presente"></span> Presente
+                  </span>
+                  <span class="cal-ley-item">
+                    <span class="cal-ley-dot ausente"></span> Ausente / centro cerrado
+                  </span>
+                  <span class="cal-ley-item">
+                    <span class="cal-ley-dot nohabil"></span> Fin de semana
+                  </span>
+                  <span class="cal-ley-item">
+                    <span class="cal-ley-dot fuera"></span> Fuera del período
+                  </span>
+                </div>
+                <div class="cal-meses-grid">
+                  @for (mes of frecuenciaCalendarioMeses; track mes.label) {
+                    <div class="cal-mes">
+                      <div class="cal-mes-titulo">{{ mes.label }}</div>
+                      <div class="cal-semana-header">
+                        <span>Lu</span><span>Ma</span><span>Mi</span>
+                        <span>Ju</span><span>Vi</span><span>Sa</span><span>Do</span>
+                      </div>
+                      <div class="cal-dias-grid">
+                        @for (dia of mes.dias; track $index) {
+                          <div class="cal-dia cal-dia-{{ dia.tipo }}"
+                               [matTooltip]="dia.tooltip"
+                               [class.cal-dia-vacio]="dia.tipo === 'fueraPeriodo' && dia.fecha.getTime() === 0">
+                            @if (dia.tipo !== 'fueraPeriodo' || dia.fecha.getTime() !== 0) {
+                              <span>{{ dia.fecha.getDate() }}</span>
+                            }
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
           </div>
         }
       </div>
@@ -677,9 +751,11 @@
                     <span class="hfp-label">días faltó</span>
                     <span class="hfp-pct">{{ historialFrecuencia.porcentajeInasistencia }}%</span>
                   </div>
-                  <div class="hfp-stat total">
+                  <div class="hfp-stat total"
+                       matTooltip="Solo se cuentan días en que el centro abrió. Fines de semana, feriados y vacaciones no se incluyen.">
                     <span class="hfp-num">{{ historialFrecuencia.totalDiasHabiles }}</span>
                     <span class="hfp-label">días hábiles</span>
+                    <mat-icon style="font-size:11px;color:#1D4ED8;margin-top:2px">info_outline</mat-icon>
                   </div>
                 </div>
                 <div class="hfp-barra-wrap">
@@ -690,8 +766,62 @@
                 </div>
                 <p class="hfp-resumen">
                   <mat-icon style="font-size:13px;vertical-align:middle">schedule</mat-icon>
-                  Concurrió <strong>{{ historialFrecuencia.diasPresente }} de {{ historialFrecuencia.totalDiasHabiles }}</strong> días hábiles en el período seleccionado.
+                  Concurrió <strong>{{ historialFrecuencia.diasPresente }} de {{ historialFrecuencia.totalDiasHabiles }}</strong>
+                  días hábiles en el período seleccionado.
                 </p>
+
+                <!-- Nota sobre días hábiles -->
+                <p class="hfp-habiles-nota">
+                  <mat-icon style="font-size:12px;vertical-align:middle">info</mat-icon>
+                  Los días hábiles son los días en que el centro estuvo abierto
+                  (fines de semana, feriados y vacaciones excluidos automáticamente).
+                </p>
+
+                <!-- Botón Ver calendario -->
+                <button mat-stroked-button class="btn-ver-calendario"
+                        (click)="toggleHistorialCalendario()">
+                  <mat-icon>calendar_month</mat-icon>
+                  {{ historialCalendarioVisible ? 'Ocultar calendario' : 'Ver calendario' }}
+                </button>
+
+                <!-- Calendario dentro del modal -->
+                @if (historialCalendarioVisible && historialCalendarioMeses.length > 0) {
+                  <div class="frec-calendario">
+                    <div class="cal-leyenda">
+                      <span class="cal-ley-item">
+                        <span class="cal-ley-dot presente"></span> Presente
+                      </span>
+                      <span class="cal-ley-item">
+                        <span class="cal-ley-dot ausente"></span> Ausente / centro cerrado
+                      </span>
+                      <span class="cal-ley-item">
+                        <span class="cal-ley-dot nohabil"></span> Fin de semana
+                      </span>
+                    </div>
+                    <div class="cal-meses-grid">
+                      @for (mes of historialCalendarioMeses; track mes.label) {
+                        <div class="cal-mes">
+                          <div class="cal-mes-titulo">{{ mes.label }}</div>
+                          <div class="cal-semana-header">
+                            <span>Lu</span><span>Ma</span><span>Mi</span>
+                            <span>Ju</span><span>Vi</span><span>Sa</span><span>Do</span>
+                          </div>
+                          <div class="cal-dias-grid">
+                            @for (dia of mes.dias; track $index) {
+                              <div class="cal-dia cal-dia-{{ dia.tipo }}"
+                                   [matTooltip]="dia.tooltip"
+                                   [class.cal-dia-vacio]="dia.tipo === 'fueraPeriodo' && dia.fecha.getTime() === 0">
+                                @if (dia.tipo !== 'fueraPeriodo' || dia.fecha.getTime() !== 0) {
+                                  <span>{{ dia.fecha.getDate() }}</span>
+                                }
+                              </div>
+                            }
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
               }
             </div>
 

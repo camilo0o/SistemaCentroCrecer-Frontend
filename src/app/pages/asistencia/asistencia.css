@@ -485,6 +485,16 @@
 }
 .badge-completo mat-icon { font-size: 16px; width: 16px; height: 16px; }
 
+.badge-ausente {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #757575;
+  font-weight: 500;
+}
+.badge-ausente mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
 /* Responsive */
 @media (max-width: 900px) {
   .content-grid {
@@ -1042,3 +1052,203 @@
 .nfm-chip.rojo   { background: #FEE2E2; color: #B91C1C; }
 .nfm-periodo     { font-size: 10px; color: #9AA0B9; margin-left: auto; }
 .nfm-label       { font-size: 11px; color: #9AA0B9; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FRECUENCIA — nota días hábiles y botón Ver Calendario
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Nota explicativa debajo de los stats de frecuencia */
+.frec-habiles-nota {
+  font-size: 12px;
+  color: #4B5563;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin: 4px 0 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  line-height: 1.4;
+}
+.frec-habiles-nota mat-icon { flex-shrink: 0; margin-top: 1px; color: #3B82F6; }
+
+/* Ícono de info en la tarjeta de total días hábiles */
+.frec-info-icon {
+  font-size: 13px !important;
+  color: #7C3AED;
+  margin-top: 3px;
+  cursor: help;
+}
+
+/* Nota días hábiles en el mini panel inline de niños */
+.nfm-habiles-nota {
+  font-size: 10px;
+  color: #6B7280;
+  margin: 2px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  line-height: 1.3;
+}
+.nfm-habiles-nota mat-icon { color: #9CA3AF; flex-shrink: 0; }
+
+/* Nota en el panel de frecuencia dentro del modal historial */
+.hfp-habiles-nota {
+  font-size: 11px;
+  color: #4B5563;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  border-radius: 6px;
+  padding: 5px 9px;
+  margin: 2px 0 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  line-height: 1.4;
+}
+
+/* Botón Ver Calendario */
+.btn-ver-calendario {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 13px;
+  border-color: #6366F1 !important;
+  color: #6366F1 !important;
+  padding: 0 14px;
+  height: 34px;
+}
+.btn-ver-calendario mat-icon { font-size: 17px; }
+.btn-ver-calendario:hover { background: #EEF2FF !important; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CALENDARIO DE FRECUENCIA
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.frec-calendario {
+  margin-top: 12px;
+  background: #FAFAFA;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Leyenda de colores */
+.cal-leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  font-size: 11px;
+  color: #5C6680;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #E2E8F0;
+}
+.cal-ley-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.cal-ley-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.cal-ley-dot.presente { background: #22C55E; }
+.cal-ley-dot.ausente  { background: #F87171; }
+.cal-ley-dot.nohabil  { background: #CBD5E1; }
+.cal-ley-dot.fuera    { background: transparent; border: 1px dashed #CBD5E1; }
+
+/* Grid de meses (puede ser varios meses si el rango los abarca) */
+.cal-meses-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+/* Un mes */
+.cal-mes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 196px;
+}
+.cal-mes-titulo {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1A1F36;
+  text-align: center;
+  margin-bottom: 2px;
+  text-transform: capitalize;
+}
+
+/* Cabecera días de la semana */
+.cal-semana-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  text-align: center;
+}
+.cal-semana-header span {
+  font-size: 10px;
+  font-weight: 600;
+  color: #9AA0B9;
+  padding: 2px 0;
+}
+
+/* Grid de días */
+.cal-dias-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+/* Celda de día */
+.cal-dia {
+  aspect-ratio: 1;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: default;
+  transition: transform .1s;
+  min-width: 24px;
+  min-height: 24px;
+}
+.cal-dia:not(.cal-dia-fueraPeriodo):not(.cal-dia-vacio):hover {
+  transform: scale(1.15);
+  z-index: 1;
+  position: relative;
+}
+
+/* Colores por tipo */
+.cal-dia-presente {
+  background: #22C55E;
+  color: #fff;
+  font-weight: 700;
+}
+.cal-dia-ausente {
+  background: #FEE2E2;
+  color: #B91C1C;
+  border: 1px solid #FECACA;
+}
+.cal-dia-noHabil {
+  background: #F1F5F9;
+  color: #94A3B8;
+}
+.cal-dia-fueraPeriodo {
+  background: transparent;
+  color: #CBD5E1;
+  font-size: 10px;
+}
+.cal-dia-vacio {
+  background: transparent;
+  pointer-events: none;
+}

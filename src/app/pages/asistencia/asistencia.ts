@@ -14,7 +14,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
-import { finalize, forkJoin } from 'rxjs';
+import { finalize, forkJoin, catchError, of } from 'rxjs';
 import { AsistenciaService } from '../../services/asistencia.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
@@ -31,6 +31,17 @@ interface NinioConEstado extends NinioResponse {
   observaciones?: string;
   cargando?: boolean;
   actividadId?: number;
+}
+
+/** Un día dentro del calendario de frecuencia */
+export interface CalendarioDia {
+  fecha: Date;
+  tipo: 'presente' | 'ausente' | 'fueraPeriodo' | 'noHabil';
+  // 'presente'     = el centro abrió Y el niño asistió
+  // 'ausente'      = el centro abrió Y el niño NO asistió
+  // 'noHabil'      = fin de semana o fuera del período (el centro no cuenta ese día)
+  // 'fueraPeriodo' = dentro del grid del mes pero fuera del rango desde/hasta
+  tooltip: string;
 }
 
 @Component({
@@ -108,6 +119,10 @@ export class AsistenciaComponent implements OnInit {
   historialFrecuenciaHasta: string = '';
   historialFrecuenciaCargando = false;
 
+  // ── Calendario de frecuencia (modal historial) ───────────────────────────
+  historialCalendarioVisible = false;
+  historialCalendarioMeses: { anio: number; mes: number; label: string; dias: CalendarioDia[] }[] = [];
+
   frecuenciaCedula: string = '';
   frecuenciaDesde: string = '';
   frecuenciaHasta: string = '';
@@ -115,11 +130,17 @@ export class AsistenciaComponent implements OnInit {
   frecuenciaResultado: FrecuenciaAsistenciaResponse | null = null;
   frecuenciaError: string = '';
 
+  // ── Calendario de frecuencia (panel consulta standalone) ────────────────
+  frecuenciaCalendarioVisible = false;
+  frecuenciaCalendarioMeses: { anio: number; mes: number; label: string; dias: CalendarioDia[] }[] = [];
+
   abrirHistorial(): void {
     this.historialCedula = '';
     this.historialRegistros = [];
     this.historialError = '';
     this.historialFrecuencia = null;
+    this.historialCalendarioVisible = false;
+    this.historialCalendarioMeses = [];
     this.modalHistorialVisible = true;
   }
 
@@ -134,6 +155,8 @@ export class AsistenciaComponent implements OnInit {
     this.historialCargando = true;
     this.historialRegistros = [];
     this.historialFrecuencia = null;
+    this.historialCalendarioVisible = false;
+    this.historialCalendarioMeses = [];
 
     // Rango: últimos 90 días
     const hasta = new Date();
@@ -159,13 +182,16 @@ export class AsistenciaComponent implements OnInit {
 
   cargarFrecuenciaHistorial(cedula: string): void {
     this.historialFrecuenciaCargando = true;
+    this.historialCalendarioVisible = false;
     this.asistenciaService.frecuenciaPorCedula(
       cedula,
       this.historialFrecuenciaDesde,
       this.historialFrecuenciaHasta
     ).pipe(finalize(() => this.historialFrecuenciaCargando = false))
       .subscribe({
-        next: r => this.historialFrecuencia = r,
+        next: r => {
+          this.historialFrecuencia = r;
+        },
         error: () => {} // silencioso, el historial ya se mostró
       });
   }
@@ -173,7 +199,34 @@ export class AsistenciaComponent implements OnInit {
   actualizarFrecuenciaHistorial(): void {
     const ced = this.historialCedula.trim();
     if (!ced || !this.historialFrecuenciaDesde || !this.historialFrecuenciaHasta) return;
+    this.historialCalendarioVisible = false;
+    this.historialCalendarioMeses = [];
     this.cargarFrecuenciaHistorial(ced);
+  }
+
+  /** Construye el calendario para el modal de historial y lo muestra/oculta */
+  toggleHistorialCalendario(): void {
+    if (this.historialCalendarioVisible) {
+      this.historialCalendarioVisible = false;
+      return;
+    }
+    if (!this.historialFrecuencia) return;
+
+    // Las fechas donde el niño asistió las sacamos de historialRegistros
+    // (que está filtrado al período completo del niño, así que filtramos al rango actual)
+    const fechasPresente = new Set(
+      this.historialRegistros
+        .filter(r => r.fecha >= this.historialFrecuenciaDesde && r.fecha <= this.historialFrecuenciaHasta)
+        .map(r => r.fecha)
+    );
+
+    this.historialCalendarioMeses = this.construirCalendario(
+      this.historialFrecuenciaDesde,
+      this.historialFrecuenciaHasta,
+      fechasPresente,
+      this.historialFrecuencia.totalDiasHabiles
+    );
+    this.historialCalendarioVisible = true;
   }
 
   buscarFrecuencia(): void {
@@ -184,13 +237,54 @@ export class AsistenciaComponent implements OnInit {
     }
     this.frecuenciaError = '';
     this.frecuenciaResultado = null;
+    this._frecuenciaFechasPresente = new Set();
     this.frecuenciaCargando = true;
+    this.frecuenciaCalendarioVisible = false;
+    this.frecuenciaCalendarioMeses = [];
+
+    // Paso 1: buscar frecuencia. Si falla, es error real (cédula no existe, etc.)
+    // Paso 2: buscar historial con catchError → si falla (niño sin asistencias previas),
+    //         lo tratamos silenciosamente: el calendario simplemente no tendrá días marcados
+    //         como presentes pero los stats de frecuencia sí se muestran.
     this.asistenciaService.frecuenciaPorCedula(ced, this.frecuenciaDesde, this.frecuenciaHasta)
       .pipe(finalize(() => this.frecuenciaCargando = false))
       .subscribe({
-        next: r => this.frecuenciaResultado = r,
+        next: frecuencia => {
+          this.frecuenciaResultado = frecuencia;
+          // Buscar historial por separado para poder pintar el calendario;
+          // si falla (niño sin historial) no afecta los stats ya mostrados.
+          this.asistenciaService.historialPorCedula(ced)
+            .pipe(catchError(() => of([])))
+            .subscribe(historial => {
+              this._frecuenciaFechasPresente = new Set(
+                historial
+                  .filter(r => r.fecha >= this.frecuenciaDesde && r.fecha <= this.frecuenciaHasta)
+                  .map(r => r.fecha)
+              );
+            });
+        },
         error: e => this.frecuenciaError = e.error?.message || 'Cédula no encontrada.'
       });
+  }
+
+  // Almacén interno de fechas presentes para el calendario standalone
+  private _frecuenciaFechasPresente: Set<string> = new Set();
+
+  /** Construye el calendario para el panel standalone y lo muestra/oculta */
+  toggleFrecuenciaCalendario(): void {
+    if (this.frecuenciaCalendarioVisible) {
+      this.frecuenciaCalendarioVisible = false;
+      return;
+    }
+    if (!this.frecuenciaResultado) return;
+
+    this.frecuenciaCalendarioMeses = this.construirCalendario(
+      this.frecuenciaDesde,
+      this.frecuenciaHasta,
+      this._frecuenciaFechasPresente,
+      this.frecuenciaResultado.totalDiasHabiles
+    );
+    this.frecuenciaCalendarioVisible = true;
   }
 
   limpiarFrecuencia(): void {
@@ -199,6 +293,113 @@ export class AsistenciaComponent implements OnInit {
     this.frecuenciaHasta = '';
     this.frecuenciaResultado = null;
     this.frecuenciaError = '';
+    this.frecuenciaCalendarioVisible = false;
+    this.frecuenciaCalendarioMeses = [];
+    this._frecuenciaFechasPresente = new Set();
+  }
+
+  // ── Construcción del calendario ─────────────────────────────────────────
+  /**
+   * Genera una estructura de meses/días para visualizar el período.
+   *
+   * Lógica de colores:
+   *  - Verde  ("presente")    : el centro abrió ese día Y el niño asistió
+   *  - Rojo   ("ausente")     : el centro abrió ese día Y el niño NO asistió
+   *  - Gris   ("noHabil")     : fin de semana o fuera del rango desde/hasta
+   *  - Blanco ("fueraPeriodo"): dentro del grid del mes pero antes/después del rango
+   *
+   * "El centro abrió" = ese día tiene al menos un niño con asistencia registrada
+   * en todo el sistema, que es exactamente lo que cuenta `totalDiasHabiles`
+   * en el backend (countDiasConAsistenciaEnPeriodo).
+   *
+   * Para saberlo en el frontend usamos `fechasPresente`: si el niño asistió,
+   * sabemos que el centro abrió. Para los días donde el niño no asistió,
+   * NO podemos saber desde el frontend si el centro abrió o no (no tenemos
+   * la lista de días que el centro abrió por fuera del niño consultado).
+   * Los marcamos como "ausente" dentro del período entre lunes y sábado.
+   * Fines de semana siempre son "noHabil".
+   */
+  construirCalendario(
+    desde: string,
+    hasta: string,
+    fechasPresente: Set<string>,
+    totalDiasHabiles: number
+  ): { anio: number; mes: number; label: string; dias: CalendarioDia[] }[] {
+    const desdeFecha = new Date(desde + 'T00:00:00');
+    const hastaFecha = new Date(hasta + 'T00:00:00');
+
+    // Agrupar por mes
+    const mesesMap = new Map<string, { anio: number; mes: number; diasDelMes: Date[] }>();
+
+    const cur = new Date(desdeFecha);
+    while (cur <= hastaFecha) {
+      const key = `${cur.getFullYear()}-${cur.getMonth()}`;
+      if (!mesesMap.has(key)) {
+        mesesMap.set(key, { anio: cur.getFullYear(), mes: cur.getMonth(), diasDelMes: [] });
+      }
+      mesesMap.get(key)!.diasDelMes.push(new Date(cur));
+      cur.setDate(cur.getDate() + 1);
+    }
+
+    const NOMBRES_MESES = [
+      'Enero','Febrero','Marzo','Abril','Mayo','Junio',
+      'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'
+    ];
+
+    return Array.from(mesesMap.values()).map(({ anio, mes, diasDelMes }) => {
+      // Generar el grid completo del mes (lunes a domingo)
+      const primerDia = new Date(anio, mes, 1);
+      const ultimoDia = new Date(anio, mes + 1, 0);
+
+      // Offset para iniciar la semana en lunes (0=lun,...,6=dom)
+      const offsetInicio = (primerDia.getDay() + 6) % 7;
+
+      const dias: CalendarioDia[] = [];
+
+      // Días vacíos antes del 1
+      for (let i = 0; i < offsetInicio; i++) {
+        dias.push({ fecha: new Date(0), tipo: 'fueraPeriodo', tooltip: '' });
+      }
+
+      // Días del mes
+      for (let d = 1; d <= ultimoDia.getDate(); d++) {
+        const fecha = new Date(anio, mes, d);
+        const fechaStr = fecha.toISOString().split('T')[0];
+        const dow = fecha.getDay(); // 0=dom,6=sab
+
+        let tipo: CalendarioDia['tipo'];
+        let tooltip: string;
+
+        if (fecha < desdeFecha || fecha > hastaFecha) {
+          tipo = 'fueraPeriodo';
+          tooltip = '';
+        } else if (dow === 0 || dow === 6) {
+          // Fin de semana — nunca cuenta como día hábil
+          tipo = 'noHabil';
+          tooltip = 'Fin de semana';
+        } else if (fechasPresente.has(fechaStr)) {
+          tipo = 'presente';
+          tooltip = 'Presente';
+        } else {
+          // Día de semana en el rango donde el niño no asistió.
+          // Puede ser: día que el centro no abrió (feriado / vacaciones) O ausencia real.
+          // El backend los distingue internamente con countDiasConAsistenciaEnPeriodo,
+          // pero esa info no llega por día individual al frontend.
+          // Los mostramos como "ausente" (el texto del tooltip lo aclara).
+          tipo = 'ausente';
+          tooltip = 'Ausente o centro cerrado';
+        }
+
+        dias.push({ fecha, tipo, tooltip });
+      }
+
+      return {
+        anio,
+        mes,
+        label: `${NOMBRES_MESES[mes]} ${anio}`,
+        dias
+      };
+    });
   }
 
   // ── Frecuencia inline en card de niño ───────────────────────────────────
@@ -409,6 +610,10 @@ export class AsistenciaComponent implements OnInit {
   }
 
   registrarEntrada(): void {
+    if (!this.esHoy) {
+      this.toast.show('No se puede registrar asistencia fuera de fecha', 'error');
+      return;
+    }
     if (!this.horaEntradaInput) {
       this.toast.show('Ingrese la hora de entrada', 'error');
       return;
@@ -436,6 +641,10 @@ export class AsistenciaComponent implements OnInit {
   }
 
   registrarSalida(): void {
+    if (!this.esHoy) {
+      this.toast.show('No se puede registrar asistencia fuera de fecha', 'error');
+      return;
+    }
     if (!this.horaSalidaInput) {
       this.toast.show('Ingrese la hora de salida', 'error');
       return;
@@ -526,6 +735,10 @@ export class AsistenciaComponent implements OnInit {
   }
 
   confirmarPresente(ninio: NinioConEstado): void {
+    if (!this.esHoy) {
+      this.toast.show('No se puede marcar asistencia fuera de fecha', 'error');
+      return;
+    }
     if (ninio.presente || ninio.cargando) return;
     ninio.cargando = true;
     this.asistenciaService.marcarAsistenciaNinio({
@@ -551,6 +764,10 @@ export class AsistenciaComponent implements OnInit {
   }
 
   marcarPresente(ninio: NinioConEstado): void {
+    if (!this.esHoy) {
+      this.toast.show('No se puede marcar asistencia fuera de fecha', 'error');
+      return;
+    }
     this.abrirFormPresente(ninio);
   }
 
@@ -567,6 +784,10 @@ export class AsistenciaComponent implements OnInit {
   }
 
   registrarSalidaNinio(ninio: NinioConEstado): void {
+    if (!this.esHoy) {
+      this.toast.show('No se puede registrar asistencia fuera de fecha', 'error');
+      return;
+    }
     if (!ninio.asistenciaId || !this.horaSalidaNinioInput) return;
     ninio.cargando = true;
     this.asistenciaService.registrarSalidaNinio(ninio.asistenciaId, {

@@ -26,9 +26,6 @@ import { InscripcionService, InscripcionSolicitudResponse } from '../../services
 import { ToastService } from '../../services/toast.service';
 import { GrupoResponse, ROL_DISPLAY } from '../../models/models';
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// DIALOG: Dar de alta un niño
-// ═══════════════════════════════════════════════════════════════════════════════
 
 @Component({
   selector: 'app-dar-de-alta-dialog',
@@ -234,11 +231,9 @@ export class DarDeAltaDialogComponent {
       observaciones: ['']
     });
 
-    // Calcular edad
     const edadMeses = this.calcularEdadMeses(data.solicitud.ninioFechaNacimiento);
     this.edadTexto = this.formatearEdad(edadMeses);
 
-    // Sugerir grupo por rango de edad y preseleccionar
     this.grupoSugerido = this.sugerirGrupo(edadMeses, data.grupos);
     if (this.grupoSugerido) {
       this.form.get('grupoId')!.setValue(this.grupoSugerido.id);
@@ -260,16 +255,10 @@ export class DarDeAltaDialogComponent {
     return m > 0 ? `${años} año${años !== 1 ? 's' : ''} y ${m} mes${m !== 1 ? 'es' : ''}` : `${años} año${años !== 1 ? 's' : ''}`;
   }
 
-  /**
-   * Intenta hacer coincidir la edad (en meses) con el rangoEdad de los grupos.
-   * Los grupos suelen tener formatos como "2-3 años", "3 a 4 años", "45 días a 1 año", etc.
-   * Si no hay match exacto, devuelve null (el funcionario elige manualmente).
-   */
   private sugerirGrupo(edadMeses: number, grupos: GrupoResponse[]): GrupoResponse | null {
     const edadAnios = edadMeses / 12;
     for (const g of grupos) {
       if (!g.rangoEdad || !g.activo) continue;
-      // Intenta extraer dos números del rango (p.ej. "2-3 años" → [2,3])
       const nums = g.rangoEdad.match(/\d+/g);
       if (!nums || nums.length < 2) continue;
       const min = parseFloat(nums[0]);
@@ -288,10 +277,6 @@ export class DarDeAltaDialogComponent {
     this.ref.close({ accion: 'rechazar' });
   }
 }
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// DASHBOARD FUNCIONARIO
-// ═══════════════════════════════════════════════════════════════════════════════
 
 interface AccionCard {
   route: string;
@@ -334,12 +319,10 @@ export class DashboardFuncionarioComponent implements OnInit {
   acciones: AccionCard[] = [];
   infoItems: InfoItem[] = [];
 
-  // Solicitudes pendientes
   solicitudesPendientes: InscripcionSolicitudResponse[] = [];
   cargandoSolicitudes = false;
   grupos: GrupoResponse[] = [];
 
-  // ─── Configuración por rol ────────────────────────────────────────────────
 
   private readonly ROL_CONFIG: Record<string, {
     acciones: AccionCard[];
@@ -458,7 +441,7 @@ export class DashboardFuncionarioComponent implements OnInit {
       ],
       infoItems: [
         { icon: 'group_work', color: '#2E7D32', text: 'Trabaja directamente con los niños en sala' },
-        { icon: 'school',     color: '#1565C0', text: 'Coordina con maestra en la parte pedagógica' },
+        { icon: 'school',     color: '#1565C0', text: 'Coordina con el/la maestro/a en la parte pedagógica' },
       ]
     },
 
@@ -581,7 +564,7 @@ export class DashboardFuncionarioComponent implements OnInit {
   this.inscripcionService.listarPendientes()
     .pipe(finalize(() => {
       this.cargandoSolicitudes = false;
-      this.cdr.markForCheck();  // ← fuerza la detección
+      this.cdr.markForCheck();  
     }))
     .subscribe({
       next: s => { this.solicitudesPendientes = s; },

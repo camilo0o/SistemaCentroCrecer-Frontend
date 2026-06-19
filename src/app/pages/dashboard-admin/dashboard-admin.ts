@@ -37,8 +37,8 @@ export class DashboardAdminComponent implements OnInit {
   statCards: any[] = [];
 
   roleHierarchy = [
-    { icon: 'admin_panel_settings', label: 'Administrador del Sistema', color: 'primary', indent: 0 },
-    { icon: 'star',                 label: 'Coordinadora',               color: 'accent',  indent: 1 },
+    { icon: 'admin_panel_settings', label: 'Administrador/a del Sistema', color: 'primary', indent: 0 },
+    { icon: 'star',                 label: 'Coordinador/a',             color: 'accent',  indent: 1 },
     { icon: 'psychology',           label: 'Equipo Técnico (5 roles)',    color: 'primary', indent: 2 },
     { icon: 'school',               label: 'Educadores y Talleristas',    color: 'accent',  indent: 3 },
     { icon: 'cleaning_services',    label: 'Auxiliar de Limpieza',        color: 'primary', indent: 4 },
@@ -54,7 +54,7 @@ export class DashboardAdminComponent implements OnInit {
   constructor(private dashService: DashboardService, public auth: AuthService, private cdr: ChangeDetectorRef, private toast: ToastService) {}
 
   ngOnInit() {
-  this.nombre = this.auth.getNombre() ?? 'Administrador';
+  this.nombre = this.auth.getNombre() ?? 'Administrador/a';
   this.dashService.getAdminStats().pipe(
     finalize(() => { this.cargando = false; this.cdr.detectChanges(); })
   ).subscribe({

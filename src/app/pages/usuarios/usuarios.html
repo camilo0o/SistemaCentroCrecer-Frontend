@@ -132,7 +132,7 @@
               <mat-icon>lock_reset</mat-icon>
             </button>
             <button mat-icon-button
-              [matTooltip]="esAdminSistema(f) ? 'Los administradores de sistema no pueden darse de baja' : (f.activo ? 'Dar de baja' : 'Dar de alta')"
+              [matTooltip]="esAdminSistema(f) ? 'Los administradores/as de sistema no pueden darse de baja' : (f.activo ? 'Dar de baja' : 'Dar de alta')"
               (click)="toggleEstado(f)"
               [disabled]="esAdminSistema(f)">
               <mat-icon [color]="esAdminSistema(f) ? '' : (f.activo ? 'warn' : 'primary')">

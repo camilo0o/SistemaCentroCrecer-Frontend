@@ -217,13 +217,13 @@ export interface ReporteResponse {
 
 
 export const ROL_DISPLAY: Record<string, string> = {
-  'ADMINISTRADOR_SISTEMA': 'Administrador del Sistema',
-  'COORDINADORA': 'Coordinadora',
+  'ADMINISTRADOR_SISTEMA': 'Administrador/a del Sistema',
+  'COORDINADORA': 'Coordinador/a',
   'ASISTENTE_SOCIAL': 'Asistente Social',
-  'PSICOLOGO': 'Psicólogo',
+  'PSICOLOGO': 'Psicólogo/a',
   'PSICOMOTRICISTA': 'Psicomotricista',
-  'MAESTRA': 'Maestra',
-  'ADMINISTRATIVO': 'Administrativo',
+  'MAESTRA': 'Maestro/a',
+  'ADMINISTRATIVO': 'Administrativo/a',
   'EDUCADOR': 'Educador/a',
   'TALLERISTA_PLASTICA': 'Tallerista Expresión Plástica',
   'TALLERISTA_CERAMICA': 'Tallerista Cerámica',

@@ -24,7 +24,6 @@ import { FuncionarioResponse, FuncionarioRequest, Rol, ROL_DISPLAY } from '../..
 import { finalize, catchError } from 'rxjs/operators';
 import { of, forkJoin } from 'rxjs';
 
-// Dialog Funcionario
 @Component({
   selector: 'app-funcionario-dialog',
   standalone: true,
@@ -94,7 +93,7 @@ import { of, forkJoin } from 'rxjs';
           @if(data.funcionario?.rol?.nombre === 'ADMINISTRADOR_SISTEMA'){
             <mat-hint style="color:#92400E">
               <mat-icon style="font-size:13px;vertical-align:middle">lock</mat-icon>
-              El rol Administrador de Sistema no se puede modificar
+              El rol Administrador/a de Sistema no se puede modificar
             </mat-hint>
           }
           @if(form.get('rolId')?.invalid && form.get('rolId')?.touched){<mat-error>Seleccioná un rol</mat-error>}
@@ -138,7 +137,6 @@ export class FuncionarioDialogComponent {
     private funcionarioService: FuncionarioService,
     private toast: ToastService
   ) {
-    // Filtrar ADMINISTRADOR_SISTEMA de la lista de roles disponibles para asignar
     this.roles = (data.roles ?? []).filter(r => r.nombre !== 'ADMINISTRADOR_SISTEMA');
     const f = data.funcionario;
     const esAdminSistema = f?.rol?.nombre === 'ADMINISTRADOR_SISTEMA';
@@ -160,7 +158,7 @@ export class FuncionarioDialogComponent {
   guardar() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.guardando = true;
-    const v = this.form.getRawValue(); // getRawValue incluye campos deshabilitados (rolId bloqueado para admin)
+    const v = this.form.getRawValue();
     const payload: FuncionarioRequest = {
       nombre: v.nombre, apellido: v.apellido, cedula: v.cedula,
       email: v.email, telefono: v.telefono, rolId: v.rolId,
@@ -177,7 +175,6 @@ export class FuncionarioDialogComponent {
   }
 }
 
-// Dialog Blanqueo de Contraseña (Admin obliga a cambiar)
 @Component({
   selector: 'app-blanqueo-dialog',
   standalone: true,
@@ -248,7 +245,6 @@ export class BlanqueoPasswordDialogComponent {
   }
 }
 
-// Main
 @Component({
   selector: 'app-usuarios',
   standalone: true,
@@ -287,13 +283,11 @@ export class UsuariosComponent implements OnInit {
     this.cargarDatos();
   }
 
-  /** Carga roles y funcionarios en paralelo, con fallback si /roles/activos falla */
   cargarDatos() {
     this.cargando = true;
 
     const roles$ = this.rolService.listarActivos().pipe(
       catchError(() =>
-        // Fallback: intentar con el endpoint general de roles
         this.rolService.listarTodos().pipe(
           catchError(() => {
             this.toast.error('No se pudieron cargar los roles');
@@ -394,7 +388,7 @@ export class UsuariosComponent implements OnInit {
 
   toggleEstado(f: FuncionarioResponse) {
     if (this.esAdminSistema(f) && f.activo) {
-      this.toast.error('No se puede dar de baja a un Administrador de Sistema');
+      this.toast.error('No se puede dar de baja a un/a Administrador/a de Sistema');
       return;
     }
     const op = f.activo ? this.funcionarioService.darDeBaja(f.id) : this.funcionarioService.darDeAlta(f.id);

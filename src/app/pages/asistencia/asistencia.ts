@@ -14,7 +14,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
-import { finalize, forkJoin, catchError, of } from 'rxjs';
+import { finalize, forkJoin, catchError, of, timeout } from 'rxjs';
 import { AsistenciaService } from '../../services/asistencia.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
@@ -78,6 +78,7 @@ export class AsistenciaComponent implements OnInit {
   miHistorialRegistros: AsistenciaResponse[] = [];
   miHistorialCargando = false;
   miHistorialError = '';
+  miHistorialModalVisible = false;
 
   ninios: NinioConEstado[] = [];
   cargandoNinios = false;
@@ -110,6 +111,7 @@ export class AsistenciaComponent implements OnInit {
 
   modalHistorialVisible = false;
   historialCedula: string = '';
+  historialNinioSeleccionadoId: number | null = null;
   historialCargando = false;
   historialRegistros: AsistenciaResponse[] = [];
   historialError: string = '';
@@ -134,13 +136,26 @@ export class AsistenciaComponent implements OnInit {
   frecuenciaCalendarioVisible = false;
   frecuenciaCalendarioMeses: { anio: number; mes: number; label: string; dias: CalendarioDia[] }[] = [];
 
+  abrirMiHistorial(): void {
+    this.miHistorialModalVisible = true;
+    this.cargarMiHistorial();
+  }
+
+  cerrarMiHistorial(): void {
+    this.miHistorialModalVisible = false;
+  }
+
   abrirHistorial(): void {
     this.historialCedula = '';
+    this.historialNinioSeleccionadoId = null;
     this.historialRegistros = [];
     this.historialError = '';
     this.historialFrecuencia = null;
     this.historialCalendarioVisible = false;
     this.historialCalendarioMeses = [];
+    if (this.gruposConNinios.length === 0 && !this.cargandoNinios) {
+      this.cargarNinios();
+    }
     this.modalHistorialVisible = true;
   }
 
@@ -166,9 +181,26 @@ export class AsistenciaComponent implements OnInit {
     this.historialFrecuenciaDesde = desde.toISOString().split('T')[0];
 
     this.asistenciaService.historialPorCedula(ced)
-      .pipe(finalize(() => this.historialCargando = false))
+      .pipe(
+        timeout(10000),
+        catchError(e => {
+          if (e.name === 'TimeoutError') {
+            this.historialError = 'La consulta demoro demasiado. Intenta nuevamente.';
+          } else if (e.status === 403) {
+            this.historialError = e.error?.message || 'No tenes permiso para consultar la asistencia de este nino.';
+          } else {
+            this.historialError = e.error?.message || 'Cedula no encontrada.';
+          }
+          return of(null as unknown as AsistenciaResponse[]);
+        }),
+        finalize(() => {
+          this.historialCargando = false;
+          this.cdr.detectChanges();
+        })
+      )
       .subscribe({
         next: r => {
+          if (!r) return;
           this.historialRegistros = r;
           if (r.length === 0) {
             this.historialError = 'No se encontraron registros para esta cédula.';
@@ -180,6 +212,12 @@ export class AsistenciaComponent implements OnInit {
       });
   }
 
+  seleccionarNinioHistorial(ninio: NinioConEstado): void {
+    this.historialNinioSeleccionadoId = ninio.id;
+    this.historialCedula = ninio.cedula;
+    this.buscarHistorial();
+  }
+
   cargarFrecuenciaHistorial(cedula: string): void {
     this.historialFrecuenciaCargando = true;
     this.historialCalendarioVisible = false;
@@ -187,9 +225,24 @@ export class AsistenciaComponent implements OnInit {
       cedula,
       this.historialFrecuenciaDesde,
       this.historialFrecuenciaHasta
-    ).pipe(finalize(() => this.historialFrecuenciaCargando = false))
+    ).pipe(
+      timeout(10000),
+      catchError(e => {
+        if (e.name === 'TimeoutError') {
+          this.historialError = 'La frecuencia demoro demasiado. Intenta nuevamente.';
+        } else if (e.status === 403) {
+          this.historialError = e.error?.message || 'No tenes permiso para consultar la frecuencia de este nino.';
+        }
+        return of(null as unknown as FrecuenciaAsistenciaResponse);
+      }),
+      finalize(() => {
+        this.historialFrecuenciaCargando = false;
+        this.cdr.detectChanges();
+      })
+    )
       .subscribe({
         next: r => {
+          if (!r) return;
           this.historialFrecuencia = r;
         },
         error: () => {} // silencioso, el historial ya se mostró
@@ -468,7 +521,6 @@ export class AsistenciaComponent implements OnInit {
       error: () => {}
     });
     this.cargarDatos();
-    this.cargarMiHistorial();
   }
 
   horaActual(): string {

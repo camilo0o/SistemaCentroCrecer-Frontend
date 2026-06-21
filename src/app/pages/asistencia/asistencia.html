@@ -384,123 +384,25 @@
 
   </div>
 
-  <section class="panel mi-historial-panel">
-    <div class="panel-header historial-funcionario-header">
-      <mat-icon class="panel-icon blue">history</mat-icon>
-      <h2 class="panel-title">Mi historial de asistencia</h2>
-      <div class="mi-historial-filtros">
-        <label>
-          Desde
-          <input type="date" [(ngModel)]="miHistorialDesde" [max]="hoy" class="consulta-input">
-        </label>
-        <label>
-          Hasta
-          <input type="date" [(ngModel)]="miHistorialHasta" [max]="hoy" class="consulta-input">
-        </label>
-        <button mat-flat-button class="btn-consulta btn-blue"
-                (click)="cargarMiHistorial()"
-                [disabled]="miHistorialCargando">
-          @if (miHistorialCargando) { <mat-spinner diameter="16"></mat-spinner> }
-          @else { <mat-icon>search</mat-icon> }
-          Consultar
-        </button>
-      </div>
+  <section class="panel historiales-acceso-panel">
+    <div class="panel-header">
+      <mat-icon class="panel-icon blue">manage_search</mat-icon>
+      <h2 class="panel-title">Historiales de asistencia</h2>
     </div>
 
-    @if (miHistorialError) {
-      <p class="consulta-error">{{ miHistorialError }}</p>
-    }
+    <div class="historiales-actions">
+      <button mat-flat-button class="btn-consulta btn-blue historial-action-btn" (click)="abrirMiHistorial()">
+        <mat-icon>badge</mat-icon>
+        Ver mi historial de asistencia
+      </button>
 
-    @if (miHistorialCargando) {
-      <div class="loading-center">
-        <mat-spinner diameter="32"></mat-spinner>
-        <p>Cargando tu historial...</p>
-      </div>
-    } @else {
-      <div class="mi-historial-resumen">
-        <div class="mi-historial-chip">
-          <mat-icon>event_available</mat-icon>
-          <div>
-            <span class="chip-label">Registros</span>
-            <strong>{{ miHistorialRegistros.length }}</strong>
-          </div>
-        </div>
-        <div class="mi-historial-chip">
-          <mat-icon>timer</mat-icon>
-          <div>
-            <span class="chip-label">Horas registradas</span>
-            <strong>{{ miHistorialTotalHoras }}</strong>
-          </div>
-        </div>
-        <div class="mi-historial-chip" [class.warn]="miHistorialPendientesSalida > 0">
-          <mat-icon>logout</mat-icon>
-          <div>
-            <span class="chip-label">Salidas pendientes</span>
-            <strong>{{ miHistorialPendientesSalida }}</strong>
-          </div>
-        </div>
-      </div>
-
-      @if (miHistorialRegistros.length === 0) {
-        <div class="empty-registro historial-empty">
-          <mat-icon class="empty-icon">event_busy</mat-icon>
-          <p>No tenes registros de asistencia en el periodo seleccionado.</p>
-        </div>
-      } @else {
-        <div class="historial-table-wrapper mi-historial-table">
-          <table class="historial-table">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Entrada</th>
-                <th>Estado entrada</th>
-                <th>Salida</th>
-                <th>Estado salida</th>
-                <th>Horas</th>
-                <th>Observaciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (r of miHistorialRegistros; track r.id) {
-                <tr>
-                  <td class="td-fecha">{{ r.fecha | date:'dd/MM/yyyy' }}</td>
-                  <td class="td-hora entrada">
-                    <mat-icon style="font-size:13px;vertical-align:middle">login</mat-icon>
-                    {{ formatHora(r.horaEntrada) }}
-                  </td>
-                  <td>
-                    <span class="puntualidad-badge {{ puntualidadClase(r.estadoEntrada) }}">
-                      <mat-icon>{{ puntualidadIcono(r.estadoEntrada) }}</mat-icon>
-                      {{ puntualidadLabel(r.estadoEntrada) || '-' }}
-                    </span>
-                  </td>
-                  <td class="td-hora salida">
-                    @if (r.horaSalida) {
-                      <mat-icon style="font-size:13px;vertical-align:middle">logout</mat-icon>
-                      {{ formatHora(r.horaSalida) }}
-                    } @else {
-                      <span class="sin-salida">-</span>
-                    }
-                  </td>
-                  <td>
-                    @if (r.horaSalida) {
-                      <span class="puntualidad-badge {{ puntualidadClase(r.estadoSalida) }}">
-                        <mat-icon>{{ puntualidadIcono(r.estadoSalida) }}</mat-icon>
-                        {{ puntualidadLabel(r.estadoSalida) || '-' }}
-                      </span>
-                    } @else {
-                      <span class="puntualidad-badge puntualidad-sin-turno">Sin registrar</span>
-                    }
-                  </td>
-                  <td class="td-hora">{{ formatDuracion(minutosTrabajados(r)) }}</td>
-                  <td class="td-obs">{{ r.observaciones || '-' }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+      @if (!esAuxiliar) {
+        <button mat-flat-button class="btn-consulta btn-blue historial-action-btn" (click)="abrirHistorial()">
+          <mat-icon>child_care</mat-icon>
+          Ver historial de un niño
+        </button>
       }
-    }
+    </div>
   </section>
 
   @if (!esAuxiliar) {
@@ -513,7 +415,7 @@
 
     <div class="consultas-grid">
 
-      <!-- RF30: Historial -->
+      <!-- RF30: Historial
       <div class="consulta-card">
         <div class="consulta-card-header">
           <mat-icon class="consulta-icon blue">history</mat-icon>
@@ -524,6 +426,8 @@
           <mat-icon>search</mat-icon> Consultar historial
         </button>
       </div>
+
+      -->
 
       <!-- RF31/RF32: Frecuencia -->
       <div class="consulta-card">
@@ -667,6 +571,139 @@
   } <!-- fin @if (!esAuxiliar) -->
 
   <!-- ── Modal: Historial RF30 ─────────────────────────────────────────── -->
+  @if (miHistorialModalVisible) {
+    <div class="modal-overlay" (click)="cerrarMiHistorial()">
+      <div class="modal-panel mi-historial-modal" (click)="$event.stopPropagation()">
+
+        <div class="modal-header">
+          <div class="modal-title-row">
+            <mat-icon class="modal-icon">badge</mat-icon>
+            <h2 class="modal-title">Mi historial de asistencia</h2>
+          </div>
+          <button mat-icon-button (click)="cerrarMiHistorial()" matTooltip="Cerrar">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="mi-historial-filtros modal-filtros">
+            <label>
+              Desde
+              <input type="date" [(ngModel)]="miHistorialDesde" [max]="hoy" class="consulta-input">
+            </label>
+            <label>
+              Hasta
+              <input type="date" [(ngModel)]="miHistorialHasta" [max]="hoy" class="consulta-input">
+            </label>
+            <button mat-flat-button class="btn-consulta btn-blue"
+                    (click)="cargarMiHistorial()"
+                    [disabled]="miHistorialCargando">
+              @if (miHistorialCargando) { <mat-spinner diameter="16"></mat-spinner> }
+              @else { <mat-icon>search</mat-icon> }
+              Consultar
+            </button>
+          </div>
+
+          @if (miHistorialError) {
+            <p class="consulta-error">{{ miHistorialError }}</p>
+          }
+
+          @if (miHistorialCargando) {
+            <div class="loading-center">
+              <mat-spinner diameter="32"></mat-spinner>
+              <p>Cargando tu historial...</p>
+            </div>
+          } @else {
+            <div class="mi-historial-resumen">
+              <div class="mi-historial-chip">
+                <mat-icon>event_available</mat-icon>
+                <div>
+                  <span class="chip-label">Registros</span>
+                  <strong>{{ miHistorialRegistros.length }}</strong>
+                </div>
+              </div>
+              <div class="mi-historial-chip">
+                <mat-icon>timer</mat-icon>
+                <div>
+                  <span class="chip-label">Horas registradas</span>
+                  <strong>{{ miHistorialTotalHoras }}</strong>
+                </div>
+              </div>
+              <div class="mi-historial-chip" [class.warn]="miHistorialPendientesSalida > 0">
+                <mat-icon>logout</mat-icon>
+                <div>
+                  <span class="chip-label">Salidas pendientes</span>
+                  <strong>{{ miHistorialPendientesSalida }}</strong>
+                </div>
+              </div>
+            </div>
+
+            @if (miHistorialRegistros.length === 0) {
+              <div class="empty-registro historial-empty">
+                <mat-icon class="empty-icon">event_busy</mat-icon>
+                <p>No tenes registros de asistencia en el periodo seleccionado.</p>
+              </div>
+            } @else {
+              <div class="historial-table-wrapper mi-historial-table">
+                <table class="historial-table">
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Entrada</th>
+                      <th>Estado entrada</th>
+                      <th>Salida</th>
+                      <th>Estado salida</th>
+                      <th>Horas</th>
+                      <th>Observaciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (r of miHistorialRegistros; track r.id) {
+                      <tr>
+                        <td class="td-fecha">{{ r.fecha | date:'dd/MM/yyyy' }}</td>
+                        <td class="td-hora entrada">
+                          <mat-icon style="font-size:13px;vertical-align:middle">login</mat-icon>
+                          {{ formatHora(r.horaEntrada) }}
+                        </td>
+                        <td>
+                          <span class="puntualidad-badge {{ puntualidadClase(r.estadoEntrada) }}">
+                            <mat-icon>{{ puntualidadIcono(r.estadoEntrada) }}</mat-icon>
+                            {{ puntualidadLabel(r.estadoEntrada) || '-' }}
+                          </span>
+                        </td>
+                        <td class="td-hora salida">
+                          @if (r.horaSalida) {
+                            <mat-icon style="font-size:13px;vertical-align:middle">logout</mat-icon>
+                            {{ formatHora(r.horaSalida) }}
+                          } @else {
+                            <span class="sin-salida">-</span>
+                          }
+                        </td>
+                        <td>
+                          @if (r.horaSalida) {
+                            <span class="puntualidad-badge {{ puntualidadClase(r.estadoSalida) }}">
+                              <mat-icon>{{ puntualidadIcono(r.estadoSalida) }}</mat-icon>
+                              {{ puntualidadLabel(r.estadoSalida) || '-' }}
+                            </span>
+                          } @else {
+                            <span class="puntualidad-badge puntualidad-sin-turno">Sin registrar</span>
+                          }
+                        </td>
+                        <td class="td-hora">{{ formatDuracion(minutosTrabajados(r)) }}</td>
+                        <td class="td-obs">{{ r.observaciones || '-' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          }
+        </div>
+
+      </div>
+    </div>
+  }
+
   @if (modalHistorialVisible) {
     <div class="modal-overlay" (click)="cerrarHistorial()">
       <div class="modal-panel" (click)="$event.stopPropagation()">
@@ -682,6 +719,59 @@
         </div>
 
         <div class="modal-body">
+
+          <div class="historial-ninios-selector">
+            <div class="historial-selector-header">
+              <mat-icon>groups</mat-icon>
+              <span>Seleccioná un niño de tus grupos</span>
+            </div>
+
+            @if (cargandoNinios) {
+              <div class="historial-selector-loading">
+                <mat-spinner diameter="24"></mat-spinner>
+                <span>Cargando niños...</span>
+              </div>
+            } @else if (gruposConNinios.length === 0) {
+              <div class="historial-selector-empty">
+                <mat-icon>group_off</mat-icon>
+                <span>No tenés niños asignados para consultar.</span>
+              </div>
+            } @else {
+              <div class="historial-grupos-list">
+                @for (grupo of gruposConNinios; track grupo.nombre) {
+                  <div class="historial-grupo">
+                    <div class="historial-grupo-title">
+                      <mat-icon>folder_shared</mat-icon>
+                      <span>{{ grupo.nombre }}</span>
+                      <small>{{ grupo.ninios.length }} niño{{ grupo.ninios.length !== 1 ? 's' : '' }}</small>
+                    </div>
+                    <div class="historial-ninios-list">
+                      @for (ninio of grupo.ninios; track ninio.id) {
+                        <button type="button"
+                                class="historial-ninio-btn"
+                                [class.active]="historialNinioSeleccionadoId === ninio.id"
+                                (click)="seleccionarNinioHistorial(ninio)"
+                                [disabled]="historialCargando">
+                          <span class="historial-ninio-avatar">
+                            {{ ninio.nombre[0] }}{{ ninio.apellido[0] }}
+                          </span>
+                          <span class="historial-ninio-data">
+                            <strong>{{ ninio.nombre }} {{ ninio.apellido }}</strong>
+                            <small>CI: {{ ninio.cedula }}</small>
+                          </span>
+                          @if (historialNinioSeleccionadoId === ninio.id && historialCargando) {
+                            <mat-spinner diameter="18"></mat-spinner>
+                          } @else {
+                            <mat-icon>chevron_right</mat-icon>
+                          }
+                        </button>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
 
           <div class="historial-search-row">
             <input class="consulta-input historial-input" type="text"

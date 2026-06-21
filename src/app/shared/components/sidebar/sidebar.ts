@@ -54,6 +54,7 @@ export class Sidebar implements OnInit, OnDestroy {
     { label: 'Responsables',        icon: 'family_restroom',   route: '/admin/responsables' },
     { label: 'Turnos',              icon: 'schedule',          route: '/funcionario/turnos' },
     { label: 'Asistencia Personal', icon: 'badge',             route: '/admin/asistencia-personal' },
+    { label: 'Calendario',          icon: 'event_available',   route: '/admin/calendario' },
   ];
 
   funcionarioItems: NavItem[] = [
@@ -64,12 +65,14 @@ export class Sidebar implements OnInit, OnDestroy {
     { label: 'Reportes',       icon: 'analytics',         route: '/funcionario/reportes' },
     { label: 'Actividades',    icon: 'event',             route: '/funcionario/actividades' },
     { label: 'Agenda',         icon: 'calendar_month',    route: '/funcionario/agenda' },
+    { label: 'Calendario',     icon: 'event_available',   route: '/funcionario/calendario' },
     { label: 'Asistencia',     icon: 'how_to_reg',        route: '/funcionario/asistencia' },
   ];
 
   auxiliarLimpiezaItems: NavItem[] = [
     { label: 'Dashboard',        icon: 'dashboard',         route: '/dashboard/funcionario' },
     { label: 'Agenda Limpieza',  icon: 'cleaning_services', route: '/funcionario/agenda-limpieza' },
+    { label: 'Calendario',       icon: 'event_available',   route: '/funcionario/calendario' },
     { label: 'Asistencia',       icon: 'how_to_reg',        route: '/funcionario/asistencia' },
     { label: 'Turnos',           icon: 'schedule',          route: '/funcionario/turnos' },
   ];
@@ -81,7 +84,7 @@ export class Sidebar implements OnInit, OnDestroy {
 
   get navItems(): NavItem[] {
     const rol = this.auth.getRol();
-    if (rol === 'ADMINISTRADOR_SISTEMA') return this.adminItems;
+    if (rol === 'ADMIN' || rol === 'ADMINISTRADOR_SISTEMA') return this.adminItems;
     if (rol === 'RESPONSABLE')           return this.responsableItems;
     if (rol === 'AUXILIAR_LIMPIEZA')     return this.auxiliarLimpiezaItems;
     return this.funcionarioItems;
@@ -89,7 +92,7 @@ export class Sidebar implements OnInit, OnDestroy {
 
   get esFuncionario(): boolean {
     const rol = this.auth.getRol();
-    return rol !== 'ADMINISTRADOR_SISTEMA' && rol !== 'RESPONSABLE' && rol !== 'AUXILIAR_LIMPIEZA';
+    return rol !== 'ADMIN' && rol !== 'ADMINISTRADOR_SISTEMA' && rol !== 'RESPONSABLE' && rol !== 'AUXILIAR_LIMPIEZA';
   }
 
   constructor(

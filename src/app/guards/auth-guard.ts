@@ -3,7 +3,7 @@ import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
 const ROLES_FUNCIONARIO = [
-  'ADMINISTRADOR_SISTEMA','COORDINADORA','PSICOLOGO',
+  'ADMIN','ADMINISTRADOR_SISTEMA','COORDINADORA','PSICOLOGO',
   'MAESTRA','ASISTENTE_SOCIAL','TALLERISTA_EXPRESION_PLASTICA',
   'TALLERISTA_PSICOMOTRICIDAD','COCINERA','AUXILIAR_LIMPIEZA'
 ];
@@ -11,7 +11,7 @@ const ROLES_FUNCIONARIO = [
 function redirectSegunRol(auth: AuthService, router: Router): false {
   const rol = auth.getRol();
   if (!rol) { router.navigate(['/iniciarSesion']); return false; }
-  if (rol === 'ADMINISTRADOR_SISTEMA') router.navigate(['/admin/dashboard']);
+  if (rol === 'ADMIN' || rol === 'ADMINISTRADOR_SISTEMA') router.navigate(['/admin/dashboard']);
   else if (rol === 'RESPONSABLE')      router.navigate(['/dashboard/responsable']);
   else                                 router.navigate(['/dashboard/funcionario']);
   return false;

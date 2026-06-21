@@ -156,9 +156,9 @@ export class ActividadDialogComponent {
     const op = this.data.modo === 'crear'
       ? this.actividadService.crear(payload)
       : this.actividadService.actualizar(this.data.actividad!.id, payload);
-    op.subscribe({
-      next: (r) => { this.guardando = false; this.ref.close(r); },
-      error: (err) => { this.guardando = false; this.toast.error(err.error?.error ?? 'Error al guardar actividad'); }
+    op.pipe(finalize(() => this.guardando = false)).subscribe({
+      next: (r) => this.ref.close(r),
+      error: (err) => this.toast.error(err.error?.error ?? 'Error al guardar actividad')
     });
   }
 }
@@ -342,7 +342,13 @@ export class ActividadDetalleDialogComponent implements OnInit {
 
   cargarPermisos() {
     this.actividadService.listarPermisosPorActividad(this.data.actividad.id)
-      .subscribe(p => this.permisos = p);
+      .subscribe({
+        next: p => {
+          this.permisos = p;
+          this.cdr.detectChanges();
+        },
+        error: () => this.toast.error('No se pudieron cargar los permisos')
+      });
   }
 
   agregarNinio() {
@@ -350,15 +356,18 @@ export class ActividadDetalleDialogComponent implements OnInit {
     const idsActuales = (this.data.actividad.ninios ?? []).map(n => n.id);
     const nuevosIds = [...idsActuales, this.ninioSeleccionadoId];
     this.agregando = true;
-    this.actividadService.asignarNinios(this.data.actividad.id, nuevosIds).subscribe({
+    this.actividadService.asignarNinios(this.data.actividad.id, nuevosIds)
+      .pipe(finalize(() => {
+        this.agregando = false;
+        this.cdr.detectChanges();
+      }))
+      .subscribe({
       next: (a) => {
         this.data.actividad.ninios = a.ninios;
         this.ninioSeleccionadoId = null;
-        this.agregando = false;
         this.toast.success('Niño agregado a la actividad');
       },
       error: (err) => {
-        this.agregando = false;
         this.toast.error(err.error?.error ?? 'Error al agregar niño');
       }
     });
@@ -380,17 +389,16 @@ export class ActividadDetalleDialogComponent implements OnInit {
       ninioId: ninio.id,
       horaEntrada: new Date().toTimeString().slice(0, 5),
       actividadId: this.data.actividad.id
-    }).subscribe({
+    }).pipe(finalize(() => {
+      this.marcandoAsistencia[ninio.id] = false;
+      this.cdr.detectChanges();
+    })).subscribe({
       next: () => {
         this.asistenciasHoy[ninio.id] = true;
-        this.marcandoAsistencia[ninio.id] = false;
         this.toast.success(`Asistencia de ${ninio.nombre} registrada`);
-        this.cdr.detectChanges();
       },
       error: (err) => {
-        this.marcandoAsistencia[ninio.id] = false;
         this.toast.error(err.error?.mensaje || err.error?.message || 'Error al marcar asistencia');
-        this.cdr.detectChanges();
       }
     });
   }

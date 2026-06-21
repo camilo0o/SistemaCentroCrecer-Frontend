@@ -78,7 +78,8 @@ export class AuthService {
   }
   
   isAdmin(): boolean {
-    return this.getRol() === 'ADMINISTRADOR_SISTEMA';
+    const rol = this.getRol();
+    return rol === 'ADMIN' || rol === 'ADMINISTRADOR_SISTEMA';
   }
  
   isCoordinadora(): boolean {

@@ -68,6 +68,8 @@ export const routes: Routes = [
           import('./pages/usuarios/usuarios').then(m => m.UsuariosComponent) },
       { path: 'asistencia-personal', loadComponent: () =>
           import('./pages/asistencia-admin/asistencia-admin').then(m => m.AsistenciaAdminComponent) },
+      { path: 'calendario', loadComponent: () =>
+          import('./pages/calendario-laboral/calendario-laboral').then(m => m.CalendarioLaboralComponent) },
       { path: 'responsables', loadComponent: () =>
           import('./pages/responsables/responsables').then(m => m.ResponsablesComponent) },
     ]
@@ -94,6 +96,8 @@ export const routes: Routes = [
           import('./pages/agenda/agenda').then(m => m.AgendaComponent) },
       { path: 'agenda-limpieza', loadComponent: () =>
           import('./pages/agenda-limpieza/agenda-limpieza').then(m => m.AgendaLimpiezaComponent) },
+      { path: 'calendario', loadComponent: () =>
+          import('./pages/calendario-laboral/calendario-laboral').then(m => m.CalendarioLaboralComponent) },
       { path: 'asistencia', loadComponent: () =>
           import('./pages/asistencia/asistencia').then(m => m.AsistenciaComponent) },
       { path: 'responsables', loadComponent: () =>

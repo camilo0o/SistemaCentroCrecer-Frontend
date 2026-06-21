@@ -1,0 +1,124 @@
+<div class="calendario-page">
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">Calendario laboral</h1>
+      <p class="page-subtitle">Dias de trabajo y jornadas no laborables del centro</p>
+    </div>
+    <div class="header-actions">
+      <button mat-icon-button (click)="mesAnterior()" matTooltip="Mes anterior">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <button mat-stroked-button (click)="irHoy()">Hoy</button>
+      <button mat-icon-button (click)="mesSiguiente()" matTooltip="Mes siguiente">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
+  </header>
+
+  <section class="calendar-shell">
+    <div class="calendar-main">
+      <div class="month-bar">
+        <h2>{{ tituloMes }}</h2>
+        @if (cargando) {
+          <div class="loading-inline">
+            <mat-spinner diameter="18"></mat-spinner>
+            <span>Cargando...</span>
+          </div>
+        }
+      </div>
+
+      <div class="week-header">
+        @for (d of diasSemana; track d) {
+          <span>{{ d }}</span>
+        }
+      </div>
+
+      <div class="calendar-grid">
+        @for (dia of dias; track dia.iso) {
+          <button type="button"
+                  class="day-cell"
+                  [class.outside]="dia.fueraDeMes"
+                  [class.weekend]="dia.finDeSemana"
+                  [class.non-working]="dia.noLaborable"
+                  [class.selected]="seleccionado?.iso === dia.iso"
+                  (click)="seleccionar(dia)">
+            <span class="day-number">{{ dia.fecha.getDate() }}</span>
+            @if (dia.noLaborable) {
+              <span class="day-label">{{ dia.noLaborable.tipo }}</span>
+              <small>{{ dia.noLaborable.motivo }}</small>
+            } @else if (dia.finDeSemana) {
+              <span class="day-label muted">Fin de semana</span>
+            }
+          </button>
+        }
+      </div>
+    </div>
+
+    <aside class="detail-panel">
+      @if (!seleccionado) {
+        <div class="empty-detail">
+          <mat-icon>event</mat-icon>
+          <p>Selecciona un dia para ver el detalle.</p>
+        </div>
+      } @else {
+        <div class="detail-header">
+          <mat-icon>calendar_today</mat-icon>
+          <div>
+            <span class="detail-date">{{ seleccionado.fecha | date:'dd/MM/yyyy' }}</span>
+            <strong>
+              @if (seleccionado.noLaborable) {
+                No laborable
+              } @else if (seleccionado.finDeSemana) {
+                Fin de semana
+              } @else {
+                Laborable
+              }
+            </strong>
+          </div>
+        </div>
+
+        @if (!esAdmin) {
+          <div class="readonly-info">
+            @if (seleccionado.noLaborable) {
+              <span class="type-chip">{{ seleccionado.noLaborable.tipo }}</span>
+              <p>{{ seleccionado.noLaborable.motivo }}</p>
+            } @else if (seleccionado.finDeSemana) {
+              <p>Este dia no se trabaja por ser fin de semana.</p>
+            } @else {
+              <p>Este dia figura como dia de trabajo.</p>
+            }
+          </div>
+        } @else {
+          <label class="field">
+            Tipo
+            <select [(ngModel)]="tipo">
+              @for (t of tipos; track t) {
+                <option [value]="t">{{ t }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="field">
+            Motivo
+            <textarea [(ngModel)]="motivo" rows="3" placeholder="Ej: Feriado nacional"></textarea>
+          </label>
+
+          <div class="detail-actions">
+            <button mat-flat-button class="btn-primary" (click)="guardarDia()" [disabled]="guardando">
+              @if (guardando) { <mat-spinner diameter="16"></mat-spinner> }
+              @else { <mat-icon>save</mat-icon> }
+              Guardar
+            </button>
+
+            @if (seleccionado.noLaborable) {
+              <button mat-stroked-button class="btn-danger" (click)="quitarDia()" [disabled]="guardando">
+                <mat-icon>event_available</mat-icon>
+                Habilitar dia
+              </button>
+            }
+          </div>
+        }
+      }
+    </aside>
+  </section>
+</div>

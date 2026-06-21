@@ -13,21 +13,21 @@ export class AuthService {
   constructor(private http: HttpClient, private router: Router) {}
  
   loginFuncionario(data: LoginRequest): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.apiUrl}/funcionario/login`, data).pipe(
+    return this.http.post<LoginResponse>(`${this.apiUrl}/funcionario/login`, data, { withCredentials: true }).pipe(
       tap(res => this.saveSession(res))
     );
   }
  
   loginResponsable(data: LoginRequest): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.apiUrl}/responsable/login`, data).pipe(
+    return this.http.post<LoginResponse>(`${this.apiUrl}/responsable/login`, data, { withCredentials: true }).pipe(
       tap(res => this.saveSession(res))
     );
   }
  
  private saveSession(res: LoginResponse) {
-  if (res.token) {
-    localStorage.setItem('token', res.token);
-  }
+  // El JWT ya no pasa por acá: lo setea el backend como cookie httpOnly.
+  // Esto guarda solo datos de UI, no credenciales.
+  localStorage.setItem('sesionIniciada', 'true');
   localStorage.setItem('rol', res.rol);
   localStorage.setItem('nombre', res.nombreCompleto);
   localStorage.setItem('email', res.email);
@@ -48,10 +48,6 @@ export class AuthService {
 }
 
    
-  getToken(): string | null {
-    return localStorage.getItem('token'); 
-  }
- 
   getRol(): string | null {
     return localStorage.getItem('rol');
   }
@@ -78,7 +74,7 @@ export class AuthService {
   }
 
   isLoggedIn(): boolean {
-    return !!this.getToken();
+    return localStorage.getItem('sesionIniciada') === 'true';
   }
   
   isAdmin(): boolean {
@@ -95,6 +91,16 @@ export class AuthService {
   }
 
   logout() {
+    // Avisamos al backend para que invalide la cookie httpOnly. Si la
+    // request falla (red caída, etc.) igual limpiamos el estado local
+    // y mandamos al usuario al login.
+    this.http.post(`${this.apiUrl}/logout`, {}, { withCredentials: true }).subscribe({
+      next: () => this.finalizarSesionLocal(),
+      error: () => this.finalizarSesionLocal()
+    });
+  }
+
+  private finalizarSesionLocal() {
     localStorage.clear();
     this.router.navigate(['/iniciarSesion']);
   }

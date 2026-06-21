@@ -21,6 +21,7 @@ import { ToastService } from '../../services/toast.service';
 import { finalize } from 'rxjs/operators';
 import { ResponsableResponse, ResponsableNinioResponse, ResponsableNinioRequest } from '../../models/models';
 import { ResponsableService } from '../../services/responsable.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-retiro-dialog',
@@ -169,25 +170,17 @@ export class ResponsablesComponent implements OnInit {
     private responsableService: ResponsableService,
     private dialog: MatDialog,
     private toast: ToastService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private authService: AuthService
   ) {}
 
   ngOnInit() {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const rol: string = payload.rol || payload.role || '';
-        const ROLES_GESTION = [
-          'ADMINISTRADOR_SISTEMA', 'COORDINADORA', 'ASISTENTE_SOCIAL', 'PSICOLOGO'
-        ];
-        this.esAdmin = ROLES_GESTION.includes(rol);
-        this.esAdminSistema = rol === 'ADMINISTRADOR_SISTEMA';
-      } catch {
-        this.esAdmin = false;
-        this.esAdminSistema = false;
-      }
-    }
+    const rol = this.authService.getRol() ?? '';
+    const ROLES_GESTION = [
+      'ADMINISTRADOR_SISTEMA', 'COORDINADORA', 'ASISTENTE_SOCIAL', 'PSICOLOGO'
+    ];
+    this.esAdmin = ROLES_GESTION.includes(rol);
+    this.esAdminSistema = rol === 'ADMINISTRADOR_SISTEMA';
     this.cargar();
   }
 

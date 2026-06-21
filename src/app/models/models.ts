@@ -4,7 +4,6 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  token?: string | null;
   tipoToken: string;
   rol: string;
   id: number;

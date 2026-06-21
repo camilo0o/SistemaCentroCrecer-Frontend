@@ -47,16 +47,6 @@ nav {
   gap: 30px;
 }
 
-nav a {
-  text-decoration: none;
-  color: #24476b;
-  font-size: 20px;
-}
-
-nav a:hover {
-  color: #3b82f6;
-}
-
 /* HERO */
 .hero {
   text-align: center;

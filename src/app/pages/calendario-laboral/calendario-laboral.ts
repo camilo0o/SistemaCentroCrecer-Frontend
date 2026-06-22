@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -44,7 +44,8 @@ export class CalendarioLaboralComponent implements OnInit {
   constructor(
     private calendarioService: CalendarioLaboralService,
     private auth: AuthService,
-    private toast: ToastService
+    private toast: ToastService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -63,9 +64,13 @@ export class CalendarioLaboralComponent implements OnInit {
   cargarMes(): void {
     const desde = this.iso(new Date(this.fechaActual.getFullYear(), this.fechaActual.getMonth(), 1));
     const hasta = this.iso(new Date(this.fechaActual.getFullYear(), this.fechaActual.getMonth() + 1, 0));
+    this.construirCalendario();
     this.cargando = true;
     this.calendarioService.listar(desde, hasta)
-      .pipe(finalize(() => this.cargando = false))
+      .pipe(finalize(() => {
+        this.cargando = false;
+        this.cdr.detectChanges();
+      }))
       .subscribe({
         next: dias => {
           this.diasNoLaborables = dias.filter(d => d.activo !== false);

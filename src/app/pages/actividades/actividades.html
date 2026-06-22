@@ -190,7 +190,6 @@
           </button>
           <div class="nav-titulo">
             <span class="nav-fecha">{{ tituloSemana }}</span>
-            @if(cargando){ <mat-spinner diameter="16"></mat-spinner> }
           </div>
           <button mat-stroked-button class="btn-hoy" (click)="irHoy()">Hoy</button>
           <button mat-icon-button matTooltip="Semana siguiente" (click)="siguienteSemana()">

@@ -84,11 +84,14 @@ import {
 
         <mat-form-field appearance="outline">
           <mat-label>Fecha</mat-label>
-          <input matInput [matDatepicker]="picker" formControlName="fecha" readonly>
+          <input matInput [matDatepicker]="picker" [min]="hoyDate" formControlName="fecha" readonly>
           <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
           <mat-datepicker #picker></mat-datepicker>
-          @if(form.get('fecha')?.invalid && form.get('fecha')?.touched){
+          @if(form.get('fecha')?.hasError('required') && form.get('fecha')?.touched){
             <mat-error>La fecha es obligatoria</mat-error>
+          }
+          @if(form.get('fecha')?.hasError('matDatepickerMin') && form.get('fecha')?.touched){
+            <mat-error>No puede ser anterior a hoy</mat-error>
           }
         </mat-form-field>
 
@@ -118,6 +121,7 @@ import {
 export class AgendaLimpiezaDialogComponent {
   form: FormGroup;
   guardando = false;
+  hoyDate = this.inicioDelDia(new Date());
 
   constructor(
     private fb: FormBuilder,
@@ -162,6 +166,12 @@ export class AgendaLimpiezaDialogComponent {
         this.toast.error(err.error?.error ?? 'Error al guardar');
       }
     });
+  }
+
+  private inicioDelDia(fecha: Date): Date {
+    const normalizada = new Date(fecha);
+    normalizada.setHours(0, 0, 0, 0);
+    return normalizada;
   }
 }
 

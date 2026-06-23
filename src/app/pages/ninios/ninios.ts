@@ -63,8 +63,10 @@ import { of } from 'rxjs';
       width: 38px; height: 38px; border-radius: 50%;
       background: linear-gradient(135deg,#1565C0,#42A5F5);
       display: flex; align-items: center; justify-content: center;
-      font-size: 14px; font-weight: 700; color: white; flex-shrink: 0;
+      font-size: 14px; font-weight: 700; color: white; flex-shrink: 0; overflow: hidden;
     }
+    .rel-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+    .rel-avatar.has-photo { background: transparent; color: transparent; }
     .rel-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
     .rel-nombre { font-size: .9rem; font-weight: 600; color: #1a2340; }
     .rel-sub { font-size: .8rem; color: #5C6680; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
@@ -114,7 +116,13 @@ import { of } from 'rxjs';
       } @else {
         @for(r of relaciones; track r.id){
           <div class="rel-card">
-            <div class="rel-avatar">{{ r.responsable?.nombre?.[0] ?? '?' }}{{ r.ninio?.nombre?.[0] ?? '' }}</div>
+            <div class="rel-avatar" [class.has-photo]="r.responsable?.fotoPerfil">
+              @if(r.responsable?.fotoPerfil){
+                <img [src]="r.responsable!.fotoPerfil" alt="Foto de perfil">
+              } @else {
+                {{ r.responsable?.nombre?.[0] ?? '?' }}{{ r.responsable?.apellido?.[0] ?? '' }}
+              }
+            </div>
             <div class="rel-info">
               <span class="rel-nombre">{{ r.responsable?.nombre }} {{ r.responsable?.apellido }}</span>
               <div class="rel-sub">
@@ -385,8 +393,10 @@ export class VincularResponsableDialogComponent implements OnInit {
       width: 36px; height: 36px; border-radius: 50%;
       background: linear-gradient(135deg, #1565C0, #42A5F5);
       display: flex; align-items: center; justify-content: center;
-      font-size: 13px; font-weight: 700; color: white; flex-shrink: 0;
+      font-size: 13px; font-weight: 700; color: white; flex-shrink: 0; overflow: hidden;
     }
+    .resp-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+    .resp-avatar.has-photo { background: transparent; color: transparent; }
     .resp-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
     .resp-nombre { font-size: 0.9rem; font-weight: 600; color: #1a2340; }
     .resp-sub { font-size: 0.8rem; color: #5C6680; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
@@ -547,7 +557,13 @@ export class VincularResponsableDialogComponent implements OnInit {
         <div class="responsables-grid">
           @for(r of responsables; track r.id){
             <div class="resp-card">
-              <div class="resp-avatar">{{ r.nombre[0] }}{{ r.apellido?.[0] ?? '' }}</div>
+              <div class="resp-avatar" [class.has-photo]="r.fotoPerfil">
+                @if(r.fotoPerfil){
+                  <img [src]="r.fotoPerfil" alt="Foto de perfil">
+                } @else {
+                  {{ r.nombre[0] }}{{ r.apellido?.[0] ?? '' }}
+                }
+              </div>
               <div class="resp-info">
                 <span class="resp-nombre">{{ r.nombre }} {{ r.apellido }}</span>
                 <div class="resp-sub">

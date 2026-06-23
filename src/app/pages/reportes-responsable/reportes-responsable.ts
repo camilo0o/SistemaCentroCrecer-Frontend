@@ -34,14 +34,17 @@ interface ReporteResponsableItem extends ReporteResponse {
     .section-label { font-size:12px; font-weight:600; color:#5C6680; text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; display:flex; align-items:center; gap:4px; }
     .chips-row { display:flex; flex-wrap:wrap; gap:6px; }
     .chip-grupo { background:#E8F5E9; color:#2E7D32; border-radius:16px; padding:4px 12px; font-size:12px; font-weight:500; }
-    .chip-ninio { background:#E3F2FD; color:#1565C0; border-radius:16px; padding:4px 12px; font-size:12px; font-weight:500; }
+    .chip-ninio { background:#E3F2FD; color:#1565C0; border-radius:16px; padding:4px 12px 4px 4px; font-size:12px; font-weight:500; display:inline-flex; align-items:center; gap:6px; }
+    .chip-avatar { width:22px; height:22px; border-radius:50%; background:#1565C0; color:white; display:inline-flex; align-items:center; justify-content:center; overflow:hidden; font-size:9px; font-weight:800; flex-shrink:0; }
+    .chip-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; display:block; }
     .meta-row { display:flex; gap:24px; font-size:13px; color:#5C6680; flex-wrap:wrap; margin-bottom:16px; }
     .meta-item { display:flex; flex-direction:column; gap:2px; }
     .meta-key { font-size:11px; text-transform:uppercase; letter-spacing:.4px; }
     .meta-val { font-weight:500; color:#1a2340; }
     .desc-box { background:#F5F7FA; border-radius:8px; padding:12px; font-size:13px; color:#3a4060; white-space:pre-wrap; }
     .generado-por { display:flex; align-items:center; gap:10px; background:#F0F4FF; border-radius:10px; padding:10px 14px; margin-bottom:16px; }
-    .generado-por mat-icon { color:#1565C0; }
+    .generado-por-avatar { width:36px; height:36px; border-radius:50%; background:#1565C0; color:white; display:flex; align-items:center; justify-content:center; overflow:hidden; font-size:12px; font-weight:800; flex-shrink:0; }
+    .generado-por-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; display:block; }
     .generado-por-label { font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:#5C6680; }
     .generado-por-nombre { font-size:14px; font-weight:600; color:#1a2340; }
     .dialog-actions { display:flex; justify-content:flex-end; gap:8px; padding:16px 24px; }
@@ -54,7 +57,13 @@ interface ReporteResponsableItem extends ReporteResponse {
     <mat-dialog-content style="padding:16px 24px;width:min(520px,88vw);max-height:65vh;overflow-y:auto">
 
       <div class="generado-por">
-        <mat-icon>account_circle</mat-icon>
+        <div class="generado-por-avatar">
+          @if(funcionarioFoto){
+            <img [src]="funcionarioFoto" alt="Foto de perfil">
+          } @else {
+            {{ funcionarioIniciales }}
+          }
+        </div>
         <div>
           <div class="generado-por-label">Generado por</div>
           <div class="generado-por-nombre">
@@ -87,7 +96,16 @@ interface ReporteResponsableItem extends ReporteResponse {
       <div class="section" *ngIf="ninios.length > 0">
         <div class="section-label"><mat-icon style="font-size:14px">child_care</mat-icon> Ninos ({{ ninios.length }})</div>
         <div class="chips-row">
-          <span class="chip-ninio" *ngFor="let n of ninios">{{ n.ninioNombre }} {{ n.ninioApellido }}</span>
+          <span class="chip-ninio" *ngFor="let n of ninios">
+            <span class="chip-avatar">
+              @if(n.fotoUrl){
+                <img [src]="n.fotoUrl" alt="Foto">
+              } @else {
+                {{ getReporteNinioIniciales(n) }}
+              }
+            </span>
+            {{ n.ninioNombre }} {{ n.ninioApellido }}
+          </span>
         </div>
       </div>
 
@@ -105,6 +123,20 @@ export class ReporteResponsableDetalleDialogComponent {
 
   get grupos() { return this.data.reporte.grupos ?? []; }
   get ninios() { return this.data.reporte.ninios ?? []; }
+
+  get funcionarioFoto(): string | undefined {
+    return this.data.reporte.funcionario?.fotoPerfil;
+  }
+
+  get funcionarioIniciales(): string {
+    const f = this.data.reporte.funcionario;
+    if (!f) return '?';
+    return `${f.nombre?.[0] ?? ''}${f.apellido?.[0] ?? ''}`.toUpperCase() || '?';
+  }
+
+  getReporteNinioIniciales(n: { ninioNombre: string; ninioApellido: string }): string {
+    return `${n.ninioNombre?.[0] ?? ''}${n.ninioApellido?.[0] ?? ''}`.toUpperCase() || '?';
+  }
 
   formatFecha(f: string): string {
     if (!f) return '-';
@@ -162,17 +194,21 @@ export class ReporteResponsableDetalleDialogComponent {
     .badge-nuevo, .badge-leido { display:inline-flex; align-items:center; gap:4px; border-radius:999px; padding:3px 8px; font-size:10px; font-weight:800; margin-left:8px; vertical-align:middle; }
     .badge-nuevo { background:#EF4444; color:white; }
     .badge-leido { background:#E8F5E9; color:#2E7D32; }
-    .funcionario-row { display:flex; align-items:center; gap:6px; font-size:13px; color:#5C6680; margin-top:10px; }
-    .funcionario-row mat-icon { font-size:16px; width:16px; height:16px; color:#1565C0; }
+    .funcionario-row { display:flex; align-items:center; gap:8px; font-size:13px; color:#5C6680; margin-top:10px; }
+    .funcionario-avatar { width:24px; height:24px; border-radius:50%; background:#E3F2FD; color:#1565C0; display:flex; align-items:center; justify-content:center; overflow:hidden; font-size:9px; font-weight:800; flex-shrink:0; }
+    .funcionario-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; display:block; }
     .chips-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
     .chip-grupo, .chip-ninio { display:inline-flex; align-items:center; gap:4px; border-radius:999px; padding:4px 10px; font-size:11px; font-weight:700; }
     .chip-grupo { background:#E8F5E9; color:#2E7D32; }
     .chip-ninio { background:#E3F2FD; color:#1565C0; }
-    .chip-grupo mat-icon, .chip-ninio mat-icon { font-size:13px; width:13px; height:13px; }
+    .chip-grupo mat-icon { font-size:13px; width:13px; height:13px; }
+    .chip-avatar { width:20px; height:20px; border-radius:50%; background:#1565C0; color:white; display:inline-flex; align-items:center; justify-content:center; overflow:hidden; font-size:9px; font-weight:800; flex-shrink:0; }
+    .chip-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; display:block; }
     .card-actions { display:flex; align-items:center; gap:6px; flex-shrink:0; }
     .btn-visto { color:#2E7D32 !important; border-color:#A5D6A7 !important; height:34px !important; line-height:34px !important; font-size:12px !important; font-weight:700 !important; }
     .btn-visto mat-icon { font-size:16px; width:16px; height:16px; }
     .ver-btn { flex-shrink:0; color:#1565C0; }
+    .pdf-btn { flex-shrink:0; color:#C62828; }
     .empty-state { display:flex; flex-direction:column; align-items:center; gap:12px; padding:60px 24px; color:#9AA0B9; background:#fff; border:1px dashed #CBD5E1; border-radius:12px; }
     .empty-state mat-icon { font-size:56px; width:56px; height:56px; color:#D0D4E3; }
     @media(max-width:760px) {
@@ -282,13 +318,23 @@ export class ReporteResponsableDetalleDialogComponent {
                     <p class="desc" *ngIf="r.descripcion">{{ r.descripcion | slice:0:120 }}{{ r.descripcion.length > 120 ? '...' : '' }}</p>
 
                     <div class="funcionario-row">
-                      <mat-icon>account_circle</mat-icon>
+                      <span class="funcionario-avatar">
+                        @if(getFuncionarioFoto(r)){
+                          <img [src]="getFuncionarioFoto(r)" alt="Foto de perfil">
+                        } @else {
+                          {{ getFuncionarioIniciales(r) }}
+                        }
+                      </span>
                       {{ getNombreFuncionario(r) }}
                     </div>
                   </div>
                 </div>
 
                 <div class="card-actions">
+                  <button mat-icon-button class="pdf-btn" matTooltip="Descargar PDF"
+                    (click)="exportarPDF(r.id)">
+                    <mat-icon>picture_as_pdf</mat-icon>
+                  </button>
                   <button mat-icon-button class="ver-btn" matTooltip="Ver detalle"
                     (click)="verDetalle(r)">
                     <mat-icon>visibility</mat-icon>
@@ -301,7 +347,14 @@ export class ReporteResponsableDetalleDialogComponent {
                   <mat-icon>groups</mat-icon> {{ g.grupoNombre }}
                 </span>
                 <span class="chip-ninio" *ngFor="let n of (r.ninios ?? [])">
-                  <mat-icon>face</mat-icon> {{ n.ninioNombre }} {{ n.ninioApellido }}
+                  <span class="chip-avatar">
+                    @if(n.fotoUrl){
+                      <img [src]="n.fotoUrl" alt="Foto">
+                    } @else {
+                      {{ getReporteNinioIniciales(n) }}
+                    }
+                  </span>
+                  {{ n.ninioNombre }} {{ n.ninioApellido }}
                 </span>
               </div>
             </mat-card-content>
@@ -403,9 +456,43 @@ export class ReportesResponsableComponent implements OnInit {
     });
   }
 
+  exportarPDF(id: number) {
+    this.reporteService.exportarPdf(id).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `reporte-${id}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        this.toast.success('PDF descargado');
+      },
+      error: () => this.toast.error('No se pudo exportar el PDF')
+    });
+  }
+
   getNombreFuncionario(r: ReporteResponse): string {
     if (r.funcionario) return `${r.funcionario.nombre} ${r.funcionario.apellido}`;
     return r.funcionarioNombre ?? '-';
+  }
+
+  getFuncionarioFoto(r: ReporteResponse): string | undefined {
+    return r.funcionario?.fotoPerfil;
+  }
+
+  getFuncionarioIniciales(r: ReporteResponse): string {
+    if (r.funcionario) return `${r.funcionario.nombre?.[0] ?? ''}${r.funcionario.apellido?.[0] ?? ''}`.toUpperCase() || '?';
+    return r.funcionarioNombre
+      ?.split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map(p => p[0])
+      .join('')
+      .toUpperCase() || '?';
+  }
+
+  getReporteNinioIniciales(n: { ninioNombre: string; ninioApellido: string }): string {
+    return `${n.ninioNombre?.[0] ?? ''}${n.ninioApellido?.[0] ?? ''}`.toUpperCase() || '?';
   }
 
   formatFecha(f: string): string {

@@ -100,6 +100,7 @@ export class DashboardResponsableComponent implements OnInit {
     this.responsableId = this.auth.getUserId();
     this.inicializarFormulario();
     this.cargarInscripciones();
+    this.cargarMisNiniosParaAvatares();
     this.cargarPermisos();
   }
 
@@ -147,6 +148,17 @@ export class DashboardResponsableComponent implements OnInit {
     this.ninioService.misNinios(this.responsableId).subscribe({
       next: data => { this.misNinios = data; this.cargandoNinios = false; },
       error: () => { this.toast.error('No se pudieron cargar los niños.'); this.cargandoNinios = false; }
+    });
+  }
+
+  cargarMisNiniosParaAvatares() {
+    if (!this.responsableId) return;
+    this.ninioService.misNinios(this.responsableId).subscribe({
+      next: data => {
+        this.misNinios = data;
+        this.cdr.detectChanges();
+      },
+      error: () => {}
     });
   }
 
@@ -239,6 +251,10 @@ export class DashboardResponsableComponent implements OnInit {
 
   get cantidadActivas():   number { return this.inscripciones.filter(i => i.estadoInscripcion === 'ACTIVA').length; }
   get cantidadPendientes():number { return this.inscripciones.filter(i => i.estadoInscripcion === 'PENDIENTE').length; }
+
+  getFotoNinioInscripcion(insc: InscripcionSolicitudResponse): string | undefined {
+    return insc.ninioFotoUrl ?? this.misNinios.find(n => n.id === insc.ninioId)?.fotoUrl;
+  }
 
 
   inicializarFormulario() {

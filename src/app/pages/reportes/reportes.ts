@@ -43,8 +43,10 @@ import { forkJoin } from 'rxjs';
     .dialog-title { margin:0; font-size:18px; font-weight:600; color:#1565C0; }
     .section-label { font-size:13px; font-weight:600; color:#5C6680; margin:8px 0 4px; text-transform:uppercase; letter-spacing:.5px; }
     .chips-selected { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
-    .chip-item { background:#E3F2FD; color:#1565C0; border-radius:16px; padding:4px 12px; font-size:12px; font-weight:500; display:flex; align-items:center; gap:4px; }
+    .chip-item { background:#E3F2FD; color:#1565C0; border-radius:16px; padding:4px 12px; font-size:12px; font-weight:500; display:flex; align-items:center; gap:6px; }
     .chip-item mat-icon { font-size:14px; width:14px; height:14px; cursor:pointer; }
+    .chip-avatar { width:20px; height:20px; border-radius:50%; background:#1565C0; color:white; display:inline-flex; align-items:center; justify-content:center; overflow:hidden; font-size:9px; font-weight:800; flex-shrink:0; }
+    .chip-avatar img { width:100%; height:100%; object-fit:cover; }
     .dialog-actions { display:flex; justify-content:flex-end; gap:8px; padding:16px 24px; }
     .empty-sel { font-size:12px; color:#9AA0B9; font-style:italic; }
   `],
@@ -110,7 +112,14 @@ import { forkJoin } from 'rxjs';
           <div class="chips-selected" *ngIf="niniosSeleccionados.length > 0">
             @for(nId of niniosSeleccionados; track nId){
               <span class="chip-item">
-                <mat-icon>face</mat-icon>{{ getNinioNombre(nId) }}
+                <span class="chip-avatar">
+                  @if(getNinioFoto(nId)){
+                    <img [src]="getNinioFoto(nId)" alt="Foto">
+                  } @else {
+                    {{ getNinioIniciales(nId) }}
+                  }
+                </span>
+                {{ getNinioNombre(nId) }}
                 <mat-icon (click)="quitarNinio(nId)">close</mat-icon>
               </span>
             }
@@ -183,6 +192,16 @@ export class ReporteDialogComponent implements OnInit {
     return n ? `${n.nombre} ${n.apellido}` : String(id);
   }
 
+  getNinioFoto(id: number): string | undefined {
+    return this.ninios.find(n => n.id === id)?.fotoUrl;
+  }
+
+  getNinioIniciales(id: number): string {
+    const n = this.ninios.find(n => n.id === id);
+    if (!n) return '?';
+    return `${n.nombre?.[0] ?? ''}${n.apellido?.[0] ?? ''}`.toUpperCase();
+  }
+
   quitarGrupo(id: number) { this.gruposSeleccionados = this.gruposSeleccionados.filter(g => g !== id); }
   quitarNinio(id: number) { this.niniosSeleccionados = this.niniosSeleccionados.filter(n => n !== id); }
 
@@ -222,7 +241,9 @@ export class ReporteDialogComponent implements OnInit {
     .section-label { font-size:12px; font-weight:600; color:#5C6680; text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; display:flex; align-items:center; gap:4px; }
     .chips-row { display:flex; flex-wrap:wrap; gap:6px; }
     .chip-grupo { background:#E8F5E9; color:#2E7D32; border-radius:16px; padding:4px 12px; font-size:12px; font-weight:500; }
-    .chip-ninio { background:#E3F2FD; color:#1565C0; border-radius:16px; padding:4px 12px; font-size:12px; font-weight:500; }
+    .chip-ninio { background:#E3F2FD; color:#1565C0; border-radius:16px; padding:4px 12px; font-size:12px; font-weight:500; display:inline-flex; align-items:center; gap:6px; }
+    .chip-avatar { width:22px; height:22px; border-radius:50%; background:#1565C0; color:white; display:inline-flex; align-items:center; justify-content:center; overflow:hidden; font-size:9px; font-weight:800; flex-shrink:0; }
+    .chip-avatar img { width:100%; height:100%; object-fit:cover; }
     .empty-label { font-size:12px; color:#9AA0B9; font-style:italic; }
     .meta-row { display:flex; gap:24px; font-size:13px; color:#5C6680; flex-wrap:wrap; }
     .meta-item { display:flex; flex-direction:column; gap:2px; }
@@ -231,7 +252,8 @@ export class ReporteDialogComponent implements OnInit {
     .desc-box { background:#F5F7FA; border-radius:8px; padding:12px; font-size:13px; color:#3a4060; white-space:pre-wrap; }
     .dialog-actions { display:flex; justify-content:flex-end; gap:8px; padding:16px 24px; }
     .generado-por { display:flex; align-items:center; gap:10px; background:#F0F4FF; border-radius:10px; padding:10px 14px; margin-bottom:16px; }
-    .generado-por mat-icon { color:#1565C0; }
+    .generado-por-avatar { width:36px; height:36px; border-radius:50%; background:#1565C0; color:white; display:flex; align-items:center; justify-content:center; overflow:hidden; font-size:12px; font-weight:800; flex-shrink:0; }
+    .generado-por-avatar img { width:100%; height:100%; object-fit:cover; }
     .generado-por-label { font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:#5C6680; }
     .generado-por-nombre { font-size:14px; font-weight:600; color:#1a2340; }
   `],
@@ -244,7 +266,13 @@ export class ReporteDialogComponent implements OnInit {
 
       <!-- Generado por (destacado) -->
       <div class="generado-por">
-        <mat-icon>account_circle</mat-icon>
+        <div class="generado-por-avatar">
+          @if(funcionarioFoto){
+            <img [src]="funcionarioFoto" alt="Foto de perfil">
+          } @else {
+            {{ funcionarioIniciales }}
+          }
+        </div>
         <div>
           <div class="generado-por-label">Generado por</div>
           <div class="generado-por-nombre">{{ data.reporte.funcionario ? (data.reporte.funcionario.nombre + ' ' + data.reporte.funcionario.apellido) : (data.reporte.funcionarioNombre ?? '—') }}</div>
@@ -280,7 +308,16 @@ export class ReporteDialogComponent implements OnInit {
       <div class="section">
         <div class="section-label"><mat-icon style="font-size:14px">child_care</mat-icon> Niños ({{ ninios.length }})</div>
         <div class="chips-row" *ngIf="ninios.length > 0">
-          <span class="chip-ninio" *ngFor="let n of ninios">{{ n.ninioNombre }} {{ n.ninioApellido }}</span>
+          <span class="chip-ninio" *ngFor="let n of ninios">
+            <span class="chip-avatar">
+              @if(n.fotoUrl){
+                <img [src]="n.fotoUrl" alt="Foto">
+              } @else {
+                {{ getReporteNinioIniciales(n) }}
+              }
+            </span>
+            {{ n.ninioNombre }} {{ n.ninioApellido }}
+          </span>
         </div>
         <p class="empty-label" *ngIf="ninios.length === 0">Sin niños asociados</p>
       </div>
@@ -299,6 +336,20 @@ export class ReporteDetalleDialogComponent {
 
   get grupos() { return this.data.reporte.grupos ?? []; }
   get ninios() { return this.data.reporte.ninios ?? []; }
+
+  get funcionarioFoto(): string | undefined {
+    return this.data.reporte.funcionario?.fotoPerfil;
+  }
+
+  get funcionarioIniciales(): string {
+    const f = this.data.reporte.funcionario;
+    if (!f) return '?';
+    return `${f.nombre?.[0] ?? ''}${f.apellido?.[0] ?? ''}`.toUpperCase();
+  }
+
+  getReporteNinioIniciales(n: { ninioNombre: string; ninioApellido: string }): string {
+    return `${n.ninioNombre?.[0] ?? ''}${n.ninioApellido?.[0] ?? ''}`.toUpperCase();
+  }
 
   formatFecha(f: string): string {
     if (!f) return '—';
@@ -449,6 +500,25 @@ export class ReportesComponent implements OnInit {
       return f ? `${f.nombre} ${f.apellido}` : '—';
     }
     return '—';
+  }
+
+  getFuncionarioFoto(r: ReporteResponse): string | undefined {
+    if (r.funcionario?.fotoPerfil) return r.funcionario.fotoPerfil;
+    if (r.funcionarioId) return this.funcionarios.find(f => f.id === r.funcionarioId)?.fotoPerfil;
+    return undefined;
+  }
+
+  getFuncionarioIniciales(r: ReporteResponse): string {
+    const funcionario = r.funcionario ?? (r.funcionarioId ? this.funcionarios.find(f => f.id === r.funcionarioId) : undefined);
+    if (funcionario) return `${funcionario.nombre?.[0] ?? ''}${funcionario.apellido?.[0] ?? ''}`.toUpperCase();
+    const nombre = r.funcionarioNombre ?? '';
+    return nombre
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map(p => p[0])
+      .join('')
+      .toUpperCase() || '?';
   }
 
   getGruposResumen(r: ReporteResponse): string {

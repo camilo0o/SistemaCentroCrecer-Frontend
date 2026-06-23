@@ -130,8 +130,12 @@
               <tr>
                 <td>
                   <div class="func-cell">
-                    <div class="func-avatar">
-                      {{ (a.funcionarioNombre ?? '?')[0].toUpperCase() }}
+                    <div class="func-avatar" [class.has-photo]="getFuncionarioFoto(a.funcionarioId)">
+                      @if(getFuncionarioFoto(a.funcionarioId)){
+                        <img [src]="getFuncionarioFoto(a.funcionarioId)" alt="Foto de perfil">
+                      } @else {
+                        {{ getAsistenciaIniciales(a) }}
+                      }
                     </div>
                     <div>
                       <div class="func-nombre">{{ a.funcionarioNombre }}</div>
@@ -194,7 +198,13 @@
         @for(item of cargaHorariaFiltrada; track item.funcionario.id){
           <div class="horaria-card">
             <div class="horaria-card-header">
-              <div class="horaria-avatar">{{ initials(item.funcionario) }}</div>
+              <div class="horaria-avatar" [class.has-photo]="item.funcionario.fotoPerfil">
+                @if(item.funcionario.fotoPerfil){
+                  <img [src]="item.funcionario.fotoPerfil" alt="Foto de perfil">
+                } @else {
+                  {{ initials(item.funcionario) }}
+                }
+              </div>
               <div>
                 <div class="horaria-nombre">{{ item.funcionario.nombre }} {{ item.funcionario.apellido }}</div>
                 <div class="horaria-rol">{{ ROL_DISPLAY[item.funcionario.rol?.nombre ?? ''] ?? item.funcionario.rol?.nombre }}</div>

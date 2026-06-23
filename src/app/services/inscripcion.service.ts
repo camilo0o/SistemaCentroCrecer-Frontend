@@ -42,6 +42,7 @@ export interface InscripcionSolicitudResponse {
   ninioCedula?: string;
   ninioFechaNacimiento?: string;
   ninioSexo?: string;
+  ninioFotoUrl?: string;
   ninioObservaciones?: string;
   ninioDireccion?: string;
   condicionesMedicas?: { condicion: string; observacion?: string; esCronica: boolean }[];

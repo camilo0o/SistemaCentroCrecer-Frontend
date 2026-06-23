@@ -132,6 +132,20 @@ tr:hover td { background: #F7F9FF; }
   background: linear-gradient(135deg, #1565C0, #42A5F5);
   display: flex; align-items: center; justify-content: center;
   font-size: 12px; font-weight: 700; color: white; flex-shrink: 0;
+  overflow: hidden;
+}
+.func-avatar img,
+.horaria-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+.func-avatar.has-photo,
+.horaria-avatar.has-photo {
+  background: transparent;
+  color: transparent;
 }
 .func-nombre { font-weight: 600; font-size: 13px; }
 .func-rol { font-size: 11px; color: #9AA0B9; }
@@ -174,6 +188,7 @@ tr:hover td { background: #F7F9FF; }
   background: linear-gradient(135deg, #1565C0, #42A5F5);
   display: flex; align-items: center; justify-content: center;
   font-size: 14px; font-weight: 700; color: white; flex-shrink: 0;
+  overflow: hidden;
 }
 .horaria-nombre { font-weight: 700; font-size: 14px; color: #1a2340; }
 .horaria-rol { font-size: 11px; color: #9AA0B9; }

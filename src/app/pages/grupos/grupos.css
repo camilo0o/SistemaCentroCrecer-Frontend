@@ -255,6 +255,20 @@
   font-weight: 700;
   font-size: 13px;
   flex-shrink: 0;
+  overflow: hidden;
+}
+.ninio-avatar img,
+.func-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+.ninio-avatar.has-photo,
+.func-avatar.has-photo {
+  background: transparent;
+  color: transparent;
 }
 .ninio-info {
   flex: 1;
@@ -355,6 +369,7 @@
   font-size: 12px;
   font-weight: 700;
   flex-shrink: 0;
+  overflow: hidden;
 }
 .func-info {
   flex: 1;

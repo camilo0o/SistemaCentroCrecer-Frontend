@@ -10,6 +10,7 @@ import { interval, Subscription, forkJoin } from 'rxjs';
 import { AuthService } from '../../../services/auth.service';
 import { ROL_DISPLAY } from '../../../models/models';
 import { environment } from '../../../../environments/environment';
+import { PerfilService } from '../../../services/perfil.service';
 
 interface NavItem {
   label: string;
@@ -98,7 +99,8 @@ export class Sidebar implements OnInit, OnDestroy {
   constructor(
     public auth: AuthService,
     private router: Router,
-    private http: HttpClient
+    private http: HttpClient,
+    private perfilService: PerfilService
   ) {}
 
   ngOnInit() {
@@ -110,6 +112,7 @@ export class Sidebar implements OnInit, OnDestroy {
       : 'U';
 
     this.fotoPerfil = localStorage.getItem('fotoPerfil');
+    this.cargarFotoPerfilRemota();
 
     window.addEventListener('storage-foto-updated', () => {
       this.fotoPerfil = localStorage.getItem('fotoPerfil');
@@ -121,6 +124,7 @@ export class Sidebar implements OnInit, OnDestroy {
       this.currentRoute = e.urlAfterRedirects;
       this.nombre       = this.auth.getNombre();
       this.fotoPerfil   = localStorage.getItem('fotoPerfil');
+      this.cargarFotoPerfilRemota();
       this.initials     = this.nombre
         ? this.nombre.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
         : 'U';
@@ -132,6 +136,26 @@ export class Sidebar implements OnInit, OnDestroy {
       this.cargarNotificaciones();
       this.pollSub = interval(30000).subscribe(() => this.cargarNotificaciones());
     }
+  }
+
+  private cargarFotoPerfilRemota() {
+    if (this.fotoPerfil) return;
+    const userId = this.auth.getUserId();
+    const rol = this.auth.getRol();
+    if (!userId || !rol) return;
+
+    const req = rol === 'RESPONSABLE'
+      ? this.perfilService.obtenerResponsable(userId)
+      : this.perfilService.obtenerFuncionario(userId);
+
+    req.subscribe({
+      next: (perfil) => {
+        if (!perfil?.fotoPerfil) return;
+        this.fotoPerfil = perfil.fotoPerfil;
+        localStorage.setItem('fotoPerfil', perfil.fotoPerfil);
+      },
+      error: () => {}
+    });
   }
 
   ngOnDestroy() {

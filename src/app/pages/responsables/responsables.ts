@@ -48,7 +48,10 @@ import { AuthService } from '../../services/auth.service';
       width: 40px; height: 40px; border-radius: 50%;
       background: #1565C0; color: white;
       display: flex; align-items: center; justify-content: center;
-      font-weight: 700; font-size: 14px; flex-shrink: 0;
+      font-weight: 700; font-size: 14px; flex-shrink: 0; overflow: hidden;
+    }
+    .ninio-avatar img {
+      width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block;
     }
     .ninio-nombre { font-weight: 600; font-size: 14px; color: #1a2340; }
     .ninio-cedula { font-size: 12px; color: #6b7280; }
@@ -63,6 +66,9 @@ import { AuthService } from '../../services/auth.service';
       display: flex; justify-content: flex-end; gap: 10px;
       padding: 12px 24px; border-top: 1px solid #f0f2f7;
     }
+    .btn-guardar-retiro { display: inline-flex !important; align-items: center; justify-content: center; gap: 6px; }
+    .btn-guardar-retiro mat-icon { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; font-size: 18px; line-height: 18px; margin: 0; }
+    ::ng-deep .btn-guardar-retiro .mdc-button__label { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
   `],
   template: `
     <div class="dlg-header">
@@ -75,7 +81,13 @@ import { AuthService } from '../../services/auth.service';
 
     <div class="dlg-body">
       <div class="ninio-info">
-        <div class="ninio-avatar">{{ data.relacion.ninio.nombre[0] }}{{ data.relacion.ninio.apellido[0] }}</div>
+        <div class="ninio-avatar" [style.background]="data.relacion.ninio.fotoUrl ? 'transparent' : '#1565C0'">
+          @if(data.relacion.ninio.fotoUrl){
+            <img [src]="data.relacion.ninio.fotoUrl" alt="Foto">
+          } @else {
+            {{ data.relacion.ninio.nombre[0] }}{{ data.relacion.ninio.apellido[0] }}
+          }
+        </div>
         <div>
           <div class="ninio-nombre">{{ data.relacion.ninio.nombre }} {{ data.relacion.ninio.apellido }}</div>
           <div class="ninio-cedula">CI {{ data.relacion.ninio.cedula }}</div>
@@ -109,7 +121,7 @@ import { AuthService } from '../../services/auth.service';
 
     <div class="dlg-footer">
       <button mat-stroked-button (click)="ref.close()">Cancelar</button>
-      <button mat-flat-button color="primary" (click)="guardar()" [disabled]="cargando">
+      <button mat-flat-button color="primary" class="btn-guardar-retiro" (click)="guardar()" [disabled]="cargando">
         @if(cargando) { <mat-spinner diameter="18"></mat-spinner> }
         @else { <mat-icon>save</mat-icon> Guardar }
       </button>

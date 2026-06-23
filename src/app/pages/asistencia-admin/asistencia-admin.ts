@@ -246,6 +246,25 @@ export class AsistenciaAdminComponent implements OnInit {
     return `${f.nombre[0] ?? ''}${f.apellido?.[0] ?? ''}`.toUpperCase();
   }
 
+  getFuncionarioFoto(funcionarioId?: number): string | undefined {
+    if (!funcionarioId) return undefined;
+    return this.cargaHoraria.find(item => item.funcionario.id === funcionarioId)?.funcionario.fotoPerfil;
+  }
+
+  getAsistenciaIniciales(a: AsistenciaResponse): string {
+    const funcionario = a.funcionarioId
+      ? this.cargaHoraria.find(item => item.funcionario.id === a.funcionarioId)?.funcionario
+      : undefined;
+    if (funcionario) return this.initials(funcionario);
+    return a.funcionarioNombre
+      ?.split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map(p => p[0])
+      .join('')
+      .toUpperCase() || '?';
+  }
+
   estadoLabel(e?: EstadoPuntualidad): string {
     switch (e) {
       case 'EN_HORARIO': return 'En horario';

@@ -91,6 +91,16 @@ import { finalize } from 'rxjs/operators';
       font-weight: 500;
     }
     .atajo-btn:hover { background: #e3f0fb; }
+    .func-option { display:flex;align-items:center;gap:8px }
+    .func-option-avatar {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: #E3F2FD; color: #1565C0;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; overflow: hidden; flex-shrink: 0;
+    }
+    .func-option-avatar img {
+      width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block;
+    }
   `],
   template: `
     <div class="dialog-header">
@@ -106,7 +116,18 @@ import { finalize } from 'rxjs/operators';
           <mat-label>Funcionario</mat-label>
           <mat-select formControlName="funcionarioId" [disabled]="!!data.funcionarioIdFijo">
             @for(f of funcionarios; track f.id){
-              <mat-option [value]="f.id">{{ f.nombre }} {{ f.apellido }} — {{ getRolDisplay(f.rol?.nombre) }}</mat-option>
+              <mat-option [value]="f.id">
+                <span class="func-option">
+                  <span class="func-option-avatar">
+                    @if(f.fotoPerfil){
+                      <img [src]="f.fotoPerfil" alt="Foto de perfil">
+                    } @else {
+                      {{ inicialesFuncionario(f) }}
+                    }
+                  </span>
+                  <span>{{ f.nombre }} {{ f.apellido }} - {{ getRolDisplay(f.rol?.nombre) }}</span>
+                </span>
+              </mat-option>
             }
           </mat-select>
           @if(form.get('funcionarioId')?.invalid && form.get('funcionarioId')?.touched){
@@ -227,6 +248,10 @@ export class TurnoDialogComponent {
 
   getRolDisplay(n?: string) { return n ? (ROL_DISPLAY[n] ?? n) : 'Sin rol'; }
 
+  inicialesFuncionario(f: FuncionarioResponse): string {
+    return `${f.nombre?.[0] ?? ''}${f.apellido?.[0] ?? ''}`.toUpperCase() || '?';
+  }
+
   isDiaSelected(dia: DiaSemana): boolean { return this.diasSeleccionados.has(dia); }
 
   toggleDia(dia: DiaSemana) {
@@ -305,9 +330,7 @@ export class TurnosComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    if (this.esAdminOCoordinadora) {
-      this.funcionarioService.listarActivos().subscribe(f => this.funcionarios = f);
-    }
+    this.funcionarioService.listarActivos().subscribe(f => this.funcionarios = f);
     this.cargarTurnos();
   }
 
@@ -461,6 +484,25 @@ export class TurnosComponent implements OnInit {
 
   get funcionarioIdPropio(): number | null {
     return this.authService.getUserId();
+  }
+
+  getFuncionarioFoto(t: TurnoResponse): string | undefined {
+    if (!t.funcionarioId) return undefined;
+    return this.funcionarios.find(f => f.id === t.funcionarioId)?.fotoPerfil;
+  }
+
+  getFuncionarioIniciales(t: TurnoResponse): string {
+    const funcionario = t.funcionarioId
+      ? this.funcionarios.find(f => f.id === t.funcionarioId)
+      : undefined;
+    if (funcionario) return `${funcionario.nombre?.[0] ?? ''}${funcionario.apellido?.[0] ?? ''}`.toUpperCase() || '?';
+    return t.funcionarioNombre
+      ?.split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map(p => p[0])
+      .join('')
+      .toUpperCase() || '?';
   }
 
   get totalActivos() { return this.turnos.filter(t => t.activo).length; }

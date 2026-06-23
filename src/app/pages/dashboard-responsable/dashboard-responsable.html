@@ -268,9 +268,13 @@
                 <mat-card class="insc-card" appearance="outlined">
                   <mat-card-content>
 
-                    <div class="insc-header">
-                      <div class="insc-avatar">
-                        {{ (insc.ninioNombre || 'N')[0] }}{{ (insc.ninioApellido || '')[0] }}
+                  <div class="insc-header">
+                      <div class="insc-avatar" [class.has-photo]="getFotoNinioInscripcion(insc)">
+                        @if(getFotoNinioInscripcion(insc)){
+                          <img [src]="getFotoNinioInscripcion(insc)" alt="Foto">
+                        } @else {
+                          {{ (insc.ninioNombre || 'N')[0] }}{{ (insc.ninioApellido || '')[0] }}
+                        }
                       </div>
 
                       <div class="insc-info">
@@ -552,8 +556,12 @@
                 <mat-card class="insc-card" appearance="outlined">
                   <mat-card-content>
                     <div class="insc-header">
-                      <div class="insc-avatar">
-                        {{ (ninio.nombre || 'N')[0] }}{{ (ninio.apellido || '')[0] }}
+                      <div class="insc-avatar" [class.has-photo]="ninio.fotoUrl">
+                        @if(ninio.fotoUrl){
+                          <img [src]="ninio.fotoUrl" alt="Foto">
+                        } @else {
+                          {{ (ninio.nombre || 'N')[0] }}{{ (ninio.apellido || '')[0] }}
+                        }
                       </div>
                       <div class="insc-info">
                         <div class="insc-nombre">{{ ninio.nombre }} {{ ninio.apellido }}</div>

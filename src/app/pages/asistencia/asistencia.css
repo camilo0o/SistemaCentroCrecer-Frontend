@@ -87,12 +87,35 @@
 
 .historiales-actions {
   display: flex;
+  justify-content: center;
   gap: 12px;
   flex-wrap: wrap;
 }
 
 .historial-action-btn {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   min-height: 44px;
+}
+
+.historial-action-btn mat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
+  line-height: 16px;
+  margin: 0;
+}
+
+::ng-deep .historial-action-btn .mdc-button__label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .historial-funcionario-header {
@@ -440,10 +463,27 @@
   font-size: 14px;
   font-weight: 700;
   flex-shrink: 0;
+  overflow: hidden;
+}
+.ninio-avatar img,
+.historial-ninio-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+.ninio-avatar.has-photo,
+.historial-ninio-avatar.has-photo {
+  background: transparent;
+  color: transparent;
 }
 .ninio-avatar.verde {
   background: #C8E6C9;
   color: #2E7D32;
+}
+.ninio-avatar.verde.has-photo {
+  background: transparent;
 }
 .ninio-datos {
   display: flex;
@@ -473,12 +513,34 @@
   gap: 6px;
 }
 .btn-marcar {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   background: #1565C0 !important;
   color: #fff !important;
   font-size: 12px !important;
   height: 32px !important;
   line-height: 32px !important;
   padding: 0 12px !important;
+}
+
+.btn-marcar mat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
+  line-height: 16px;
+  margin: 0;
+}
+
+::ng-deep .btn-marcar .mdc-button__label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 .btn-salida-ninio {
   font-size: 12px !important;
@@ -999,6 +1061,7 @@
   font-weight: 800;
   flex-shrink: 0;
   text-transform: uppercase;
+  overflow: hidden;
 }
 .historial-ninio-data {
   display: flex;

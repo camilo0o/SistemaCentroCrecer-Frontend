@@ -168,7 +168,13 @@
                   <div class="responsables-inline">
                     @for(r of ninio.responsables; track r.id){
                       <span class="resp-pill" [matTooltip]="getResponsableTooltip(r)">
-                        <span class="resp-pill-avatar">{{ r.nombre[0] }}{{ r.apellido?.[0] ?? '' }}</span>
+                        <span class="resp-pill-avatar" [class.has-photo]="r.fotoPerfil">
+                          @if(r.fotoPerfil){
+                            <img [src]="r.fotoPerfil" alt="Foto de perfil">
+                          } @else {
+                            {{ r.nombre[0] }}{{ r.apellido?.[0] ?? '' }}
+                          }
+                        </span>
                         <span class="resp-pill-name">{{ r.nombre }} {{ r.apellido }}</span>
                         @if(r.tipoRelacion){
                           <span class="resp-pill-tipo">{{ r.tipoRelacion }}</span>

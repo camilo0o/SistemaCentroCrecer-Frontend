@@ -24,11 +24,13 @@ import { NinioResponse } from '../../models/models';
 import { ParticipanteResponse } from '../../models/models';
 import { NinioService } from '../../services/ninio.service';
 import { AsistenciaService } from '../../services/asistencia.service';
+import { GrupoService } from '../../services/grupo.service';
 import { DatePipe } from '@angular/common';
 import {
   ActividadRequest,
   ActividadResponse,
   EmpresaExternaResponse,
+  GrupoResponse,
   PermisoResponse
 } from '../../models/models';
 
@@ -63,16 +65,19 @@ type Vista = 'tabla' | 'calendario';
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
           <mat-form-field appearance="outline">
             <mat-label>Fecha inicio</mat-label>
-            <input matInput [matDatepicker]="pickerDesde" formControlName="fechaDesde" placeholder="dd/mm/aaaa" readonly>
+            <input matInput [matDatepicker]="pickerDesde" [min]="hoyDate" formControlName="fechaDesde" placeholder="dd/mm/aaaa" readonly>
             <mat-datepicker-toggle matIconSuffix [for]="pickerDesde"></mat-datepicker-toggle>
             <mat-datepicker #pickerDesde></mat-datepicker>
-            @if(form.get('fechaDesde')?.invalid && form.get('fechaDesde')?.touched){<mat-error>Requerida</mat-error>}
+            @if(form.get('fechaDesde')?.hasError('required') && form.get('fechaDesde')?.touched){<mat-error>Requerida</mat-error>}
+            @if(form.get('fechaDesde')?.hasError('matDatepickerMin') && form.get('fechaDesde')?.touched){<mat-error>No puede ser anterior a hoy</mat-error>}
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>Fecha fin</mat-label>
-            <input matInput [matDatepicker]="pickerHasta" formControlName="fechaHasta" placeholder="dd/mm/aaaa" readonly>
+            <input matInput [matDatepicker]="pickerHasta" [min]="fechaHastaMin" formControlName="fechaHasta" placeholder="dd/mm/aaaa" readonly>
             <mat-datepicker-toggle matIconSuffix [for]="pickerHasta"></mat-datepicker-toggle>
             <mat-datepicker #pickerHasta></mat-datepicker>
+            @if(form.get('fechaHasta')?.hasError('matDatepickerMin') && form.get('fechaHasta')?.touched){<mat-error>Debe ser igual o posterior al inicio</mat-error>}
+            @if(form.hasError('fechaHastaAntesDeInicio') && form.get('fechaHasta')?.touched){<mat-error>Debe ser igual o posterior al inicio</mat-error>}
           </mat-form-field>
         </div>
 
@@ -104,6 +109,34 @@ type Vista = 'tabla' | 'calendario';
             <mat-error>Debe ser 0 o mayor</mat-error>
           }
         </mat-form-field>
+
+        <div class="participantes-fields">
+          <mat-form-field appearance="outline">
+            <mat-label>Asignar grupos</mat-label>
+            <mat-icon matPrefix>groups</mat-icon>
+            <mat-select formControlName="grupoIds" multiple>
+              @for(grupo of gruposDisponibles; track grupo.id){
+                <mat-option [value]="grupo.id">
+                  {{ grupo.nombre }}
+                  @if(grupo.rangoEdad){ <span class="option-meta">· {{ grupo.rangoEdad }}</span> }
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Asignar niños</mat-label>
+            <mat-icon matPrefix>child_care</mat-icon>
+            <mat-select formControlName="ninioIds" multiple>
+              @for(ninio of niniosDisponibles; track ninio.id){
+                <mat-option [value]="ninio.id">
+                  {{ ninio.nombre }} {{ ninio.apellido }}
+                  <span class="option-meta">CI {{ ninio.cedula }}@if(ninio.grupoNombre){ · {{ ninio.grupoNombre }} }</span>
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
       </form>
     </mat-dialog-content>
     <div class="dialog-actions">
@@ -112,11 +145,29 @@ type Vista = 'tabla' | 'calendario';
         @if(guardando){<mat-spinner diameter="18" color="accent"></mat-spinner>}@else{Guardar Actividad}
       </button>
     </div>
-  `
+  `,
+  styles: [`
+    .participantes-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .option-meta {
+      color: #9CA3AF;
+      font-size: 12px;
+      margin-left: 4px;
+    }
+    @media (max-width: 640px) {
+      .participantes-fields { grid-template-columns: 1fr; }
+    }
+  `]
 })
 export class ActividadDialogComponent {
   form: FormGroup;
   guardando = false;
+  hoyDate = this.inicioDelDia(new Date());
+  niniosDisponibles: NinioResponse[] = [];
+  gruposDisponibles: GrupoResponse[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -127,9 +178,12 @@ export class ActividadDialogComponent {
       empresas: EmpresaExternaResponse[];
     },
     private actividadService: ActividadService,
+    private ninioService: NinioService,
+    private grupoService: GrupoService,
     private toast: ToastService
   ) {
     const a = data.actividad;
+    const ninioIds = a?.ninios?.map(n => n.id) ?? [];
     this.form = this.fb.group({
       nombre:      [a?.nombre ?? '',      Validators.required],
       descripcion: [a?.descripcion ?? ''],
@@ -139,7 +193,52 @@ export class ActividadDialogComponent {
       horaSalida:  [a?.horaSalida ?? ''],
       lugar:       [a?.lugar ?? '',       Validators.required],
       diasLimiteModificacion: [a?.diasLimiteModificacion ?? null, [Validators.min(0)]],
+      ninioIds:    [ninioIds],
+      grupoIds:    [[]],
+    }, { validators: this.validarRangoFechas.bind(this) });
+    this.cargarParticipantes();
+    this.form.get('fechaDesde')?.valueChanges.subscribe(() => this.ajustarFechaHasta());
+  }
+
+  get fechaHastaMin(): Date {
+    const fechaDesde = this.form?.get('fechaDesde')?.value;
+    return fechaDesde ? this.inicioDelDia(new Date(fechaDesde)) : this.hoyDate;
+  }
+
+  private cargarParticipantes(): void {
+    this.ninioService.listarTodos().subscribe({
+      next: n => this.niniosDisponibles = n.filter(ninio => ninio.activo !== false),
+      error: () => this.toast.error('No se pudieron cargar los niños')
     });
+    this.grupoService.listarActivos().subscribe({
+      next: g => this.gruposDisponibles = g,
+      error: () => this.toast.error('No se pudieron cargar los grupos')
+    });
+  }
+
+  private ajustarFechaHasta(): void {
+    const fechaHastaCtrl = this.form.get('fechaHasta');
+    const fechaHasta = fechaHastaCtrl?.value;
+    if (!fechaHasta) return;
+    if (this.inicioDelDia(new Date(fechaHasta)) < this.fechaHastaMin) {
+      fechaHastaCtrl?.setValue(null);
+      fechaHastaCtrl?.markAsTouched();
+    }
+  }
+
+  private validarRangoFechas() {
+    const desde = this.form?.get('fechaDesde')?.value;
+    const hasta = this.form?.get('fechaHasta')?.value;
+    if (!desde || !hasta) return null;
+    return this.inicioDelDia(new Date(hasta)) >= this.inicioDelDia(new Date(desde))
+      ? null
+      : { fechaHastaAntesDeInicio: true };
+  }
+
+  private inicioDelDia(fecha: Date): Date {
+    const normalizada = new Date(fecha);
+    normalizada.setHours(0, 0, 0, 0);
+    return normalizada;
   }
 
   guardar() {
@@ -150,7 +249,9 @@ export class ActividadDialogComponent {
     const payload: ActividadRequest = {
       ...v,
       fechaDesde: toISO(v.fechaDesde),
-      fechaHasta: v.fechaHasta ? toISO(v.fechaHasta) : '',
+      fechaHasta: v.fechaHasta ? toISO(v.fechaHasta) : null,
+      ninioIds: v.ninioIds ?? [],
+      grupoIds: v.grupoIds ?? [],
       diasLimiteModificacion: v.diasLimiteModificacion !== '' && v.diasLimiteModificacion !== null ? Number(v.diasLimiteModificacion) : null,
     };
     const op = this.data.modo === 'crear'
@@ -187,7 +288,13 @@ export class ActividadDialogComponent {
               <div class="participantes-list">
                 @for(p of data.actividad.ninios; track p.id){
                   <div class="participante-row">
-                    <div class="avatar-sm">{{ p.nombre[0].toUpperCase() }}</div>
+                    <div class="avatar-sm" [class.has-photo]="p.fotoUrl">
+                      @if(p.fotoUrl){
+                        <img [src]="p.fotoUrl" alt="Foto">
+                      } @else {
+                        {{ p.nombre[0].toUpperCase() }}
+                      }
+                    </div>
                     <div>
                       <div class="part-nombre">{{ p.nombre }} {{ p.apellido }}</div>
                       @if(p.grupoNombre){<div class="part-grupo">{{ p.grupoNombre }}</div>}
@@ -224,8 +331,14 @@ export class ActividadDialogComponent {
               <div class="participantes-list">
                 @for(p of data.actividad.ninios; track p.id){
                   <div class="participante-row">
-                    <div class="avatar-sm" [style.background]="asistenciasHoy[p.id] ? '#2E7D32' : '#1565C0'">
-                      {{ p.nombre[0].toUpperCase() }}
+                    <div class="avatar-sm"
+                         [class.has-photo]="p.fotoUrl"
+                         [style.background]="p.fotoUrl ? 'transparent' : (asistenciasHoy[p.id] ? '#2E7D32' : '#1565C0')">
+                      @if(p.fotoUrl){
+                        <img [src]="p.fotoUrl" alt="Foto">
+                      } @else {
+                        {{ p.nombre[0].toUpperCase() }}
+                      }
                     </div>
                     <div style="flex:1">
                       <div class="part-nombre">{{ p.nombre }} {{ p.apellido }}</div>
@@ -235,6 +348,7 @@ export class ActividadDialogComponent {
                       <span class="badge badge-success">Presente</span>
                     } @else if(tienePermisoAutorizado(p.id)){
                       <button mat-flat-button
+                              class="btn-marcar-presente-actividad"
                               style="background:#1565C0;color:white;height:32px;font-size:12px"
                               [disabled]="marcandoAsistencia[p.id]"
                               (click)="marcarAsistencia(p)">
@@ -288,7 +402,9 @@ export class ActividadDialogComponent {
     .empty-tab mat-icon { font-size:40px;width:40px;height:40px }
     .participantes-list { display:flex;flex-direction:column;gap:8px }
     .participante-row { display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid #F0F1F5 }
-    .avatar-sm { width:36px;height:36px;border-radius:50%;background:#1565C0;color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0 }
+    .avatar-sm { width:36px;height:36px;border-radius:50%;background:#1565C0;color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;overflow:hidden }
+    .avatar-sm img { width:100%;height:100%;object-fit:cover;border-radius:50%;display:block }
+    .avatar-sm.has-photo { background:transparent;color:transparent }
     .part-nombre { font-weight:600;font-size:14px }
     .part-grupo { font-size:12px;color:#5C6680 }
     .info-row { display:flex;align-items:flex-start;gap:10px;font-size:14px;color:#374151 }
@@ -296,6 +412,9 @@ export class ActividadDialogComponent {
     .badge { padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700 }
     .badge-success { background:#E8F5E9;color:#2E7D32 }
     .badge-danger  { background:#FFEBEE;color:#C62828 }
+    .btn-marcar-presente-actividad { display:inline-flex !important;align-items:center;justify-content:center;gap:4px;padding:0 12px !important }
+    .btn-marcar-presente-actividad mat-icon { display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;font-size:16px;line-height:16px;margin:0 }
+    ::ng-deep .btn-marcar-presente-actividad .mdc-button__label { display:inline-flex;align-items:center;justify-content:center;gap:4px }
   `]
 })
 export class ActividadDetalleDialogComponent implements OnInit {

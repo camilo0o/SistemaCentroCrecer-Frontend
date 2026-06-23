@@ -91,7 +91,13 @@
                   @for(t of turnosPorDia(dia.valor); track t.id){
                     <div class="turno-item" [class.turno-inactivo]="!t.activo">
                       <div class="turno-func">
-                        <div class="func-avatar-sm">{{ t.funcionarioNombre ? t.funcionarioNombre[0].toUpperCase() : '?' }}</div>
+                        <div class="func-avatar-sm" [class.has-photo]="getFuncionarioFoto(t)">
+                          @if(getFuncionarioFoto(t)){
+                            <img [src]="getFuncionarioFoto(t)" alt="Foto de perfil">
+                          } @else {
+                            {{ getFuncionarioIniciales(t) }}
+                          }
+                        </div>
                         <span class="func-nombre-sm">{{ t.funcionarioNombre ?? '—' }}</span>
                         @if(!t.activo){
                           <span class="badge-inactivo-sm">Baja</span>
@@ -148,7 +154,13 @@
                 <th mat-header-cell *matHeaderCellDef>Funcionario</th>
                 <td mat-cell *matCellDef="let t">
                   <div class="user-cell">
-                    <div class="avatar-sm">{{ t.funcionarioNombre ? t.funcionarioNombre[0].toUpperCase() : '?' }}</div>
+                    <div class="avatar-sm" [class.has-photo]="getFuncionarioFoto(t)">
+                      @if(getFuncionarioFoto(t)){
+                        <img [src]="getFuncionarioFoto(t)" alt="Foto de perfil">
+                      } @else {
+                        {{ getFuncionarioIniciales(t) }}
+                      }
+                    </div>
                     <div>
                       <span class="func-name">{{ t.funcionarioNombre ?? '—' }}</span>
                       @if(!esAdminOCoordinadora && t.funcionarioId !== funcionarioIdPropio){

@@ -226,8 +226,10 @@
                 <div class="ninio-card" [class.presente]="ninio.presente" [class.ausente]="!ninio.presente">
 
                   <div class="ninio-info">
-                    <div class="ninio-avatar" [class.verde]="ninio.presente">
-                      @if (ninio.presente) {
+                    <div class="ninio-avatar" [class.verde]="ninio.presente" [class.has-photo]="ninio.fotoUrl">
+                      @if (ninio.fotoUrl) {
+                        <img [src]="ninio.fotoUrl" alt="Foto">
+                      } @else if (ninio.presente) {
                         <mat-icon style="font-size:18px">check</mat-icon>
                       } @else {
                         <span>{{ ninio.nombre[0] }}</span>
@@ -752,8 +754,12 @@
                                 [class.active]="historialNinioSeleccionadoId === ninio.id"
                                 (click)="seleccionarNinioHistorial(ninio)"
                                 [disabled]="historialCargando">
-                          <span class="historial-ninio-avatar">
-                            {{ ninio.nombre[0] }}{{ ninio.apellido[0] }}
+                          <span class="historial-ninio-avatar" [class.has-photo]="ninio.fotoUrl">
+                            @if(ninio.fotoUrl){
+                              <img [src]="ninio.fotoUrl" alt="Foto">
+                            } @else {
+                              {{ ninio.nombre[0] }}{{ ninio.apellido[0] }}
+                            }
                           </span>
                           <span class="historial-ninio-data">
                             <strong>{{ ninio.nombre }} {{ ninio.apellido }}</strong>

@@ -87,6 +87,7 @@ export interface ResponsableResumen {
   email?: string;
   tipoRelacion?: string;
   autorizadoRetiro?: boolean;
+  fotoPerfil?: string;
 }
 
 export interface NinioResponse {
@@ -188,6 +189,7 @@ export interface ReporteNinioResponse {
   ninioId: number;
   ninioNombre: string;
   ninioApellido: string;
+  fotoUrl?: string;
 }
 
 export interface ReporteGrupoResponse {
@@ -275,6 +277,7 @@ export interface PermisoResponsableResponse {
     nombre: string;
     apellido: string;
     cedula: string;
+    fotoUrl?: string;
   };
   actividad?: {
     id: number;
@@ -292,11 +295,14 @@ export interface ActividadRequest {
   nombre: string;
   descripcion?: string;
   fechaDesde: string;    
-  fechaHasta?: string;   
+  fechaHasta?: string | null;   
   horaInicio: string;
   horaSalida?: string;   
   lugar: string;
   diasLimiteModificacion?: number | null;
+  ninioIds?: number[];
+  niniosIds?: number[];
+  grupoIds?: number[];
 }
 
 export interface ActividadResponse {
@@ -321,6 +327,7 @@ export interface ParticipanteResponse {
   apellido: string;
   grupoNombre?: string;
   cedula: string;
+  fotoUrl?: string;
 }
 
 export const ESTADO_ACTIVIDAD_DISPLAY: Record<EstadoActividad, string> = {
@@ -481,8 +488,8 @@ export interface DetalleAgendaResponse {
 
 export interface ResponsableNinioResponse {
   id: number;
-  ninio: { id: number; nombre: string; apellido: string; cedula: string; };
-  responsable?: { id: number; nombre: string; apellido: string; };
+  ninio: { id: number; nombre: string; apellido: string; cedula: string; fotoUrl?: string; };
+  responsable?: { id: number; nombre: string; apellido: string; fotoPerfil?: string; };
   tipoRelacion: string;
   autorizadoRetiro: boolean;
 }

@@ -64,7 +64,10 @@ type VistaGestion = 'grupos' | 'ninios';
     .ninio-avatar {
       width: 38px; height: 38px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      font-weight: 700; font-size: 14px; flex-shrink: 0;
+      font-weight: 700; font-size: 14px; flex-shrink: 0; overflow: hidden;
+    }
+    .ninio-avatar img {
+      width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block;
     }
     .ninio-info { flex: 1; min-width: 0; }
     .ninio-nombre { display: block; font-weight: 600; font-size: 14px; color: #1a1a2e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -143,8 +146,14 @@ type VistaGestion = 'grupos' | 'ninios';
       }
       @for(ninio of filtrados; track ninio.id){
         <div class="ninio-row">
-          <div class="ninio-avatar" [style.background]="data.bg" [style.color]="data.color">
-            {{ ninio.nombre[0] }}{{ ninio.apellido?.[0] ?? '' }}
+          <div class="ninio-avatar"
+               [style.background]="ninio.fotoUrl ? 'transparent' : data.bg"
+               [style.color]="data.color">
+            @if(ninio.fotoUrl){
+              <img [src]="ninio.fotoUrl" alt="Foto">
+            } @else {
+              {{ ninio.nombre[0] }}{{ ninio.apellido?.[0] ?? '' }}
+            }
           </div>
           <div class="ninio-info">
             <span class="ninio-nombre">{{ ninio.nombre }} {{ ninio.apellido }}</span>
@@ -366,7 +375,10 @@ export class NiniosGrupoDialogComponent {
       width: 40px; height: 40px; border-radius: 50%;
       background: #E3F2FD; color: #1565C0;
       display: flex; align-items: center; justify-content: center;
-      font-weight: 700; font-size: 15px; flex-shrink: 0;
+      font-weight: 700; font-size: 15px; flex-shrink: 0; overflow: hidden;
+    }
+    .func-avatar img {
+      width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block;
     }
     .func-info { flex: 1; min-width: 0; }
     .func-nombre { display: block; font-weight: 600; font-size: 14px; color: #1a1a2e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -405,7 +417,13 @@ export class NiniosGrupoDialogComponent {
       }
       @for(f of filtrados; track f.id){
         <div class="func-row">
-          <div class="func-avatar">{{ iniciales(f) }}</div>
+          <div class="func-avatar" [style.background]="f.fotoPerfil ? 'transparent' : '#E3F2FD'">
+            @if(f.fotoPerfil){
+              <img [src]="f.fotoPerfil" alt="Foto de perfil">
+            } @else {
+              {{ iniciales(f) }}
+            }
+          </div>
           <div class="func-info">
             <span class="func-nombre">{{ f.nombre }} {{ f.apellido }}</span>
             <span class="func-rol">{{ getRolDisplay(f.rol?.nombre) }}</span>
@@ -465,7 +483,12 @@ export class FuncionariosGrupoDialogComponent {
   styles: [`
     .section-label { font-size:12px;font-weight:600;color:#5C6680;text-transform:uppercase;letter-spacing:.5px;margin:4px 0 6px;display:flex;align-items:center;gap:4px }
     .chips-row { display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;min-height:28px }
-    .chip-func { background:#E3F2FD;color:#1565C0;border-radius:16px;padding:4px 10px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:4px;cursor:default }
+    .chip-func { background:#E3F2FD;color:#1565C0;border-radius:16px;padding:4px 10px 4px 4px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px;cursor:default }
+    .chip-avatar { width:22px;height:22px;border-radius:50%;background:#BBDEFB;color:#1565C0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;overflow:hidden;flex-shrink:0 }
+    .chip-avatar img { width:100%;height:100%;object-fit:cover;border-radius:50%;display:block }
+    .option-func { display:flex;align-items:center;gap:8px }
+    .option-avatar { width:24px;height:24px;border-radius:50%;background:#E3F2FD;color:#1565C0;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;overflow:hidden;flex-shrink:0 }
+    .option-avatar img { width:100%;height:100%;object-fit:cover;border-radius:50%;display:block }
     .chip-func mat-icon { font-size:14px;width:14px;height:14px;cursor:pointer;color:#1565C0 }
     .empty-sel { font-size:12px;color:#9AA0B9;font-style:italic }
   `],
@@ -558,7 +581,13 @@ export class FuncionariosGrupoDialogComponent {
               <div class="chips-row">
                 @for(fId of funcionariosSeleccionados; track fId){
                   <span class="chip-func">
-                    <mat-icon>person</mat-icon>
+                    <span class="chip-avatar">
+                      @if(getFuncionarioFoto(fId)){
+                        <img [src]="getFuncionarioFoto(fId)" alt="Foto de perfil">
+                      } @else {
+                        {{ getFuncionarioIniciales(fId) }}
+                      }
+                    </span>
                     {{ getFuncionarioNombre(fId) }}
                     <mat-icon (click)="quitarFuncionario(fId)">close</mat-icon>
                   </span>
@@ -650,6 +679,16 @@ export class GrupoDialogComponent implements OnInit {
   getFuncionarioNombre(id: number): string {
     const f = this.funcionarios.find(f => f.id === id);
     return f ? `${f.nombre} ${f.apellido}` : String(id);
+  }
+
+  getFuncionarioFoto(id: number): string | undefined {
+    return this.funcionarios.find(f => f.id === id)?.fotoPerfil;
+  }
+
+  getFuncionarioIniciales(id: number): string {
+    const f = this.funcionarios.find(f => f.id === id);
+    if (!f) return '?';
+    return ((f.nombre[0] ?? '') + (f.apellido[0] ?? '')).toUpperCase();
   }
 
   quitarFuncionario(id: number) {

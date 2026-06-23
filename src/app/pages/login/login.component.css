@@ -162,9 +162,33 @@ mat-form-field { width: 100%; }
 .btn-ingresar {
   width: 100%;
   height: 48px;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
   font-size: 15px;
   font-weight: 700;
   margin-top: 8px;
+}
+
+.btn-ingresar mat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+  line-height: 20px;
+  margin: 0 6px 0 0;
+}
+
+.btn-ingresar mat-spinner {
+  margin-right: 6px;
+}
+
+::ng-deep .btn-ingresar .mdc-button__label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .register-link {

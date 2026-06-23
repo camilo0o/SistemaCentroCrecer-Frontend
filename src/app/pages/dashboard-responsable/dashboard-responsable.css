@@ -72,6 +72,18 @@
   background: linear-gradient(135deg, #6366F1, #818CF8);
   color: white; display: flex; align-items: center; justify-content: center;
   font-weight: 800; font-size: 15px; flex-shrink: 0; text-transform: uppercase;
+  overflow: hidden;
+}
+.insc-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+.insc-avatar.has-photo {
+  background: transparent !important;
+  color: transparent;
 }
 
 .insc-info    { flex: 1; min-width: 0; }

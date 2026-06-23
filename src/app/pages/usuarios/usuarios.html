@@ -75,7 +75,13 @@
           <th mat-header-cell *matHeaderCellDef>Funcionario</th>
           <td mat-cell *matCellDef="let f">
             <div class="funcionario-cell">
-              <div class="avatar" [class.avatar-off]="!f.activo">{{ iniciales(f) }}</div>
+              <div class="avatar" [class.avatar-off]="!f.activo" [class.has-photo]="f.fotoPerfil">
+                @if(f.fotoPerfil){
+                  <img [src]="f.fotoPerfil" alt="Foto de perfil">
+                } @else {
+                  {{ iniciales(f) }}
+                }
+              </div>
               <div>
                 <div class="funcionario-nombre">{{ f.nombre }} {{ f.apellido }}</div>
                 <div class="funcionario-email">{{ f.email }}</div>

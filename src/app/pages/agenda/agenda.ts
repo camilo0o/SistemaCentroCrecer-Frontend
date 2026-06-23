@@ -66,11 +66,14 @@ import {
 
         <mat-form-field appearance="outline">
           <mat-label>Fecha</mat-label>
-          <input matInput [matDatepicker]="pickerFecha" formControlName="fecha" placeholder="dd/mm/aaaa" readonly>
+          <input matInput [matDatepicker]="pickerFecha" [min]="hoyDate" formControlName="fecha" placeholder="dd/mm/aaaa" readonly>
           <mat-datepicker-toggle matIconSuffix [for]="pickerFecha"></mat-datepicker-toggle>
           <mat-datepicker #pickerFecha></mat-datepicker>
-          @if(form.get('fecha')?.invalid && form.get('fecha')?.touched){
+          @if(form.get('fecha')?.hasError('required') && form.get('fecha')?.touched){
             <mat-error>La fecha es obligatoria</mat-error>
+          }
+          @if(form.get('fecha')?.hasError('matDatepickerMin') && form.get('fecha')?.touched){
+            <mat-error>No puede ser anterior a hoy</mat-error>
           }
         </mat-form-field>
 
@@ -119,6 +122,7 @@ import {
 export class AgendaDialogComponent {
   form: FormGroup;
   guardando = false;
+  hoyDate = this.inicioDelDia(new Date());
   sugerencias: AgendaResponse[] = [];
   
   constructor(
@@ -189,6 +193,12 @@ export class AgendaDialogComponent {
   aplicarSugerencia(s: AgendaResponse) {
     this.form.patchValue({ horaInicio: s.horaInicio, horaFin: s.horaFin });
     this.sugerencias = [];
+  }
+
+  private inicioDelDia(fecha: Date): Date {
+    const normalizada = new Date(fecha);
+    normalizada.setHours(0, 0, 0, 0);
+    return normalizada;
   }
 }
 

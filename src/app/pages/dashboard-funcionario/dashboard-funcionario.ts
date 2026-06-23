@@ -79,7 +79,9 @@ import { GrupoResponse, ROL_DISPLAY } from '../../models/models';
       display: flex; justify-content: flex-end; gap: 10px;
       padding: 12px 24px; border-top: 1px solid #f0f2f7;
     }
-    .btn-alta { font-weight: 700; }
+    .btn-alta { display:inline-flex !important;align-items:center;justify-content:center;gap:4px;font-weight:700; }
+    .btn-alta mat-icon { display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;font-size:18px;line-height:18px;margin:0; }
+    ::ng-deep .btn-alta .mdc-button__label { display:inline-flex;align-items:center;justify-content:center;gap:4px; }
 
     .resp-info {
       background: #E8F5E9; border-radius: 8px; padding: 10px 14px;

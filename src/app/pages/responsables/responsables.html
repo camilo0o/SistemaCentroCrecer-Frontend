@@ -63,7 +63,13 @@
 
                 <!-- Header del responsable -->
                 <div class="resp-header">
-                  <div class="resp-avatar" [class.avatar-inactivo]="!r.activo">{{ iniciales(r) }}</div>
+                  <div class="resp-avatar" [class.avatar-inactivo]="!r.activo" [class.has-photo]="r.fotoPerfil">
+                    @if(r.fotoPerfil){
+                      <img [src]="r.fotoPerfil" alt="Foto de perfil">
+                    } @else {
+                      {{ iniciales(r) }}
+                    }
+                  </div>
                   <div class="resp-info">
                     <div class="resp-nombre">{{ r.nombre }} {{ r.apellido }}</div>
                     <div class="resp-cedula">CI {{ r.cedula }}</div>
@@ -109,8 +115,12 @@
                   @for (rel of relacionesDe(r.id); track rel.id) {
                     <div class="ninio-row">
                       <div class="ninio-left">
-                        <div class="ninio-avatar-sm">
-                          {{ rel.ninio.nombre[0] }}{{ rel.ninio.apellido[0] }}
+                        <div class="ninio-avatar-sm" [class.has-photo]="rel.ninio.fotoUrl">
+                          @if(rel.ninio.fotoUrl){
+                            <img [src]="rel.ninio.fotoUrl" alt="Foto">
+                          } @else {
+                            {{ rel.ninio.nombre[0] }}{{ rel.ninio.apellido[0] }}
+                          }
                         </div>
                         <div>
                           <div class="ninio-nombre">{{ rel.ninio.nombre }} {{ rel.ninio.apellido }}</div>

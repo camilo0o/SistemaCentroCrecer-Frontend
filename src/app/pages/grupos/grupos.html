@@ -154,7 +154,13 @@
                         <div class="funcionarios-list">
                           @for(f of (grupo.funcionarios ?? []).slice(0, PREVIEW_FUNCIONARIOS); track f.id){
                             <div class="func-row">
-                              <div class="func-avatar">{{ iniciales(f) }}</div>
+                              <div class="func-avatar" [class.has-photo]="f.fotoPerfil">
+                                @if(f.fotoPerfil){
+                                  <img [src]="f.fotoPerfil" alt="Foto de perfil">
+                                } @else {
+                                  {{ iniciales(f) }}
+                                }
+                              </div>
                               <div class="func-info">
                                 <span class="func-nombre">{{ f.nombre }} {{ f.apellido }}</span>
                                 <span class="func-rol">{{ getRolDisplay(f.rol?.nombre) }}</span>
@@ -181,8 +187,15 @@
                         <div class="ninios-list">
                           @for(ninio of (grupo.ninios ?? []).slice(0, PREVIEW_NINIOS); track ninio.id){
                             <div class="ninio-row">
-                              <div class="ninio-avatar" [style.background]="rango.bg" [style.color]="rango.color">
-                                {{ ninio.nombre[0] }}{{ ninio.apellido?.[0] ?? '' }}
+                              <div class="ninio-avatar"
+                                   [class.has-photo]="ninio.fotoUrl"
+                                   [style.background]="ninio.fotoUrl ? 'transparent' : rango.bg"
+                                   [style.color]="rango.color">
+                                @if(ninio.fotoUrl){
+                                  <img [src]="ninio.fotoUrl" alt="Foto">
+                                } @else {
+                                  {{ ninio.nombre[0] }}{{ ninio.apellido?.[0] ?? '' }}
+                                }
                               </div>
                               <div class="ninio-info">
                                 <span class="ninio-nombre">{{ ninio.nombre }} {{ ninio.apellido }}</span>
@@ -271,7 +284,13 @@
                         <div class="funcionarios-list">
                           @for(f of (grupo.funcionarios ?? []).slice(0, PREVIEW_FUNCIONARIOS); track f.id){
                             <div class="func-row">
-                              <div class="func-avatar">{{ iniciales(f) }}</div>
+                              <div class="func-avatar" [class.has-photo]="f.fotoPerfil">
+                                @if(f.fotoPerfil){
+                                  <img [src]="f.fotoPerfil" alt="Foto de perfil">
+                                } @else {
+                                  {{ iniciales(f) }}
+                                }
+                              </div>
                               <div class="func-info">
                                 <span class="func-nombre">{{ f.nombre }} {{ f.apellido }}</span>
                                 <span class="func-rol">{{ getRolDisplay(f.rol?.nombre) }}</span>
@@ -480,6 +499,6 @@
     }
   }
 
-</div>-e 
+</div> 
 <input #fotoInputGrupos type="file" accept="image/*" style="display:none"
        (change)="onFotoNinioSeleccionada($event)">

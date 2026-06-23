@@ -125,12 +125,34 @@
 }
 
 .btn-alta {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   flex-shrink: 0;
   font-weight: 700;
   font-size: 13px;
 }
 
-.btn-alta-txt { margin-left: 2px; }
+.btn-alta mat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+  line-height: 18px;
+  margin: 0;
+}
+
+.btn-alta-txt { margin-left: 0; }
+
+::ng-deep .btn-alta .mdc-button__label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
 
 /* ── Banner de rol ── */
 .rol-banner {

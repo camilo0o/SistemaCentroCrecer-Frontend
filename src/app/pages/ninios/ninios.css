@@ -205,6 +205,18 @@ mat-paginator {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  overflow: hidden;
+}
+.resp-pill-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+.resp-pill-avatar.has-photo {
+  background: transparent;
+  color: transparent;
 }
 .resp-pill-name {
   font-weight: 600;

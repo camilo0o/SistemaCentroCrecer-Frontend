@@ -4,16 +4,20 @@ import { AuthService } from '../services/auth.service';
 
 const ROLES_FUNCIONARIO = [
   'ADMIN','ADMINISTRADOR_SISTEMA','COORDINADORA','PSICOLOGO',
-  'MAESTRA','ASISTENTE_SOCIAL','TALLERISTA_EXPRESION_PLASTICA',
-  'TALLERISTA_PSICOMOTRICIDAD','COCINERA','AUXILIAR_LIMPIEZA'
+  'PSICOMOTRICISTA','MAESTRA','ADMINISTRATIVO','EDUCADOR',
+  'ASISTENTE_SOCIAL','TALLERISTA_PLASTICA','TALLERISTA_CERAMICA',
+  'TALLERISTA_CORPORAL','COCINERA','AUXILIAR_LIMPIEZA'
 ];
 
 function redirectSegunRol(auth: AuthService, router: Router): false {
   const rol = auth.getRol();
   if (!rol) { router.navigate(['/iniciarSesion']); return false; }
   if (rol === 'ADMIN' || rol === 'ADMINISTRADOR_SISTEMA') router.navigate(['/admin/dashboard']);
-  else if (rol === 'RESPONSABLE')      router.navigate(['/dashboard/responsable']);
-  else                                 router.navigate(['/dashboard/funcionario']);
+  else if (rol === 'RESPONSABLE') router.navigate(['/dashboard/responsable']);
+  else if (ROLES_FUNCIONARIO.includes(rol)) router.navigate(['/dashboard/funcionario']);
+  else {
+    router.navigate(['/iniciarSesion']);
+  }
   return false;
 }
 

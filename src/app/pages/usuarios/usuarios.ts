@@ -135,9 +135,15 @@ export class FuncionarioDialogComponent {
     public ref: MatDialogRef<FuncionarioDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { modo: 'crear'|'editar'; funcionario?: FuncionarioResponse; roles: Rol[] },
     private funcionarioService: FuncionarioService,
-    private toast: ToastService
+    private toast: ToastService,
+    private cdr: ChangeDetectorRef
   ) {
-    this.roles = (data.roles ?? []).filter(r => r.nombre !== 'ADMINISTRADOR_SISTEMA');
+    // El rol Administrador/a de Sistema se puede asignar al CREAR un funcionario,
+    // pero no se puede asignar/cambiar al EDITAR uno existente (eso lo sigue
+    // bloqueando el backend en actualizar(), así que ni lo mostramos ahí).
+    this.roles = data.modo === 'crear'
+      ? (data.roles ?? [])
+      : (data.roles ?? []).filter(r => r.nombre !== 'ADMINISTRADOR_SISTEMA');
     const f = data.funcionario;
     const esAdminSistema = f?.rol?.nombre === 'ADMINISTRADOR_SISTEMA';
 
@@ -169,8 +175,12 @@ export class FuncionarioDialogComponent {
       ? this.funcionarioService.crear(payload)
       : this.funcionarioService.actualizar(this.data.funcionario!.id, payload);
     op.subscribe({
-      next: (res) => { this.guardando = false; this.ref.close(res); },
-      error: (err) => { this.guardando = false; this.toast.error(err.error?.error ?? err.error?.message ?? 'Error al guardar'); }
+      next: (res) => { this.guardando = false; this.cdr.markForCheck(); this.ref.close(res); },
+      error: (err) => {
+        this.guardando = false;
+        this.cdr.markForCheck();
+        this.toast.error(err.error?.error ?? err.error?.message ?? 'Error al guardar');
+      }
     });
   }
 }
@@ -226,7 +236,8 @@ export class BlanqueoPasswordDialogComponent {
     public ref: MatDialogRef<BlanqueoPasswordDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { id: number; nombre: string },
     private funcionarioService: FuncionarioService,
-    private toast: ToastService
+    private toast: ToastService,
+    private cdr: ChangeDetectorRef
   ) {
     this.form = this.fb.group({ pass: ['', [Validators.required, Validators.minLength(8)]] });
   }
@@ -237,10 +248,15 @@ export class BlanqueoPasswordDialogComponent {
     this.funcionarioService.blanquearPassword(this.data.id, this.form.value.pass).subscribe({
       next: () => {
         this.guardando = false;
+        this.cdr.markForCheck();
         this.toast.success('Contraseña blanqueada. El funcionario deberá cambiarla al ingresar.');
         this.ref.close(true);
       },
-      error: (err) => { this.guardando = false; this.toast.error(err.error?.error ?? 'Error al blanquear'); }
+      error: (err) => {
+        this.guardando = false;
+        this.cdr.markForCheck();
+        this.toast.error(err.error?.error ?? 'Error al blanquear');
+      }
     });
   }
 }
@@ -298,7 +314,7 @@ export class UsuariosComponent implements OnInit {
     );
 
     forkJoin({ roles: roles$, funcionarios: this.funcionarioService.listarTodos().pipe(catchError(() => of([]))) })
-      .pipe(finalize(() => { this.cargando = false; this.cdr.detectChanges(); }))
+      .pipe(finalize(() => { this.cargando = false; this.cdr.markForCheck(); }))
       .subscribe({
         next: ({ roles, funcionarios }) => {
           this.roles = roles;
@@ -314,7 +330,7 @@ export class UsuariosComponent implements OnInit {
   cargarFuncionarios() {
     this.cargando = true;
     this.funcionarioService.listarTodos().pipe(
-      finalize(() => { this.cargando = false; this.cdr.detectChanges(); })
+      finalize(() => { this.cargando = false; this.cdr.markForCheck(); })
     ).subscribe({
       next: (f) => { this.funcionarios = f; this.aplicarFiltros(); },
       error: () => { this.toast.error('Error al cargar funcionarios'); }

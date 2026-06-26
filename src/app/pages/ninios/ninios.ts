@@ -1533,11 +1533,12 @@ export class NinioFrecuenciaDialogComponent implements OnInit {
     this.error = '';
     this.asistenciaService.frecuenciaPorCedula(
       this.data.ninio.cedula, this.desde, this.hasta
+    ).pipe(
+      finalize(() => this.cargando = false)
     ).subscribe({
-      next: (f) => { this.frecuencia = f; this.cargando = false; },
+      next: (f) => { this.frecuencia = f; },
       error: (err) => {
-        this.error = err.error?.message ?? err.error?.error ?? 'Error al consultar la frecuencia';
-        this.cargando = false;
+        this.error = err.error?.mensaje ?? err.error?.message ?? err.error?.error ?? 'Error al consultar la frecuencia';
       }
     });
   }
@@ -1665,7 +1666,7 @@ export class NiniosComponent implements OnInit {
       width: '540px',
       maxWidth: '94vw',
       panelClass: 'app-dialog-panel',
-      disableClose: false
+      disableClose: true
     });
   }
 

@@ -1,6 +1,6 @@
 import { Component, OnInit, Inject, ChangeDetectorRef, ViewChild, ElementRef, NgZone, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -28,6 +28,28 @@ import { finalize } from 'rxjs/operators';
 import { forkJoin } from 'rxjs';
 
 type VistaGestion = 'grupos' | 'ninios';
+
+// ─── Horario del centro: 07:00 a 19:00 ────────────────────────────────────────
+const HORA_APERTURA_CENTRO = '07:00';
+const HORA_CIERRE_CENTRO = '19:00';
+
+function horaEnRangoCentroValidator(control: AbstractControl): ValidationErrors | null {
+  const valor = control.value;
+  if (!valor) return null;
+  if (valor < HORA_APERTURA_CENTRO || valor > HORA_CIERRE_CENTRO) {
+    return { fueraDeHorario: { min: HORA_APERTURA_CENTRO, max: HORA_CIERRE_CENTRO } };
+  }
+  return null;
+}
+
+function horarioValidoValidator(group: AbstractControl): ValidationErrors | null {
+  const inicio = group.get('horaInicio')?.value;
+  const fin = group.get('horaFin')?.value;
+  if (inicio && fin && fin < inicio) {
+    return { finMenorQueInicio: true };
+  }
+  return null;
+}
 
 // ─── Dialog: Todos los niños del grupo ────────────────────────────────────────
 @Component({
@@ -545,19 +567,28 @@ export class FuncionariosGrupoDialogComponent {
           <div style="display:flex;gap:12px">
             <mat-form-field appearance="outline" style="flex:1">
               <mat-label>Hora inicio</mat-label>
-              <input matInput formControlName="horaInicio" type="time">
-              @if(form.get('horaInicio')?.invalid && form.get('horaInicio')?.touched){
+              <input matInput formControlName="horaInicio" type="time" min="07:00" max="19:00">
+              @if(form.get('horaInicio')?.hasError('required') && form.get('horaInicio')?.touched){
                 <mat-error>Requerido</mat-error>
+              } @else if(form.get('horaInicio')?.hasError('fueraDeHorario') && form.get('horaInicio')?.touched){
+                <mat-error>Debe estar entre 07:00 y 19:00</mat-error>
               }
             </mat-form-field>
             <mat-form-field appearance="outline" style="flex:1">
               <mat-label>Hora fin</mat-label>
-              <input matInput formControlName="horaFin" type="time">
-              @if(form.get('horaFin')?.invalid && form.get('horaFin')?.touched){
+              <input matInput formControlName="horaFin" type="time" min="07:00" max="19:00">
+              @if(form.get('horaFin')?.hasError('required') && form.get('horaFin')?.touched){
                 <mat-error>Requerido</mat-error>
+              } @else if(form.get('horaFin')?.hasError('fueraDeHorario') && form.get('horaFin')?.touched){
+                <mat-error>Debe estar entre 07:00 y 19:00</mat-error>
               }
             </mat-form-field>
           </div>
+          @if(form.hasError('finMenorQueInicio') && (form.get('horaInicio')?.touched || form.get('horaFin')?.touched)){
+            <div style="font-size:12px;color:#D32F2F;margin-top:-10px">
+              La hora de fin no puede ser menor que la hora de inicio
+            </div>
+          }
 
           <!-- Selección de funcionarios responsables -->
           <div>
@@ -652,9 +683,9 @@ export class GrupoDialogComponent implements OnInit {
     this.form = this.fb.group({
       nombre:     [g?.nombre ?? '',        [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
       rangoEdad:  [rangoInicial],
-      horaInicio: [g?.horaInicio ?? '07:00', Validators.required],
-      horaFin:    [g?.horaFin   ?? '19:00', Validators.required],
-    });
+      horaInicio: [g?.horaInicio ?? '07:00', [Validators.required, horaEnRangoCentroValidator]],
+      horaFin:    [g?.horaFin   ?? '19:00', [Validators.required, horaEnRangoCentroValidator]],
+    }, { validators: horarioValidoValidator });
   }
 
   ngOnInit() {
@@ -662,9 +693,13 @@ export class GrupoDialogComponent implements OnInit {
     finalize(() => { this.cargandoDatos = false; this.cdr.markForCheck(); })
   ).subscribe({
     next: (fs) => {
-      this.funcionarios = fs;
+      // Los Administradores del Sistema no son personal operativo del centro,
+      // por lo que no pueden asignarse a un grupo de niños.
+      this.funcionarios = fs.filter(f => f.rol?.nombre !== 'ADMINISTRADOR_SISTEMA');
       if (this.data.modo === 'editar' && this.data.grupo?.funcionarios) {
-        this.funcionariosSeleccionados = this.data.grupo.funcionarios.map(f => f.id);
+        this.funcionariosSeleccionados = this.data.grupo.funcionarios
+          .filter(f => f.rol?.nombre !== 'ADMINISTRADOR_SISTEMA')
+          .map(f => f.id);
       }
       this.cdr.markForCheck();
     },
@@ -1102,7 +1137,7 @@ export class GruposComponent implements OnInit {
       width: '540px',
       maxWidth: '94vw',
       panelClass: 'app-dialog-panel',
-      disableClose: false
+      disableClose: true
     });
   }
 

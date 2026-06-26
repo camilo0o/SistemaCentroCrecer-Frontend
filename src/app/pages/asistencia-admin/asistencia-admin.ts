@@ -18,7 +18,6 @@ import { AsistenciaService } from '../../services/asistencia.service';
 import { FuncionarioService } from '../../services/funcionario.service';
 import { TurnoService } from '../../services/turno.service';
 import { ToastService } from '../../services/toast.service';
-import { AgendaService } from '../../services/agenda.service';
 import {
   AsistenciaResponse, FuncionarioResponse, TurnoResponse,
   ROL_DISPLAY, DIAS_SEMANA, EstadoPuntualidad
@@ -33,8 +32,15 @@ interface FuncionarioCargaHoraria {
   diasAsistidos: number;
   diasAusentes: number;
   horasEfectivas: number;
+  horasEsperadasPeriodo: number;
   pctCumplimiento: number;
+  sobrecargado: boolean;
 }
+
+/** Margen permitido por encima de las horas esperadas antes de considerar sobrecarga (25%) */
+const MARGEN_SOBRECARGA = 1.25;
+/** Mínimo de horas excedentes para no marcar sobrecarga por desvíos triviales */
+const MIN_HORAS_EXCEDENTES = 2;
 
 @Component({
   selector: 'app-asistencia-admin',
@@ -75,7 +81,6 @@ export class AsistenciaAdminComponent implements OnInit {
     private funcionarioService: FuncionarioService,
     private turnoService: TurnoService,
     private toast: ToastService,
-    private agendaService: AgendaService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -167,6 +172,13 @@ export class AsistenciaAdminComponent implements OnInit {
         ? Math.round((horasEfectivas / horasEsperadasPeriodo) * 100)
         : 0;
 
+      // Sobrecarga: trabajó significativamente más de lo esperado según su turno
+      const excedente = horasEfectivas - horasEsperadasPeriodo;
+      const sobrecargado = turnosFuncionario.length > 0
+        && horasEsperadasPeriodo > 0
+        && horasEfectivas > horasEsperadasPeriodo * MARGEN_SOBRECARGA
+        && excedente >= MIN_HORAS_EXCEDENTES;
+
       return {
         funcionario: func,
         turnos: turnosFuncionario,
@@ -176,7 +188,9 @@ export class AsistenciaAdminComponent implements OnInit {
         diasAsistidos,
         diasAusentes,
         horasEfectivas,
+        horasEsperadasPeriodo,
         pctCumplimiento,
+        sobrecargado,
       } as FuncionarioCargaHoraria;
     });
 
@@ -308,29 +322,21 @@ export class AsistenciaAdminComponent implements OnInit {
     return this.cargaHoraria.filter(c => c.funcionario.id === this.funcionarioSeleccionadoId);
   }
 
+  /**
+   * Detecta funcionarios cuyas horas efectivamente trabajadas (según fichadas
+   * de asistencia) superan significativamente las horas esperadas según su
+   * turno asignado, dentro del período consultado.
+   */
   verificarSobrecarga() {
-    const desde = new Date(this.toDateStr(this.fechaDesde) + 'T00:00:00');
-    const hasta = new Date(this.toDateStr(this.fechaHasta) + 'T00:00:00');
-    const fechas: string[] = [];
+    const sobrecargados = this.cargaHoraria.filter(c => c.sobrecargado);
 
-    const cur = new Date(desde);
-    while (cur <= hasta) {
-      fechas.push(cur.toISOString().split('T')[0]);
-      cur.setDate(cur.getDate() + 1);
+    if (sobrecargados.length > 0) {
+      const nombres = sobrecargados
+        .map(c => `${c.funcionario.nombre} ${c.funcionario.apellido}`)
+        .join(', ');
+      this.toast.error(
+        `${sobrecargados.length} funcionario(s) con sobrecarga en el período: ${nombres}`
+      );
     }
-
-    const llamadas = fechas.map(fecha => this.agendaService.detectarSobrecarga(fecha, 3));
-
-    forkJoin(llamadas).subscribe({
-      next: (resultados) => {
-        const sobrecargadosSet = new Set<string>();
-        resultados.forEach((res: any) => {
-          res.funcionariosSobrecargados.forEach((f: any) => sobrecargadosSet.add(f.nombre));
-        });
-        if (sobrecargadosSet.size > 0) {
-          this.toast.error(`${sobrecargadosSet.size} funcionario(s) con sobrecarga en el período: ${[...sobrecargadosSet].join(', ')}`);
-        }
-      }
-    });
   }
 }

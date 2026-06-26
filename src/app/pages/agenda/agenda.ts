@@ -1,6 +1,6 @@
 import { Component, OnInit, Inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
@@ -93,6 +93,12 @@ import {
             }
           </mat-form-field>
         </div>
+        @if(form.hasError('horaFinMenorOIgual') && (form.get('horaInicio')?.touched || form.get('horaFin')?.touched)){
+          <div style="color:#C62828;font-size:12px;display:flex;gap:6px;align-items:center;margin-top:-8px">
+            <mat-icon style="font-size:16px;width:16px;height:16px">error</mat-icon>
+            La hora de inicio debe ser menor a la hora de fin
+          </div>
+        }
 
       </form>
       @if(sugerencias.length > 0){
@@ -145,7 +151,14 @@ export class AgendaDialogComponent {
       fecha:       [a?.fecha ? new Date(a.fecha + 'T00:00:00') : null, Validators.required],
       horaInicio:  [a?.horaInicio ?? '',   Validators.required],
       horaFin:     [a?.horaFin ?? '',      Validators.required],
-    });
+    }, { validators: this.horaInicioMenorQueFinValidator });
+  }
+
+  private horaInicioMenorQueFinValidator(group: AbstractControl): ValidationErrors | null {
+    const inicio = group.get('horaInicio')?.value;
+    const fin = group.get('horaFin')?.value;
+    if (!inicio || !fin) return null;
+    return inicio < fin ? null : { horaFinMenorOIgual: true };
   }
 
   guardar() {

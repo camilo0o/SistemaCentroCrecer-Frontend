@@ -206,7 +206,8 @@ import { finalize } from 'rxjs/operators';
 export class TurnoDialogComponent {
   form: FormGroup;
   guardando = false;
-  diasSemana = DIAS_SEMANA;
+  private readonly diasLaborales: DiaSemana[] = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
+  diasSemana = DIAS_SEMANA.filter(d => this.diasLaborales.includes(d.valor));
   diasSeleccionados: Set<DiaSemana> = new Set();
   diasTocados = false;
 
@@ -240,7 +241,7 @@ export class TurnoDialogComponent {
       horaFin: [t?.horaFin ?? '', Validators.required],
     });
     if (t?.dias?.length) {
-      this.diasSeleccionados = new Set(t.dias);
+      this.diasSeleccionados = new Set(t.dias.filter(d => this.diasLaborales.includes(d)));
     }
   }
 
@@ -255,16 +256,17 @@ export class TurnoDialogComponent {
   isDiaSelected(dia: DiaSemana): boolean { return this.diasSeleccionados.has(dia); }
 
   toggleDia(dia: DiaSemana) {
+    if (!this.diasLaborales.includes(dia)) return;
     if (this.diasSeleccionados.has(dia)) this.diasSeleccionados.delete(dia);
     else this.diasSeleccionados.add(dia);
   }
 
   seleccionarLunesViernes() {
-    this.diasSeleccionados = new Set<DiaSemana>(['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY']);
+    this.diasSeleccionados = new Set<DiaSemana>(this.diasLaborales);
   }
 
   seleccionarTodos() {
-    this.diasSeleccionados = new Set(DIAS_SEMANA.map(d => d.valor));
+    this.diasSeleccionados = new Set(this.diasLaborales);
   }
 
   limpiarDias() { this.diasSeleccionados.clear(); }
@@ -278,7 +280,7 @@ export class TurnoDialogComponent {
     this.guardando = true;
     const payload: TurnoRequest = {
       ...this.form.value,
-      dias: Array.from(this.diasSeleccionados)
+      dias: Array.from(this.diasSeleccionados).filter(d => this.diasLaborales.includes(d))
     };
     const op = this.data.modo === 'crear'
       ? this.turnoService.crear(payload)

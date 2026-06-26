@@ -17,9 +17,11 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatTabsModule } from '@angular/material/tabs';
 import { finalize } from 'rxjs/operators';
+import { forkJoin } from 'rxjs';
 import { Sidebar } from '../../shared/components/sidebar/sidebar';
 import { ActividadService } from '../../services/actividad.service';
 import { ToastService } from '../../services/toast.service';
+import { AuthService } from '../../services/auth.service';
 import { NinioResponse } from '../../models/models';
 import { ParticipanteResponse } from '../../models/models';
 import { NinioService } from '../../services/ninio.service';
@@ -176,6 +178,7 @@ export class ActividadDialogComponent {
       modo: 'crear' | 'editar';
       actividad?: ActividadResponse;
       empresas: EmpresaExternaResponse[];
+      funcionarioId?: number | null;
     },
     private actividadService: ActividadService,
     private ninioService: NinioService,
@@ -206,14 +209,29 @@ export class ActividadDialogComponent {
   }
 
   private cargarParticipantes(): void {
-    this.ninioService.listarTodos().subscribe({
-      next: n => this.niniosDisponibles = n.filter(ninio => ninio.activo !== false),
-      error: () => this.toast.error('No se pudieron cargar los niños')
+    forkJoin({
+      ninios: this.ninioService.listarTodos(),
+      grupos: this.grupoService.listarActivos()
+    }).subscribe({
+      next: ({ ninios, grupos }) => {
+        this.gruposDisponibles = this.filtrarGruposDelFuncionario(grupos);
+        const gruposIds = new Set(this.gruposDisponibles.map(g => g.id));
+        this.niniosDisponibles = ninios.filter(ninio =>
+          ninio.activo !== false && gruposIds.has(this.getGrupoIdNinio(ninio))
+        );
+      },
+      error: () => this.toast.error('No se pudieron cargar los ninos y grupos')
     });
-    this.grupoService.listarActivos().subscribe({
-      next: g => this.gruposDisponibles = g,
-      error: () => this.toast.error('No se pudieron cargar los grupos')
-    });
+  }
+
+  private filtrarGruposDelFuncionario(grupos: GrupoResponse[]): GrupoResponse[] {
+    const funcionarioId = this.data.funcionarioId;
+    if (!funcionarioId) return [];
+    return grupos.filter(g => (g.funcionarios ?? []).some(f => f.id === funcionarioId));
+  }
+
+  private getGrupoIdNinio(ninio: NinioResponse): number {
+    return ninio.grupo?.id ?? ninio.grupoId ?? 0;
   }
 
   private ajustarFechaHasta(): void {
@@ -559,6 +577,7 @@ export class ActividadesComponent implements OnInit {
     private actividadService: ActividadService,
     private dialog: MatDialog,
     private toast: ToastService,
+    private auth: AuthService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -684,7 +703,7 @@ export class ActividadesComponent implements OnInit {
 
   abrirCrear() {
     const ref = this.dialog.open(ActividadDialogComponent, {
-      data: { modo: 'crear', empresas: this.empresas },
+      data: { modo: 'crear', empresas: this.empresas, funcionarioId: this.auth.getUserId() },
       width: '580px',
       maxWidth: '94vw',
       panelClass: 'app-dialog-panel',
@@ -695,7 +714,7 @@ export class ActividadesComponent implements OnInit {
 
   abrirEditar(a: ActividadResponse) {
     const ref = this.dialog.open(ActividadDialogComponent, {
-      data: { modo: 'editar', actividad: a, empresas: this.empresas },
+      data: { modo: 'editar', actividad: a, empresas: this.empresas, funcionarioId: this.auth.getUserId() },
       width: '580px',
       maxWidth: '94vw',
       panelClass: 'app-dialog-panel',

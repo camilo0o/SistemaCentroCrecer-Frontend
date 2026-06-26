@@ -152,6 +152,7 @@ export class ReporteDialogComponent implements OnInit {
     @Inject(MAT_DIALOG_DATA) public data: { funcionarioId: number; reporte?: ReporteResponse },
     private http: HttpClient,
     private reporteService: ReporteService,
+    private auth: AuthService,
     private toast: ToastService,
     private cdr: ChangeDetectorRef
   ) {
@@ -162,13 +163,15 @@ export class ReporteDialogComponent implements OnInit {
   }
 
   ngOnInit() {
+    const funcionarioId = this.data.funcionarioId || this.auth.getUserId();
     forkJoin({
       grupos: this.http.get<GrupoResponse[]>(`${environment.apiUrl}/grupos/activos`),
       ninios: this.http.get<NinioResponse[]>(`${environment.apiUrl}/ninios`)
     }).subscribe({
       next: ({ grupos, ninios }) => {
-        this.grupos = grupos;
-        this.ninios = ninios.filter(n => n.activo !== false);
+        this.grupos = this.filtrarGruposDelFuncionario(grupos, funcionarioId);
+        const gruposIds = new Set(this.grupos.map(g => g.id));
+        this.ninios = ninios.filter(n => n.activo !== false && gruposIds.has(this.getGrupoIdNinio(n)));
         this.niniosFiltrados = this.ninios;
 
         // Pre-cargar selecciones si estamos editando
@@ -181,6 +184,15 @@ export class ReporteDialogComponent implements OnInit {
       },
       error: () => this.toast.error('Error al cargar datos')
     });
+  }
+
+  private filtrarGruposDelFuncionario(grupos: GrupoResponse[], funcionarioId: number | null): GrupoResponse[] {
+    if (!funcionarioId) return [];
+    return grupos.filter(g => (g.funcionarios ?? []).some(f => f.id === funcionarioId));
+  }
+
+  private getGrupoIdNinio(ninio: NinioResponse): number {
+    return ninio.grupo?.id ?? ninio.grupoId ?? 0;
   }
 
   getGrupoNombre(id: number): string {

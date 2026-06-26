@@ -27,7 +27,7 @@ import { AsistenciaService } from '../../services/asistencia.service';
 import { ResponsableService } from '../../services/responsable.service';
 import { ToastService } from '../../services/toast.service';
 import { CondicionMedicaResponse, FrecuenciaAsistenciaResponse, GrupoResponse, NinioResponse, ResponsableResumen, ResponsableResponse, ResponsableNinioResponse } from '../../models/models';
-import { finalize, switchMap } from 'rxjs/operators';
+import { catchError, finalize, switchMap, timeout } from 'rxjs/operators';
 import { of } from 'rxjs';
 
 
@@ -1506,6 +1506,7 @@ export class NinioFrecuenciaDialogComponent implements OnInit {
   cargando = false;
   frecuencia: FrecuenciaAsistenciaResponse | null = null;
   error = '';
+  private readonly TIEMPO_MAXIMO_CONSULTA_MS = 12000;
 
   constructor(
     public ref: MatDialogRef<NinioFrecuenciaDialogComponent>,
@@ -1534,12 +1535,16 @@ export class NinioFrecuenciaDialogComponent implements OnInit {
     this.asistenciaService.frecuenciaPorCedula(
       this.data.ninio.cedula, this.desde, this.hasta
     ).pipe(
+      timeout(this.TIEMPO_MAXIMO_CONSULTA_MS),
+      catchError((err) => {
+        this.error = err?.name === 'TimeoutError'
+          ? 'La consulta demoró demasiado. Intentá nuevamente.'
+          : err?.error?.mensaje ?? err?.error?.message ?? err?.error?.error ?? 'Error al consultar la frecuencia';
+        return of(null);
+      }),
       finalize(() => this.cargando = false)
     ).subscribe({
-      next: (f) => { this.frecuencia = f; },
-      error: (err) => {
-        this.error = err.error?.mensaje ?? err.error?.message ?? err.error?.error ?? 'Error al consultar la frecuencia';
-      }
+      next: (f) => { this.frecuencia = f; }
     });
   }
 

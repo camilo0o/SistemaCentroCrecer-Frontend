@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { adminGuard, authGuard, funcionarioGuard, responsableGuard } from './guards/auth-guard';
+import { adminGuard, authGuard, funcionarioGuard, publicOnlyGuard, responsableGuard } from './guards/auth-guard';
 import { Home } from './pages/home/home';
 
 
@@ -14,7 +14,8 @@ export const routes: Routes = [
 
   {
     path: 'home',
-    component: Home
+    component: Home,
+    canActivate: [publicOnlyGuard]
   },
 
   {

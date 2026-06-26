@@ -40,6 +40,17 @@ export const authGuard: CanActivateFn = (route, state) => {
   return true;
 };
 
+export const publicOnlyGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if (!auth.isLoggedIn()) return true;
+  if (auth.mustChangePassword()) {
+    router.navigate(['/perfil']);
+    return false;
+  }
+  return redirectSegunRol(auth, router);
+};
+
 export const adminGuard: CanActivateFn = (route, state) => {
   const auth = inject(AuthService);
   const router = inject(Router);

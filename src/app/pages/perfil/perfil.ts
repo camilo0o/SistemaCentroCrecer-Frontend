@@ -13,7 +13,8 @@ import { PerfilService } from '../../services/perfil.service';
 import { ToastService } from '../../services/toast.service';
 import { Sidebar } from '../../shared/components/sidebar/sidebar';
 import { environment } from '../../../environments/environment';
-import { finalize } from 'rxjs/operators';
+import { throwError } from 'rxjs';
+import { catchError, finalize } from 'rxjs/operators';
 
 
 @Component({
@@ -181,6 +182,7 @@ export class PerfilComponent implements OnInit {
       : this.perfilService.cambiarPasswordFuncionario(this.userId, { contraseniaActual, nuevaContrasenia });
 
     req.pipe(
+      catchError(err => throwError(() => ({ error: { message: this.getPasswordErrorMessage(err) } }))),
       finalize(() => { this.savingPassword = false; this.cdr.detectChanges(); })
     ).subscribe({
       next: () => {
@@ -194,6 +196,23 @@ export class PerfilComponent implements OnInit {
         this.toast.error(err?.error?.message ?? err?.error?.error ?? 'Error al cambiar la contraseña');
       }
     });
+  }
+
+  private getPasswordErrorMessage(err: any): string {
+    const backendMessage = this.extractBackendMessage(err);
+    if (err?.status === 400 || err?.status === 401 || err?.status === 403) {
+      return backendMessage && !backendMessage.toLowerCase().includes('error al cambiar')
+        ? backendMessage
+        : 'La contraseña actual es incorrecta';
+    }
+    if (backendMessage) return backendMessage;
+    return 'Error al cambiar la contraseña';
+  }
+
+  private extractBackendMessage(err: any): string {
+    const body = err?.error;
+    if (typeof body === 'string') return body;
+    return body?.mensaje ?? body?.message ?? body?.error ?? '';
   }
 
   async onPhotoSelect(event: Event) {

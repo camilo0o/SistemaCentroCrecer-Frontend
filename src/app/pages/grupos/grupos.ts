@@ -753,8 +753,6 @@ export class GrupoDialogComponent implements OnInit {
       ? this.grupoService.crear(payload)
       : this.grupoService.actualizar(this.data.grupo!.id, payload);
 
-    // FIX: finalize garantiza que guardando vuelva a false siempre,
-    // incluso si ocurre un error inesperado (timeout, red, etc.)
     op$.pipe(finalize(() => { this.guardando = false; }))
       .subscribe({
         next: (g) => { this.ref.close(g); },

@@ -351,27 +351,6 @@ export class AsistenciaComponent implements OnInit {
     this._frecuenciaFechasPresente = new Set();
   }
 
-  // ── Construcción del calendario ─────────────────────────────────────────
-  /**
-   * Genera una estructura de meses/días para visualizar el período.
-   *
-   * Lógica de colores:
-   *  - Verde  ("presente")    : el centro abrió ese día Y el niño asistió
-   *  - Rojo   ("ausente")     : el centro abrió ese día Y el niño NO asistió
-   *  - Gris   ("noHabil")     : fin de semana o fuera del rango desde/hasta
-   *  - Blanco ("fueraPeriodo"): dentro del grid del mes pero antes/después del rango
-   *
-   * "El centro abrió" = ese día tiene al menos un niño con asistencia registrada
-   * en todo el sistema, que es exactamente lo que cuenta `totalDiasHabiles`
-   * en el backend (countDiasConAsistenciaEnPeriodo).
-   *
-   * Para saberlo en el frontend usamos `fechasPresente`: si el niño asistió,
-   * sabemos que el centro abrió. Para los días donde el niño no asistió,
-   * NO podemos saber desde el frontend si el centro abrió o no (no tenemos
-   * la lista de días que el centro abrió por fuera del niño consultado).
-   * Los marcamos como "ausente" dentro del período entre lunes y sábado.
-   * Fines de semana siempre son "noHabil".
-   */
   construirCalendario(
     desde: string,
     hasta: string,

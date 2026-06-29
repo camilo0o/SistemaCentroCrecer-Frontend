@@ -283,42 +283,42 @@ export class AsistenciaComponent implements OnInit {
   }
 
   buscarFrecuencia(): void {
-    const ced = this.frecuenciaCedula.trim();
-    if (!ced || !this.frecuenciaDesde || !this.frecuenciaHasta) {
-      this.frecuenciaError = 'Complete la cédula y el rango de fechas.';
-      return;
-    }
-    this.frecuenciaError = '';
-    this.frecuenciaResultado = null;
-    this._frecuenciaFechasPresente = new Set();
-    this.frecuenciaCargando = true;
-    this.frecuenciaCalendarioVisible = false;
-    this.frecuenciaCalendarioMeses = [];
-
-    // Paso 1: buscar frecuencia. Si falla, es error real (cédula no existe, etc.)
-    // Paso 2: buscar historial con catchError → si falla (niño sin asistencias previas),
-    //         lo tratamos silenciosamente: el calendario simplemente no tendrá días marcados
-    //         como presentes pero los stats de frecuencia sí se muestran.
-    this.asistenciaService.frecuenciaPorCedula(ced, this.frecuenciaDesde, this.frecuenciaHasta)
-      .pipe(finalize(() => this.frecuenciaCargando = false))
-      .subscribe({
-        next: frecuencia => {
-          this.frecuenciaResultado = frecuencia;
-          // Buscar historial por separado para poder pintar el calendario;
-          // si falla (niño sin historial) no afecta los stats ya mostrados.
-          this.asistenciaService.historialPorCedula(ced)
-            .pipe(catchError(() => of([])))
-            .subscribe(historial => {
-              this._frecuenciaFechasPresente = new Set(
-                historial
-                  .filter(r => r.fecha >= this.frecuenciaDesde && r.fecha <= this.frecuenciaHasta)
-                  .map(r => r.fecha)
-              );
-            });
-        },
-        error: e => this.frecuenciaError = e.error?.message || 'Cédula no encontrada.'
-      });
+  const ced = this.frecuenciaCedula.trim();
+  if (!ced || !this.frecuenciaDesde || !this.frecuenciaHasta) {
+    this.frecuenciaError = 'Complete la cédula y el rango de fechas.';
+    return;
   }
+  this.frecuenciaError = '';
+  this.frecuenciaResultado = null;
+  this._frecuenciaFechasPresente = new Set();
+  this.frecuenciaCargando = true;
+  this.frecuenciaCalendarioVisible = false;
+  this.frecuenciaCalendarioMeses = [];
+
+  this.asistenciaService.frecuenciaPorCedula(ced, this.frecuenciaDesde, this.frecuenciaHasta)
+    .pipe(finalize(() => {
+      this.frecuenciaCargando = false;
+      this.cdr.detectChanges();
+    }))
+    .subscribe({
+      next: frecuencia => {
+        this.frecuenciaResultado = frecuencia;
+        this.asistenciaService.historialPorCedula(ced)
+          .pipe(catchError(() => of([])))
+          .subscribe(historial => {
+            this._frecuenciaFechasPresente = new Set(
+              historial
+                .filter(r => r.fecha >= this.frecuenciaDesde && r.fecha <= this.frecuenciaHasta)
+                .map(r => r.fecha)
+            );
+            this.cdr.detectChanges();
+          });
+      },
+      error: e => {
+        this.frecuenciaError = e.error?.message || 'Cédula no encontrada.';
+      }
+    });
+}
 
   // Almacén interno de fechas presentes para el calendario standalone
   private _frecuenciaFechasPresente: Set<string> = new Set();

@@ -4,10 +4,10 @@
     <header class="topbar">
       <div>
         <h2 class="page-title">Mi Agenda</h2>
-        <p class="page-subtitle">Anotaciones personales del funcionario</p>
+        <p class="page-subtitle">Agenda del funcionario</p>
       </div>
       <button mat-flat-button class="btn-create" (click)="abrirCrear()">
-        <mat-icon>add_circle</mat-icon> Nueva anotación
+        <mat-icon>add_circle</mat-icon> Nueva agenda
       </button>
     </header>
 
@@ -154,9 +154,9 @@
           @if(filtradas.length === 0){
             <div class="empty-state">
               <mat-icon>event_note</mat-icon>
-              <p>No hay anotaciones registradas</p>
+              <p>No hay agendas registradas</p>
               <button mat-flat-button class="btn-create" (click)="abrirCrear()">
-                Crear primera anotación
+                Crear primera agenda
               </button>
             </div>
           }

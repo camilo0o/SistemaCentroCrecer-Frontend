@@ -146,8 +146,16 @@ export class DashboardResponsableComponent implements OnInit {
     if (!this.responsableId) return;
     this.cargandoNinios = true;
     this.ninioService.misNinios(this.responsableId).subscribe({
-      next: data => { this.misNinios = data; this.cargandoNinios = false; },
-      error: () => { this.toast.error('No se pudieron cargar los niños.'); this.cargandoNinios = false; }
+      next: data => {
+        this.misNinios = data;
+        this.cargandoNinios = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.toast.error('No se pudieron cargar los niños.');
+        this.cargandoNinios = false;
+        this.cdr.detectChanges();
+      }
     });
   }
 

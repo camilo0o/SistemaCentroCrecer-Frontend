@@ -1,0 +1,694 @@
+<div class="main-content">
+
+    <!-- ── Toolbar ──────────────────────────────────────────────────────── -->
+    <mat-toolbar color="primary" class="toolbar">
+      <button mat-icon-button *ngIf="vista !== 'dashboard'" (click)="volver()" matTooltip="Volver al dashboard">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <span>{{
+        vista === 'dashboard' ? saludoHora + ', ' + nombre.split(' ')[0] :
+        vista === 'nueva-inscripcion' ? 'Nueva solicitud de inscripción' :
+        'Mis niños'
+      }}</span>
+      <span class="spacer"></span>
+      <mat-chip-set>
+        <mat-chip>
+          <mat-icon matChipAvatar>family_restroom</mat-icon>
+          Responsable
+        </mat-chip>
+      </mat-chip-set>
+    </mat-toolbar>
+
+    <div class="page-content">
+
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+      <!-- VISTA: DASHBOARD                                                   -->
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+      @if(vista === 'dashboard') {
+
+        <p class="fecha-label">{{ fechaFormateada }}</p>
+
+        <!-- ── Cargando ─────────────────────────────────────────────────── -->
+        @if(cargando) {
+          <div class="loading-center">
+            <mat-spinner diameter="44"></mat-spinner>
+            <p>Cargando tus inscripciones...</p>
+          </div>
+        }
+
+        @if(!cargando) {
+
+          <!-- ── Tarjetas de resumen ─────────────────────────────────────── -->
+          <div class="stat-grid">
+            <mat-card class="stat-card" appearance="outlined">
+              <mat-card-content>
+                <div class="stat-icon-wrap" style="background:#ECFDF5">
+                  <mat-icon style="color:#10B981">child_care</mat-icon>
+                </div>
+                <div>
+                  <div class="stat-value">{{ inscripciones.length }}</div>
+                  <div class="stat-label">Inscripcion{{ inscripciones.length !== 1 ? 'es' : '' }} totales</div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card class="stat-card" appearance="outlined">
+              <mat-card-content>
+                <div class="stat-icon-wrap" style="background:#FFF7ED">
+                  <mat-icon style="color:#F59E0B">schedule</mat-icon>
+                </div>
+                <div>
+                  <div class="stat-value">{{ cantidadPendientes }}</div>
+                  <div class="stat-label">Pendiente{{ cantidadPendientes !== 1 ? 's' : '' }} de revisión</div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card class="stat-card" appearance="outlined">
+              <mat-card-content>
+                <div class="stat-icon-wrap" style="background:#F0FDF4">
+                  <mat-icon style="color:#10B981">check_circle</mat-icon>
+                </div>
+                <div>
+                  <div class="stat-value">{{ cantidadActivas }}</div>
+                  <div class="stat-label">Activa{{ cantidadActivas !== 1 ? 's' : '' }}</div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+
+          <!-- ── Acción principal ─────────────────────────────────────────── -->
+          <mat-card class="action-card" appearance="outlined" (click)="irANuevaInscripcion()">
+            <mat-card-content>
+              <div class="action-icon" style="background:#EEF2FF">
+                <mat-icon style="color:#6366F1">add_circle</mat-icon>
+              </div>
+              <div class="action-text">
+                <div class="action-titulo">Solicitar nueva inscripción</div>
+                <div class="action-desc">Ingresá los datos de un nuevo niño o niña</div>
+              </div>
+              <mat-icon class="action-arrow">chevron_right</mat-icon>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="action-card" appearance="outlined" (click)="irAMisNinios()" style="margin-top:10px">
+            <mat-card-content>
+              <div class="action-icon" style="background:#FFF7ED">
+                <mat-icon style="color:#F59E0B">edit_note</mat-icon>
+              </div>
+              <div class="action-text">
+                <div class="action-titulo">Actualizar datos de mis niños</div>
+                <div class="action-desc">Modificá nombre, apellido, dirección u observaciones</div>
+              </div>
+              <mat-icon class="action-arrow">chevron_right</mat-icon>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- ── Permisos pendientes ──────────────────────────────────────────── -->
+          <div class="section-label" style="margin-top:28px">PERMISOS DE ACTIVIDADES</div>
+
+          @if(cargandoPermisos) {
+            <div class="loading-center"><mat-spinner diameter="32"></mat-spinner></div>
+          }
+
+          @if(!cargandoPermisos && permisos.length === 0) {
+            <mat-card appearance="outlined" class="empty-card">
+              <mat-card-content>
+                <mat-icon class="empty-icon">lock_open</mat-icon>
+                <p>No hay permisos de actividades pendientes.</p>
+              </mat-card-content>
+            </mat-card>
+          }
+
+          @if(!cargandoPermisos && permisos.length > 0) {
+
+            @if(permisosVigentes.length === 0) {
+              <mat-card appearance="outlined" class="empty-card">
+                <mat-card-content>
+                  <mat-icon class="empty-icon">lock_open</mat-icon>
+                  <p>No hay permisos de próximas actividades.</p>
+                </mat-card-content>
+              </mat-card>
+            }
+
+            @if(permisosVigentes.length > 0) {
+              <div class="insc-list">
+                @for(p of permisosVigentes; track p.id) {
+                  <ng-container *ngTemplateOutlet="permisoCard; context: { $implicit: p }"></ng-container>
+                }
+              </div>
+            }
+
+            @if(permisosVencidos.length > 0) {
+              <mat-accordion style="margin-top:14px;display:block">
+                <mat-expansion-panel>
+                  <mat-expansion-panel-header>
+                    <mat-panel-title>
+                      <mat-icon style="margin-right:6px;color:#9CA3AF">history</mat-icon>
+                      Actividades anteriores
+                    </mat-panel-title>
+                    <mat-panel-description>
+                      {{ permisosVencidos.length }} actividad{{ permisosVencidos.length !== 1 ? 'es' : '' }}
+                    </mat-panel-description>
+                  </mat-expansion-panel-header>
+                  <div class="insc-list" style="margin-top:8px">
+                    @for(p of permisosVencidos; track p.id) {
+                      <ng-container *ngTemplateOutlet="permisoCard; context: { $implicit: p }"></ng-container>
+                    }
+                  </div>
+                </mat-expansion-panel>
+              </mat-accordion>
+            }
+
+          }
+
+          <!-- ── Tarjeta de permiso (reutilizada para vigentes y vencidas) ──────── -->
+          <ng-template #permisoCard let-p>
+            <mat-card class="insc-card" appearance="outlined">
+              <mat-card-content>
+                <div class="insc-header">
+                  <div class="insc-avatar" [style.background]="!p.respondido ? '#F59E0B' : p.autorizado ? '#10B981' : '#EF4444'">
+                    <mat-icon style="color:white;font-size:20px">{{ !p.respondido ? 'schedule' : p.autorizado ? 'check' : 'close' }}</mat-icon>
+                  </div>
+                  <div class="insc-info">
+                    <div class="insc-nombre">{{ p.actividad?.nombre }}</div>
+                    <div class="insc-meta">
+                      <span><mat-icon>child_care</mat-icon>{{ p.ninio?.nombre }} {{ p.ninio?.apellido }}</span>
+                      @if(p.actividad?.fechaDesde) {
+                        <span><mat-icon>calendar_today</mat-icon>{{ p.actividad!.fechaDesde | date:'dd-MM-yyyy' }}</span>
+                      }
+                      @if(p.actividad?.lugar) {
+                        <span><mat-icon>place</mat-icon>{{ p.actividad!.lugar }}</span>
+                      }
+                    </div>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+                    @if(!p.respondido) {
+                      <!-- Aún no respondió -->
+                      @if(puedeModificarPermiso(p)) {
+                        <span style="font-size:13px;font-weight:600;color:#555;margin-bottom:2px">¿Autoriza?</span>
+                        @if(p.actividad?.diasLimiteModificacion != null) {
+                          <span style="font-size:11px;color:#888;margin-top:-4px;margin-bottom:2px">
+                            Podés cambiar hasta {{ p.actividad!.diasLimiteModificacion }} días antes
+                          </span>
+                        }
+                        <div style="display:flex;gap:8px">
+                          <button mat-flat-button color="primary" (click)="autorizarPermiso(p.id)">
+                            <mat-icon>check_circle</mat-icon> Sí
+                          </button>
+                          <button mat-stroked-button color="warn" (click)="rechazarPermiso(p.id)">
+                            <mat-icon>cancel</mat-icon> No
+                          </button>
+                        </div>
+                      } @else if(eventoVencido(p.actividad)) {
+                        <span style="color:#9CA3AF;font-weight:600;display:flex;align-items:center;gap:4px;font-size:13px;text-align:right">
+                          <mat-icon style="font-size:18px">event_busy</mat-icon> Se pasó la fecha y no se optó por ninguna opción
+                        </span>
+                      } @else {
+                        <span style="color:#9CA3AF;font-weight:600;display:flex;align-items:center;gap:4px;font-size:13px;text-align:right">
+                          <mat-icon style="font-size:18px">lock_clock</mat-icon> El plazo para responder venció
+                        </span>
+                      }
+                    } @else if(p.autorizado) {
+                      <!-- Autorizó -->
+                      <span style="color:#10B981;font-weight:600;display:flex;align-items:center;gap:4px">
+                        <mat-icon>check_circle</mat-icon> Autorizado
+                      </span>
+                      @if(puedeModificarPermiso(p)) {
+                        @if(p.actividad?.diasLimiteModificacion != null) {
+                          <span style="font-size:11px;color:#888">
+                            Podés cambiar hasta {{ p.actividad!.diasLimiteModificacion }} días antes
+                          </span>
+                        }
+                        <button mat-stroked-button color="warn" style="font-size:12px;height:32px" (click)="rechazarPermiso(p.id)">
+                          <mat-icon style="font-size:15px">cancel</mat-icon> Cambiar a No
+                        </button>
+                      }
+                    } @else {
+                      <!-- Rechazó -->
+                      <span style="color:#EF4444;font-weight:600;display:flex;align-items:center;gap:4px">
+                        <mat-icon>cancel</mat-icon> No autorizado
+                      </span>
+                      @if(puedeModificarPermiso(p)) {
+                        @if(p.actividad?.diasLimiteModificacion != null) {
+                          <span style="font-size:11px;color:#888">
+                            Podés cambiar hasta {{ p.actividad!.diasLimiteModificacion }} días antes
+                          </span>
+                        }
+                        <button mat-flat-button color="primary" style="font-size:12px;height:32px" (click)="autorizarPermiso(p.id)">
+                          <mat-icon style="font-size:15px">check_circle</mat-icon> Cambiar a Sí
+                        </button>
+                      }
+                    }
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </ng-template>
+
+
+          <!-- ── Listado de inscripciones ─────────────────────────────────── -->
+          <div class="section-label" style="margin-top:28px">MIS INSCRIPCIONES</div>
+
+          @if(inscripciones.length === 0) {
+            <mat-card appearance="outlined" class="empty-card">
+              <mat-card-content>
+                <mat-icon class="empty-icon">inbox</mat-icon>
+                <p>Todavía no tenés inscripciones registradas.</p>
+                <button mat-flat-button color="primary" (click)="irANuevaInscripcion()">
+                  <mat-icon>add</mat-icon> Solicitar primera inscripción
+                </button>
+              </mat-card-content>
+            </mat-card>
+          }
+
+          @if(inscripciones.length > 0) {
+            <div class="insc-list">
+              @for(insc of inscripciones; track insc.id) {
+                <mat-card class="insc-card" appearance="outlined">
+                  <mat-card-content>
+
+                  <div class="insc-header">
+                      <div class="insc-avatar" [class.has-photo]="getFotoNinioInscripcion(insc)">
+                        @if(getFotoNinioInscripcion(insc)){
+                          <img [src]="getFotoNinioInscripcion(insc)" alt="Foto">
+                        } @else {
+                          {{ (insc.ninioNombre || 'N')[0] }}{{ (insc.ninioApellido || '')[0] }}
+                        }
+                      </div>
+
+                      <div class="insc-info">
+                        <div class="insc-nombre">{{ insc.ninioNombre }} {{ insc.ninioApellido }}</div>
+                        <div class="insc-meta">
+                          <span><mat-icon>badge</mat-icon>CI {{ insc.ninioCedula }}</span>
+                          @if(insc.ninioFechaNacimiento) {
+                            <span><mat-icon>cake</mat-icon>{{ calcularEdad(insc.ninioFechaNacimiento) }}</span>
+                          }
+                          @if(insc.ninioSexo) {
+                            <span><mat-icon>wc</mat-icon>{{ insc.ninioSexo }}</span>
+                          }
+                        </div>
+                      </div>
+
+                      <div class="insc-estado" [style.color]="estadoConfig(insc.estadoInscripcion).color">
+                        <mat-icon>{{ estadoConfig(insc.estadoInscripcion).icon }}</mat-icon>
+                        <span>{{ estadoConfig(insc.estadoInscripcion).label }}</span>
+                      </div>
+                    </div>
+
+                    <mat-divider style="margin: 10px 0"></mat-divider>
+
+                    <div class="insc-detalles">
+                      <div class="detalle-item">
+                        <mat-icon>calendar_today</mat-icon>
+                        <span>Solicitado el {{ insc.fechaInscripcion | date:'dd/MM/yyyy' }}</span>
+                      </div>
+                      @if(insc.grupoNombre) {
+                        <div class="detalle-item">
+                          <mat-icon>groups</mat-icon>
+                          <span>Grupo: <strong>{{ insc.grupoNombre }}</strong></span>
+                        </div>
+                      }
+                      @if(insc.ninioDireccion) {
+                        <div class="detalle-item">
+                          <mat-icon>home</mat-icon>
+                          <span>{{ insc.ninioDireccion }}</span>
+                        </div>
+                      }
+                    </div>
+
+                    <!-- Estado PENDIENTE: mensaje informativo -->
+                    @if(insc.estadoInscripcion === 'PENDIENTE') {
+                      <div class="info-pendiente">
+                        <mat-icon>info_outline</mat-icon>
+                        Un funcionario del centro revisará los datos y asignará el grupo.
+                      </div>
+                    }
+
+                    <!-- Estado CANCELADA: motivo -->
+                    @if(insc.estadoInscripcion === 'CANCELADA' && insc.motivoBaja) {
+                      <div class="info-cancelada">
+                        <mat-icon>cancel</mat-icon>
+                        Motivo: {{ insc.motivoBaja }}
+                      </div>
+                    }
+
+                    <!-- Condiciones médicas -->
+                    @if(insc.condicionesMedicas?.length) {
+                      <mat-expansion-panel class="cond-panel">
+                        <mat-expansion-panel-header>
+                          <mat-panel-title>
+                            <mat-icon style="font-size:16px;margin-right:6px;color:#E65100">medical_services</mat-icon>
+                            {{ insc.condicionesMedicas!.length }} condición{{ insc.condicionesMedicas!.length !== 1 ? 'es' : '' }} médica{{ insc.condicionesMedicas!.length !== 1 ? 's' : '' }}
+                          </mat-panel-title>
+                        </mat-expansion-panel-header>
+                        <div class="cond-list">
+                          @for(c of insc.condicionesMedicas; track $index) {
+                            <div class="cond-item">
+                              <mat-icon>{{ c.esCronica ? 'warning' : 'info' }}</mat-icon>
+                              <div>
+                                <strong>{{ c.condicion }}</strong>
+                                @if(c.observacion) { <span> — {{ c.observacion }}</span> }
+                                @if(c.esCronica) { <span class="badge-cronica">Crónica</span> }
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      </mat-expansion-panel>
+                    }
+
+                  </mat-card-content>
+                </mat-card>
+              }
+            </div>
+          }
+
+        }
+      }
+
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+      <!-- VISTA: NUEVA INSCRIPCIÓN                                           -->
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+      @if(vista === 'nueva-inscripcion') {
+
+        <!-- Éxito -->
+        @if(mostrarExito) {
+          <div class="exito-block">
+            <mat-icon class="exito-icon" color="primary">check_circle</mat-icon>
+            <h2>¡Solicitud enviada!</h2>
+            <p>La inscripción quedó registrada como <strong>Pendiente</strong>. Un funcionario del centro revisará los datos y asignará el grupo.</p>
+            <button mat-flat-button color="primary" (click)="volverAlDashboardDesdeExito()">
+              <mat-icon>dashboard</mat-icon> Volver al inicio
+            </button>
+          </div>
+        }
+
+        @if(!mostrarExito) {
+          <form [formGroup]="niniosForm" (ngSubmit)="enviarSolicitud()" class="form-col">
+
+            <div formArrayName="ninos">
+              @for(nino of ninosArray.controls; track $index; let i = $index) {
+                <div [formGroupName]="i" class="nino-card">
+
+                  <div class="nino-card-header">
+                    <div class="nino-card-titulo">
+                      <mat-icon>child_care</mat-icon>
+                      <span>Niño {{ i + 1 }}</span>
+                    </div>
+                    @if(ninosArray.length > 1) {
+                      <button mat-icon-button type="button" color="warn"
+                              (click)="eliminarNino(i)" matTooltip="Eliminar">
+                        <mat-icon>delete_outline</mat-icon>
+                      </button>
+                    }
+                  </div>
+
+                  <div class="form-row">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Nombre</mat-label>
+                      <mat-icon matPrefix>person</mat-icon>
+                      <input matInput formControlName="nombre">
+                      @if(getError(nino, 'nombre')){ <mat-error>{{ getError(nino, 'nombre') }}</mat-error> }
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>Apellido</mat-label>
+                      <mat-icon matPrefix>person</mat-icon>
+                      <input matInput formControlName="apellido">
+                      @if(getError(nino, 'apellido')){ <mat-error>{{ getError(nino, 'apellido') }}</mat-error> }
+                    </mat-form-field>
+                  </div>
+
+                  <div class="form-row">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Cédula</mat-label>
+                      <mat-icon matPrefix>badge</mat-icon>
+                      <input matInput formControlName="cedula" placeholder="12345678">
+                      @if(getError(nino, 'cedula')){ <mat-error>{{ getError(nino, 'cedula') }}</mat-error> }
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>Sexo</mat-label>
+                      <mat-icon matPrefix>wc</mat-icon>
+                      <mat-select formControlName="sexo">
+                        <mat-option value="Masculino">Masculino</mat-option>
+                        <mat-option value="Femenino">Femenino</mat-option>
+                      </mat-select>
+                      @if(getError(nino, 'sexo')){ <mat-error>{{ getError(nino, 'sexo') }}</mat-error> }
+                    </mat-form-field>
+                  </div>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Fecha de nacimiento</mat-label>
+                    <mat-icon matPrefix>cake</mat-icon>
+                    <input matInput [matDatepicker]="pickerNino" formControlName="fechaNacimiento">
+                    <mat-datepicker-toggle matSuffix [for]="pickerNino"></mat-datepicker-toggle>
+                    <mat-datepicker #pickerNino></mat-datepicker>
+                    @if(getError(nino, 'fechaNacimiento')){ <mat-error>{{ getError(nino, 'fechaNacimiento') }}</mat-error> }
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Dirección (opcional)</mat-label>
+                    <mat-icon matPrefix>home</mat-icon>
+                    <input matInput formControlName="direccion" placeholder="Ej: Av. 18 de Julio 1234, Apto 5">
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Observaciones generales (opcional)</mat-label>
+                    <mat-icon matPrefix>notes</mat-icon>
+                    <textarea matInput formControlName="observaciones" rows="2"
+                              placeholder="Ej: duerme siesta, come con asistencia..."></textarea>
+                  </mat-form-field>
+
+                  <!-- Condiciones médicas -->
+                  <div class="condiciones-section">
+                    <div class="condiciones-header">
+                      <span class="condiciones-titulo">
+                        <mat-icon>medical_services</mat-icon> Condiciones médicas
+                      </span>
+                      <button mat-stroked-button type="button" color="primary"
+                              (click)="agregarCondicion(i)" class="btn-agregar-cond">
+                        <mat-icon>add</mat-icon> Agregar
+                      </button>
+                    </div>
+                    <div formArrayName="condiciones">
+                      @for(cond of condicionesArray(i).controls; track $index; let ci = $index) {
+                        <div [formGroupName]="ci" class="condicion-row">
+                          <mat-form-field appearance="outline" class="cond-field-main">
+                            <mat-label>Condición</mat-label>
+                            <input matInput formControlName="condicion" placeholder="Ej: Asma, alergia...">
+                            @if(cond.get('condicion')?.invalid && cond.get('condicion')?.touched){
+                              <mat-error>Requerido</mat-error>
+                            }
+                          </mat-form-field>
+                          <mat-form-field appearance="outline" class="cond-field-obs">
+                            <mat-label>Observación (opcional)</mat-label>
+                            <input matInput formControlName="observacion" placeholder="Medicación, dosis...">
+                          </mat-form-field>
+                          <div class="cond-cronica">
+                            <mat-checkbox formControlName="esCronica">Crónica</mat-checkbox>
+                          </div>
+                          <button mat-icon-button type="button" color="warn"
+                                  (click)="eliminarCondicion(i, ci)" matTooltip="Eliminar">
+                            <mat-icon>remove_circle_outline</mat-icon>
+                          </button>
+                        </div>
+                      }
+                      @if(condicionesArray(i).length === 0){
+                        <p class="sin-condiciones">Sin condiciones médicas registradas</p>
+                      }
+                    </div>
+                  </div>
+
+                </div>
+              }
+            </div>
+
+            <button mat-stroked-button type="button" color="primary"
+                    (click)="agregarNino()" class="btn-agregar-nino">
+              <mat-icon>add</mat-icon> Agregar otro niño
+            </button>
+
+            <mat-divider></mat-divider>
+
+            <div class="form-row-btns">
+              <button mat-stroked-button type="button" (click)="volver()">
+                <mat-icon>arrow_back</mat-icon> Cancelar
+              </button>
+              <button mat-flat-button color="primary" type="submit"
+                      [disabled]="cargandoEnvio" class="btn-enviar">
+                @if(cargandoEnvio) {
+                  <mat-spinner diameter="20"></mat-spinner>
+                } @else {
+                  <mat-icon>send</mat-icon> Enviar solicitud
+                }
+              </button>
+            </div>
+
+          </form>
+        }
+
+      }
+
+      @if(vista === 'mis-ninios') {
+
+        <!-- Cargando -->
+        @if(cargandoNinios) {
+          <div class="loading-center">
+            <mat-spinner diameter="44"></mat-spinner>
+            <p>Cargando tus niños...</p>
+          </div>
+        }
+
+        @if(!cargandoNinios) {
+
+          @if(misNinios.length === 0) {
+            <mat-card appearance="outlined" class="empty-card">
+              <mat-card-content>
+                <mat-icon class="empty-icon">child_care</mat-icon>
+                <p>No tenés niños registrados aún.</p>
+              </mat-card-content>
+            </mat-card>
+          }
+
+          @if(misNinios.length > 0) {
+            <div class="section-label" style="margin-top:8px">NIÑOS REGISTRADOS</div>
+            <div class="insc-list">
+              @for(ninio of misNinios; track ninio.id) {
+                <mat-card class="insc-card" appearance="outlined">
+                  <mat-card-content>
+                    <div class="insc-header">
+                      <div class="insc-avatar" [class.has-photo]="ninio.fotoUrl">
+                        @if(ninio.fotoUrl){
+                          <img [src]="ninio.fotoUrl" alt="Foto">
+                        } @else {
+                          {{ (ninio.nombre || 'N')[0] }}{{ (ninio.apellido || '')[0] }}
+                        }
+                      </div>
+                      <div class="insc-info">
+                        <div class="insc-nombre">{{ ninio.nombre }} {{ ninio.apellido }}</div>
+                        <div class="insc-meta">
+                          <span><mat-icon>badge</mat-icon>CI {{ ninio.cedula }}</span>
+                          @if(ninio.fechaNacimiento) {
+                            <span><mat-icon>cake</mat-icon>{{ calcularEdad(ninio.fechaNacimiento) }}</span>
+                          }
+                          @if(ninio.grupoNombre) {
+                            <span><mat-icon>groups</mat-icon>{{ ninio.grupoNombre }}</span>
+                          }
+                        </div>
+                        @if(ninio.direccion) {
+                          <div class="insc-meta" style="margin-top:4px">
+                            <span><mat-icon>home</mat-icon>{{ ninio.direccion }}</span>
+                          </div>
+                        }
+                        @if(ninio.observaciones) {
+                          <div class="insc-meta" style="margin-top:4px">
+                            <span><mat-icon>notes</mat-icon>{{ ninio.observaciones }}</span>
+                          </div>
+                        }
+                      </div>
+                      <button mat-icon-button color="primary" (click)="abrirEdicion(ninio)"
+                              matTooltip="Editar datos">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+              }
+            </div>
+          }
+
+        }
+
+        <!-- ── Modal de edición ─────────────────────────────────────────── -->
+        @if(ninioEditando) {
+          <div class="modal-overlay" (click)="cerrarEdicion()">
+            <mat-card class="modal-card" appearance="outlined" (click)="$event.stopPropagation()">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>edit</mat-icon>
+                  Editar datos de {{ ninioEditando.nombre }}
+                </mat-card-title>
+                <button mat-icon-button (click)="cerrarEdicion()" style="margin-left:auto">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </mat-card-header>
+              <mat-card-content>
+                <p class="modal-nota">
+                  <mat-icon style="font-size:16px;vertical-align:middle">info_outline</mat-icon>
+                  Podés modificar la dirección, observaciones y condiciones médicas.
+                  El nombre, apellido y datos de grupo son gestionados por el centro.
+                </p>
+                @if(editForm) {
+                  <form [formGroup]="editForm" class="form-col" style="gap:12px">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Dirección</mat-label>
+                      <mat-icon matPrefix>home</mat-icon>
+                      <input matInput formControlName="direccion" placeholder="Ej: Av. 18 de Julio 1234">
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>Observaciones</mat-label>
+                      <mat-icon matPrefix>notes</mat-icon>
+                      <textarea matInput formControlName="observaciones" rows="2"
+                                placeholder="Ej: duerme siesta, come con asistencia..."></textarea>
+                    </mat-form-field>
+
+                    <!-- Condiciones médicas -->
+                    <div class="condiciones-section">
+                      <div class="condiciones-header">
+                        <span class="condiciones-titulo">
+                          <mat-icon>medical_services</mat-icon> Condiciones médicas
+                        </span>
+                        <button mat-stroked-button type="button" color="primary"
+                                (click)="agregarCondicionEdit()" class="btn-agregar-cond">
+                          <mat-icon>add</mat-icon> Agregar
+                        </button>
+                      </div>
+                      <div formArrayName="condicionesMedicas">
+                        @for(cond of condicionesEditArray.controls; track $index; let ci = $index) {
+                          <div [formGroupName]="ci" class="condicion-row">
+                            <mat-form-field appearance="outline" class="cond-field-main">
+                              <mat-label>Condición</mat-label>
+                              <input matInput formControlName="condicion" placeholder="Ej: Asma, alergia...">
+                              @if(cond.get('condicion')?.invalid && cond.get('condicion')?.touched){
+                                <mat-error>Requerido</mat-error>
+                              }
+                            </mat-form-field>
+                            <mat-form-field appearance="outline" class="cond-field-obs">
+                              <mat-label>Observación (opcional)</mat-label>
+                              <input matInput formControlName="observacion" placeholder="Medicación, dosis...">
+                            </mat-form-field>
+                            <div class="cond-cronica">
+                              <mat-checkbox formControlName="esCronica">Crónica</mat-checkbox>
+                            </div>
+                            <button mat-icon-button type="button" color="warn"
+                                    (click)="eliminarCondicionEdit(ci)" matTooltip="Eliminar condición">
+                              <mat-icon>remove_circle_outline</mat-icon>
+                            </button>
+                          </div>
+                        }
+                        @if(condicionesEditArray.length === 0){
+                          <p class="sin-condiciones">Sin condiciones médicas registradas</p>
+                        }
+                      </div>
+                    </div>
+                  </form>
+                }
+              </mat-card-content>
+              <mat-card-actions align="end" style="padding:16px">
+                <button mat-stroked-button (click)="cerrarEdicion()">Cancelar</button>
+                <button mat-flat-button color="primary" (click)="guardarEdicion()"
+                        [disabled]="guardandoEdicion" style="margin-left:8px">
+                  @if(guardandoEdicion) {
+                    <mat-spinner diameter="18" style="display:inline-block"></mat-spinner>
+                  } @else {
+                    <mat-icon>save</mat-icon> Guardar cambios
+                  }
+                </button>
+              </mat-card-actions>
+            </mat-card>
+          </div>
+        }
+
+      }
+
+    </div>
+</div>

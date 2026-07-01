@@ -1,0 +1,267 @@
+<div class="app-shell">
+  <div class="main-content">
+    <header class="topbar">
+      <div>
+        <h2 class="page-title">Gestión de Turnos</h2>
+        <p class="page-subtitle">Asignación y control de horarios del personal</p>
+      </div>
+      <button mat-flat-button class="btn-create" (click)="abrirCrear()">
+        <mat-icon>add_circle</mat-icon> Nuevo Turno
+      </button>
+    </header>
+
+    <div class="page-content">
+
+      <div class="summary-row">
+        <div class="chip-stat"><span class="chip-num">{{ turnos.length }}</span><span class="chip-lbl">Total visibles</span></div>
+        <div class="chip-stat active"><span class="chip-num">{{ totalActivos }}</span><span class="chip-lbl">Activos</span></div>
+      </div>
+
+      <div class="coverage-banner">
+        <mat-icon>info</mat-icon>
+        <span>El centro opera de <strong>7:00 a 19:00 hs</strong>. Los turnos deben garantizar cobertura completa en ese horario.</span>
+      </div>
+
+
+      <div class="card filters-card">
+        <div class="filters-row">
+          @if(esAdminOCoordinadora){
+          <mat-form-field appearance="outline" class="search-field">
+            <mat-label>Buscar por funcionario</mat-label>
+            <input matInput [(ngModel)]="busqueda" (ngModelChange)="aplicarFiltros()" placeholder="Nombre...">
+            <mat-icon matPrefix>search</mat-icon>
+          </mat-form-field>
+
+            <mat-form-field appearance="outline" class="filter-field">
+              <mat-label>Filtrar por funcionario</mat-label>
+              <mat-select [(ngModel)]="filtroFuncionarioId" (ngModelChange)="aplicarFiltros()">
+                <mat-option [value]="null">Todos</mat-option>
+                @for(f of funcionarios; track f.id){
+                  <mat-option [value]="f.id">{{ f.nombre }} {{ f.apellido }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          }
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Estado</mat-label>
+            <mat-select [(ngModel)]="filtroEstado" (ngModelChange)="aplicarFiltros()">
+              <mat-option value="todos">Todos</mat-option>
+              <mat-option value="activos">Activos</mat-option>
+              <mat-option value="inactivos">Inactivos</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <div class="vista-toggle">
+            <button type="button" [class.active]="vistaActual === 'semana'" (click)="vistaActual = 'semana'">
+              <mat-icon>calendar_view_week</mat-icon> Por día
+            </button>
+            <button type="button" [class.active]="vistaActual === 'tabla'" (click)="vistaActual = 'tabla'">
+              <mat-icon>table_rows</mat-icon> Tabla
+            </button>
+          </div>
+        </div>
+      </div>
+
+      @if(cargando){
+        <div class="loading-center">
+          <mat-spinner diameter="40"></mat-spinner>
+          <p>Cargando turnos...</p>
+        </div>
+      } @else {
+
+        @if(vistaActual === 'semana'){
+          <div class="semana-grid">
+            @for(dia of diasSemana; track dia.valor){
+              <div class="dia-col" [class.dia-col-vacio]="turnosPorDia(dia.valor).length === 0">
+                <div class="dia-header">
+                  <span class="dia-nombre">{{ dia.etiqueta }}</span>
+                  <span class="dia-count" [class.count-cero]="turnosPorDia(dia.valor).length === 0">
+                    {{ turnosPorDia(dia.valor).length }}
+                  </span>
+                </div>
+
+                <div class="dia-turnos">
+                  @if(turnosPorDia(dia.valor).length === 0){
+                    <div class="turno-vacio">
+                      <mat-icon>event_busy</mat-icon>
+                      <span>Sin turnos</span>
+                    </div>
+                  }
+                  @for(t of turnosPorDia(dia.valor); track t.id){
+                    <div class="turno-item" [class.turno-inactivo]="!t.activo">
+                      <div class="turno-func">
+                        <div class="func-avatar-sm" [class.has-photo]="getFuncionarioFoto(t)">
+                          @if(getFuncionarioFoto(t)){
+                            <img [src]="getFuncionarioFoto(t)" alt="Foto de perfil">
+                          } @else {
+                            {{ getFuncionarioIniciales(t) }}
+                          }
+                        </div>
+                        <span class="func-nombre-sm">{{ t.funcionarioNombre ?? '—' }}</span>
+                        @if(!t.activo){
+                          <span class="badge-inactivo-sm">Baja</span>
+                        }
+                        @if(!esAdminOCoordinadora && t.funcionarioId !== funcionarioIdPropio){
+                          <span class="badge-coordinacion">Coord.</span>
+                        }
+                      </div>
+                      <div class="turno-horario">
+                        <mat-icon class="h-icon">access_time</mat-icon>
+                        <span class="hora-entrada">{{ t.horaInicio }}</span>
+                        <span class="hora-sep">–</span>
+                        <span class="hora-salida">{{ t.horaFin }}</span>
+                        <span class="duracion-sm">{{ calcularDuracion(t.horaInicio, t.horaFin) }}</span>
+                      </div>
+                      <div class="turno-item-acciones">
+                        @if(puedeGestionar(t)){
+                          <button mat-icon-button matTooltip="Editar" (click)="abrirEditar(t)" [disabled]="!t.activo">
+                            <mat-icon class="icon-edit">edit</mat-icon>
+                          </button>
+                          @if(t.activo){
+                            <button mat-icon-button matTooltip="Dar de baja" (click)="darDeBaja(t)">
+                              <mat-icon class="icon-baja">cancel</mat-icon>
+                            </button>
+                          }
+                        }
+                        @if(!t.activo && puedeReactivar(t)){
+                          <button mat-icon-button matTooltip="Dar de alta" (click)="reactivar(t)">
+                            <mat-icon class="icon-alta">check_circle</mat-icon>
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          @if(filtrados.length === 0){
+            <div class="empty-state">
+              <mat-icon>schedule</mat-icon>
+              <p>No hay turnos registrados aún</p>
+              <button mat-flat-button class="btn-create" (click)="abrirCrear()">Crear primer turno</button>
+            </div>
+          }
+        }
+
+        @if(vistaActual === 'tabla'){
+          <div class="card table-card">
+            <table mat-table [dataSource]="pagina" class="mat-elevation-z0">
+
+              <ng-container matColumnDef="funcionario">
+                <th mat-header-cell *matHeaderCellDef>Funcionario</th>
+                <td mat-cell *matCellDef="let t">
+                  <div class="user-cell">
+                    <div class="avatar-sm" [class.has-photo]="getFuncionarioFoto(t)">
+                      @if(getFuncionarioFoto(t)){
+                        <img [src]="getFuncionarioFoto(t)" alt="Foto de perfil">
+                      } @else {
+                        {{ getFuncionarioIniciales(t) }}
+                      }
+                    </div>
+                    <div>
+                      <span class="func-name">{{ t.funcionarioNombre ?? '—' }}</span>
+                      @if(!esAdminOCoordinadora && t.funcionarioId !== funcionarioIdPropio){
+                        <span class="badge-coordinacion-table">Coordinación</span>
+                      }
+                    </div>
+                  </div>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="dias">
+                <th mat-header-cell *matHeaderCellDef>Días</th>
+                <td mat-cell *matCellDef="let t">
+                  <div class="dias-chips">
+                    @if(t.dias?.length){
+                      @for(d of ordenarDias(t.dias); track d){
+                        <span class="dia-badge">{{ getDiaLabel(d) }}</span>
+                      }
+                    } @else {
+                      <span class="sin-dias">Sin días</span>
+                    }
+                  </div>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="horaInicio">
+                <th mat-header-cell *matHeaderCellDef>Entrada</th>
+                <td mat-cell *matCellDef="let t">
+                  <span class="hora-chip entrada"><mat-icon>access_time</mat-icon> {{ t.horaInicio }}</span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="horaFin">
+                <th mat-header-cell *matHeaderCellDef>Salida</th>
+                <td mat-cell *matCellDef="let t">
+                  <span class="hora-chip salida"><mat-icon>access_time</mat-icon> {{ t.horaFin }}</span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="duracion">
+                <th mat-header-cell *matHeaderCellDef>Duración</th>
+                <td mat-cell *matCellDef="let t">
+                  <span class="duracion-chip">{{ calcularDuracion(t.horaInicio, t.horaFin) }}</span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="estado">
+                <th mat-header-cell *matHeaderCellDef>Estado</th>
+                <td mat-cell *matCellDef="let t">
+                  <span class="badge" [class.badge-success]="t.activo" [class.badge-danger]="!t.activo">
+                    {{ t.activo ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="acciones">
+                <th mat-header-cell *matHeaderCellDef>Acciones</th>
+                <td mat-cell *matCellDef="let t">
+                  <div class="acciones-row">
+                    @if(puedeGestionar(t)){
+                      <button mat-icon-button matTooltip="Editar" (click)="abrirEditar(t)" [disabled]="!t.activo">
+                        <mat-icon class="icon-edit">edit</mat-icon>
+                      </button>
+                      @if(t.activo){
+                        <button mat-icon-button matTooltip="Dar de baja" (click)="darDeBaja(t)">
+                          <mat-icon class="icon-baja">cancel</mat-icon>
+                        </button>
+                      }
+                    }
+                    @if(!t.activo && puedeReactivar(t)){
+                      <button mat-icon-button matTooltip="Dar de alta" (click)="reactivar(t)">
+                        <mat-icon class="icon-alta">check_circle</mat-icon>
+                      </button>
+                    }
+                  </div>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+              <tr mat-row *matRowDef="let row; columns: columnas;" [class.row-inactive]="!row.activo"></tr>
+            </table>
+
+            @if(filtrados.length === 0){
+              <div class="empty-state">
+                <mat-icon>schedule</mat-icon>
+                <p>No hay turnos registrados aún</p>
+                <button mat-flat-button class="btn-create" (click)="abrirCrear()">Crear primer turno</button>
+              </div>
+            }
+
+            <mat-paginator
+              [length]="filtrados.length"
+              [pageSize]="pageSize"
+              [pageSizeOptions]="[5, 10, 25]"
+              (page)="onPage($event)"
+              aria-label="Seleccionar página de turnos">
+            </mat-paginator>
+          </div>
+        }
+
+      }
+    </div>
+  </div>
+</div>

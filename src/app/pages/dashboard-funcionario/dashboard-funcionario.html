@@ -1,0 +1,163 @@
+<div class="app-shell">
+  <div class="main-content">
+
+    <!-- ── Toolbar ─────────────────────────────────────────────────────── -->
+    <mat-toolbar color="primary" style="justify-content:space-between;flex-shrink:0">
+      <span>{{ saludoHora }}, {{ nombre.split(' ')[0] }}</span>
+      <mat-chip-set>
+        <mat-chip>
+          <mat-icon matChipAvatar>badge</mat-icon>
+          {{ rolDisplay }}
+        </mat-chip>
+      </mat-chip-set>
+    </mat-toolbar>
+
+    <div class="page-content">
+
+      @if(cargando){
+        <div class="loading-center">
+          <mat-spinner diameter="48"></mat-spinner>
+          <p>Cargando información...</p>
+        </div>
+      }
+
+      @if(!cargando){
+
+        <!-- ── Fecha ──────────────────────────────────────────────────── -->
+        <p class="fecha-label">{{ fechaFormateada }}</p>
+
+        <!-- ── PANEL SOLICITUDES PENDIENTES ──────────────────────────── -->
+        @if(puedeGestionarInscripciones){
+          <div class="solicitudes-panel">
+            <div class="solicitudes-header">
+              <div class="solicitudes-titulo">
+                <mat-icon class="sol-icon">pending_actions</mat-icon>
+                <span>Solicitudes de inscripción pendientes</span>
+                @if(solicitudesPendientes.length > 0){
+                  <span class="badge-pendiente">{{ solicitudesPendientes.length }}</span>
+                }
+              </div>
+              <button mat-icon-button (click)="cargarSolicitudesPendientes()"
+                      matTooltip="Actualizar" [disabled]="cargandoSolicitudes">
+                <mat-icon>refresh</mat-icon>
+              </button>
+            </div>
+
+            @if(cargandoSolicitudes){
+              <div class="sol-loading">
+                <mat-spinner diameter="28"></mat-spinner>
+                <span>Cargando solicitudes...</span>
+              </div>
+            }
+
+            @if(!cargandoSolicitudes && solicitudesPendientes.length === 0){
+              <div class="sol-empty">
+                <mat-icon>check_circle_outline</mat-icon>
+                <span>No hay solicitudes pendientes</span>
+              </div>
+            }
+
+            @if(!cargandoSolicitudes && solicitudesPendientes.length > 0){
+              <div class="sol-list">
+                @for(sol of solicitudesPendientes; track sol.id){
+                  <div class="sol-item">
+                    <div class="sol-avatar">
+                      {{ (sol.ninioNombre || 'N')[0] }}{{ (sol.ninioApellido || '')[0] }}
+                    </div>
+                    <div class="sol-info">
+                      <span class="sol-nombre">{{ sol.ninioNombre }} {{ sol.ninioApellido }}</span>
+                      <span class="sol-sub">
+                        CI {{ sol.ninioCedula }} ·
+                        {{ calcularEdadTexto(sol.ninioFechaNacimiento) }} ·
+                        Resp: {{ sol.responsableNombre || '(sin datos)' }}
+                        @if(sol.condicionesMedicas?.length){
+                          · <mat-icon style="font-size:13px;vertical-align:middle;color:#E65100">medical_services</mat-icon>
+                          {{ sol.condicionesMedicas!.length }} condición(es)
+                        }
+                      </span>
+                      <span class="sol-fecha">
+                        Solicitado: {{ sol.fechaInscripcion | date:'dd/MM/yyyy' }}
+                      </span>
+                    </div>
+                    <button mat-flat-button color="primary" class="btn-alta"
+                            (click)="abrirDarDeAlta(sol)">
+                      <mat-icon>how_to_reg</mat-icon>
+                      <span class="btn-alta-txt">Dar de alta</span>
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <!-- ── Banner de rol ─────────────────────────────────────────── -->
+        <div class="rol-banner"
+             [style.background]="rolConfig.bannerBg"
+             [style.border-left]="'5px solid ' + rolConfig.bannerColor">
+          <div class="rol-banner-icon" [style.color]="rolConfig.bannerColor">
+            <mat-icon>{{ rolConfig.bannerIcon }}</mat-icon>
+          </div>
+          <div>
+            <div class="rol-banner-nombre" [style.color]="rolConfig.bannerColor">{{ rolDisplay }}</div>
+            <div class="rol-banner-desc">{{ rolConfig.bannerDesc }}</div>
+          </div>
+        </div>
+
+        <!-- ── Stats (solo si no es auxiliar) ───────────────────────── -->
+        @if(!esAuxiliar && stats){
+          <div class="stat-grid">
+            @for(card of statCards; track card.label){
+              <mat-card appearance="outlined" class="stat-card">
+                <mat-card-content>
+                  <div class="stat-icon-wrap" [style.background]="card.bg" [style.color]="card.color">
+                    <mat-icon>{{ card.icon }}</mat-icon>
+                  </div>
+                  <div>
+                    <div class="stat-value">{{ card.value }}</div>
+                    <div class="stat-label">{{ card.label }}</div>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+            }
+          </div>
+        }
+
+        <!-- ── Acciones rápidas ──────────────────────────────────────── -->
+        <p class="section-label">Acciones rápidas</p>
+        <div class="actions-grid">
+          @for(acc of rolConfig.acciones; track acc.route){
+            <mat-card appearance="outlined" class="action-card" [routerLink]="acc.route">
+              <mat-card-content>
+                <div class="action-icon" [style.background]="acc.bg" [style.color]="acc.color">
+                  <mat-icon>{{ acc.icon }}</mat-icon>
+                </div>
+                <div class="action-text">
+                  <div class="action-titulo">{{ acc.label }}</div>
+                  <div class="action-desc">{{ acc.desc }}</div>
+                </div>
+                <mat-icon class="action-arrow" [style.color]="acc.color">chevron_right</mat-icon>
+              </mat-card-content>
+            </mat-card>
+          }
+        </div>
+
+        <!-- ── Info del rol ──────────────────────────────────────────── -->
+        @if(rolConfig.infoItems.length > 0){
+          <p class="section-label">Información del puesto</p>
+          <mat-card appearance="outlined" class="info-card">
+            <mat-card-content>
+              @for(item of rolConfig.infoItems; track item.text){
+                <div class="info-row">
+                  <mat-icon [style.color]="item.color">{{ item.icon }}</mat-icon>
+                  <span>{{ item.text }}</span>
+                </div>
+              }
+            </mat-card-content>
+          </mat-card>
+        }
+
+      }
+    </div>
+  </div>
+</div>

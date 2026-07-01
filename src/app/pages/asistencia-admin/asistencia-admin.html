@@ -1,0 +1,306 @@
+<mat-toolbar class="toolbar">
+  <span>Asistencia del Personal</span>
+</mat-toolbar>
+
+<div class="page-content">
+
+  <!-- Filtros -->
+  <div class="filtros-panel">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Desde</mat-label>
+      <input matInput [matDatepicker]="pickerDesde" [(ngModel)]="fechaDesde">
+      <mat-datepicker-toggle matIconSuffix [for]="pickerDesde"></mat-datepicker-toggle>
+      <mat-datepicker #pickerDesde></mat-datepicker>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Hasta</mat-label>
+      <input matInput [matDatepicker]="pickerHasta" [(ngModel)]="fechaHasta">
+      <mat-datepicker-toggle matIconSuffix [for]="pickerHasta"></mat-datepicker-toggle>
+      <mat-datepicker #pickerHasta></mat-datepicker>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Funcionario</mat-label>
+      <mat-select [(ngModel)]="funcionarioSeleccionadoId">
+        <mat-option [value]="null">Todos</mat-option>
+        @for(f of funcionarios; track f.id){
+          <mat-option [value]="f.id">{{ f.nombre }} {{ f.apellido }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    @if(vista === 'asistencias'){
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Estado entrada</mat-label>
+        <mat-select [(ngModel)]="filtroEstado">
+          <mat-option value="">Todos</mat-option>
+          <mat-option value="EN_HORARIO">En horario</mat-option>
+          <mat-option value="TARDE">Tarde</mat-option>
+          <mat-option value="TEMPRANO">Temprano</mat-option>
+          <mat-option value="SIN_TURNO_ASIGNADO">Sin turno</mat-option>
+        </mat-select>
+      </mat-form-field>
+    }
+
+    <button mat-flat-button class="btn-buscar" (click)="buscar()" [disabled]="cargando">
+      @if(cargando){ <mat-spinner diameter="18" color="accent"></mat-spinner> }
+      @else { <mat-icon>search</mat-icon> Consultar }
+    </button>
+  </div>
+
+  <!-- Resumen chips -->
+  @if(!cargando){
+    <div class="resumen-row">
+      <div class="resumen-chip">
+        <mat-icon style="color:#1565C0">how_to_reg</mat-icon>
+        <div class="chip-info">
+          <span class="chip-label">Registros</span>
+          <span class="chip-value">{{ totalRegistros }}</span>
+        </div>
+      </div>
+      <div class="resumen-chip">
+        <mat-icon style="color:#2E7D32">groups</mat-icon>
+        <div class="chip-info">
+          <span class="chip-label">Funcionarios</span>
+          <span class="chip-value">{{ funcionariosConAsistencia }}</span>
+        </div>
+      </div>
+      <div class="resumen-chip">
+        <mat-icon style="color:#E65100">schedule</mat-icon>
+        <div class="chip-info">
+          <span class="chip-label">Tardanzas</span>
+          <span class="chip-value">{{ totalTardanzas }}</span>
+        </div>
+      </div>
+      <div class="resumen-chip">
+        <mat-icon style="color:#757575">event_busy</mat-icon>
+        <div class="chip-info">
+          <span class="chip-label">Sin turno asignado</span>
+          <span class="chip-value">{{ totalSinTurno }}</span>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Tabs -->
+  <div class="tabs-row">
+    <button class="tab-btn" [class.active]="vista === 'asistencias'" (click)="vista = 'asistencias'">
+      <mat-icon>table_rows</mat-icon>
+      Registros de asistencia
+    </button>
+    <button class="tab-btn" [class.active]="vista === 'carga-horaria'" (click)="vista = 'carga-horaria'">
+      <mat-icon>bar_chart</mat-icon>
+      Carga horaria
+    </button>
+  </div>
+
+  <!-- ── Vista: Registros de asistencia ── -->
+  @if(vista === 'asistencias'){
+    @if(cargando){
+      <div class="loading-wrap">
+        <mat-spinner diameter="36"></mat-spinner>
+        <span>Cargando asistencias...</span>
+      </div>
+    } @else if(asistenciasFiltradas.length === 0){
+      <div class="empty-wrap">
+        <mat-icon class="empty-icon">how_to_reg</mat-icon>
+        <p>No se encontraron registros para el período seleccionado</p>
+      </div>
+    } @else {
+      <div class="tabla-wrap">
+        <div class="tabla-header">
+          <p class="tabla-title">Registros de asistencia</p>
+          <span class="tabla-count">{{ asistenciasFiltradas.length }} registro{{ asistenciasFiltradas.length !== 1 ? 's' : '' }}</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Funcionario</th>
+              <th>Fecha</th>
+              <th>Entrada</th>
+              <th>Estado entrada</th>
+              <th>Salida</th>
+              <th>Estado salida</th>
+              <th>Observaciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for(a of asistenciasFiltradas; track a.id){
+              <tr>
+                <td>
+                  <div class="func-cell">
+                    <div class="func-avatar" [class.has-photo]="getFuncionarioFoto(a.funcionarioId)">
+                      @if(getFuncionarioFoto(a.funcionarioId)){
+                        <img [src]="getFuncionarioFoto(a.funcionarioId)" alt="Foto de perfil">
+                      } @else {
+                        {{ getAsistenciaIniciales(a) }}
+                      }
+                    </div>
+                    <div>
+                      <div class="func-nombre">{{ a.funcionarioNombre }}</div>
+                      @if(a.funcionarioCedula){
+                        <div class="func-rol">CI: {{ a.funcionarioCedula }}</div>
+                      }
+                    </div>
+                  </div>
+                </td>
+                <td>{{ formatFecha(a.fecha) }}</td>
+                <td>
+                  <span class="hora-val">{{ formatHora(a.horaEntrada) }}</span>
+                </td>
+                <td>
+                  <span class="estado-pill" [ngClass]="estadoClass(a.estadoEntrada)">
+                    {{ estadoLabel(a.estadoEntrada) }}
+                  </span>
+                </td>
+                <td>
+                  <span class="hora-val" [class.muted]="!a.horaSalida">
+                    {{ formatHora(a.horaSalida) }}
+                  </span>
+                </td>
+                <td>
+                  @if(a.horaSalida){
+                    <span class="estado-pill" [ngClass]="estadoClass(a.estadoSalida)">
+                      {{ estadoLabel(a.estadoSalida) }}
+                    </span>
+                  } @else {
+                    <span class="estado-pill estado-sin">Sin registrar</span>
+                  }
+                </td>
+                <td>
+                  <span [class.muted]="!a.observaciones" style="font-size:12px;color:#5C6680">
+                    {{ a.observaciones || '—' }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+
+  <!-- ── Vista: Carga horaria ── -->
+  @if(vista === 'carga-horaria'){
+    @if(cargando){
+      <div class="loading-wrap">
+        <mat-spinner diameter="36"></mat-spinner>
+        <span>Calculando carga horaria...</span>
+      </div>
+    } @else if(cargaHorariaFiltrada.length === 0){
+      <div class="empty-wrap">
+        <mat-icon class="empty-icon">bar_chart</mat-icon>
+        <p>No hay datos de carga horaria</p>
+      </div>
+    } @else {
+      <div class="horaria-grid">
+        @for(item of cargaHorariaFiltrada; track item.funcionario.id){
+          <div class="horaria-card">
+            <div class="horaria-card-header">
+              <div class="horaria-avatar" [class.has-photo]="item.funcionario.fotoPerfil">
+                @if(item.funcionario.fotoPerfil){
+                  <img [src]="item.funcionario.fotoPerfil" alt="Foto de perfil">
+                } @else {
+                  {{ initials(item.funcionario) }}
+                }
+              </div>
+              <div>
+                <div class="horaria-nombre">{{ item.funcionario.nombre }} {{ item.funcionario.apellido }}</div>
+                <div class="horaria-rol">{{ ROL_DISPLAY[item.funcionario.rol?.nombre ?? ''] ?? item.funcionario.rol?.nombre }}</div>
+              </div>
+            </div>
+            <div class="horaria-body">
+
+              <!-- Turno asignado -->
+              @if(item.turnos.length === 0){
+                <div class="horaria-row">
+                  <span class="horaria-key">
+                    <mat-icon>schedule</mat-icon>
+                    Turno
+                  </span>
+                  <span class="horaria-val" style="color:#9AA0B9;font-weight:400">Sin turno asignado</span>
+                </div>
+              } @else {
+                @for(t of item.turnos; track t.id){
+                  <div class="horaria-row">
+                    <span class="horaria-key">
+                      <mat-icon>schedule</mat-icon>
+                      Turno
+                    </span>
+                    <span class="horaria-val">{{ formatHora(t.horaInicio) }} – {{ formatHora(t.horaFin) }}</span>
+                  </div>
+                  <div class="horaria-row">
+                    <span class="horaria-key">
+                      <mat-icon>calendar_today</mat-icon>
+                      Días
+                    </span>
+                    <div class="dias-wrap">
+                      @for(d of item.diasAsignados; track d){
+                        <span class="turno-dia-tag">{{ d }}</span>
+                      }
+                    </div>
+                  </div>
+                }
+                <div class="horaria-row">
+                  <span class="horaria-key">
+                    <mat-icon>timer</mat-icon>
+                    Hs. semanales asignadas
+                  </span>
+                  <span class="horaria-val">{{ redondear(item.horasSemanalesAsignadas) }}</span>
+                </div>
+              }
+
+              <hr style="border:none;border-top:1px solid #F0F2F7;margin:4px 0">
+
+              <!-- Período consultado -->
+              <div class="horaria-row">
+                <span class="horaria-key">
+                  <mat-icon>event_available</mat-icon>
+                  Días asistidos
+                </span>
+                <span class="horaria-val" style="color:#2E7D32">{{ item.diasAsistidos }}</span>
+              </div>
+              <div class="horaria-row">
+                <span class="horaria-key">
+                  <mat-icon>event_busy</mat-icon>
+                  Ausencias estimadas
+                </span>
+                <span class="horaria-val" [style.color]="item.diasAusentes > 0 ? '#C62828' : '#2E7D32'">
+                  {{ item.diasAusentes }}
+                </span>
+              </div>
+              <div class="horaria-row">
+                <span class="horaria-key">
+                  <mat-icon>access_time</mat-icon>
+                  Hs. efectivas
+                </span>
+                <span class="horaria-val">{{ redondear(item.horasEfectivas) }}</span>
+              </div>
+
+              <!-- Barra de cumplimiento -->
+              @if(item.turnos.length > 0){
+                <div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                    <span class="horaria-key" style="font-size:11px">Cumplimiento del período</span>
+                    <span class="prog-pct" [class.sobre]="item.pctCumplimiento > 100">
+                      {{ item.pctCumplimiento }}%
+                    </span>
+                  </div>
+                  <div class="prog-bar-wrap">
+                    <div class="prog-bar"
+                         [class.sobre]="item.pctCumplimiento > 100"
+                         [style.width.%]="item.pctCumplimiento > 100 ? 100 : item.pctCumplimiento">
+                    </div>
+                  </div>
+                </div>
+              }
+
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+
+</div>

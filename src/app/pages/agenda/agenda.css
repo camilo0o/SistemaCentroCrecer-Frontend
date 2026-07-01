@@ -1,0 +1,79 @@
+.app-shell    { display:flex; height:100vh; background:#F4F6FB; overflow:hidden; }
+.main-content { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+.page-content { flex:1; overflow-y:auto; padding:24px; display:flex; flex-direction:column; gap:16px; }
+
+.topbar         { background:white; padding:16px 24px; border-bottom:1px solid #E0E4EC; display:flex; align-items:center; justify-content:space-between; box-shadow:0 2px 8px rgba(21,101,192,0.06); }
+.page-title     { font-family:'Poppins',sans-serif; font-size:22px; font-weight:700; color:#1A1A2E; margin:0; }
+.page-subtitle  { font-size:13px; color:#5C6680; margin:2px 0 0; }
+.btn-create     { background:#1565C0 !important; color:white !important; border-radius:10px !important; font-weight:600 !important; gap:6px; }
+.btn-create mat-icon { font-size:18px; width:18px; height:18px; }
+
+.card { background:white; border-radius:12px; border:1px solid #E0E4EC; box-shadow:0 2px 8px rgba(21,101,192,0.04); }
+
+.summary-row { display:flex; gap:12px; flex-wrap:wrap; }
+.chip-stat   { display:flex; align-items:center; gap:8px; background:white; border:1px solid #E0E4EC; border-radius:10px; padding:10px 18px; }
+.chip-stat.activa   { border-color:#C8E6C9; background:#F1F8F1; }
+.chip-stat.inactiva { border-color:#FFCDD2; background:#FFF5F5; }
+.chip-num    { font-family:'Poppins',sans-serif; font-size:20px; font-weight:700; color:#1A1A2E; }
+.chip-lbl    { font-size:12px; color:#5C6680; font-weight:600; }
+
+.filters-card { padding:16px 20px; }
+.filters-row  { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+.search-field { flex:2; min-width:200px; }
+.filter-field { flex:1; min-width:140px; }
+
+.table-card { overflow:hidden; }
+
+table { width:100%; }
+
+th.mat-header-cell {
+  font-family:'Poppins',sans-serif;
+  font-size:12px;
+  font-weight:700;
+  color:#5C6680;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  background:#FAFBFF;
+  border-bottom:1px solid #E0E4EC;
+  padding:14px 16px;
+}
+
+td.mat-cell {
+  padding:14px 16px;
+  border-bottom:1px solid #F4F6FB;
+  font-size:14px;
+  color:#1A1A2E;
+  vertical-align:middle;
+}
+
+tr.mat-row:hover td { background:#F8FAFF; }
+tr.row-inactive td  { opacity:0.5; }
+
+.desc-cell { display:flex; align-items:center; gap:10px; }
+.desc-icon { width:34px; height:34px; border-radius:8px; background:#E3F2FD; color:#1565C0; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.desc-icon mat-icon { font-size:18px; width:18px; height:18px; }
+.desc-text { font-size:13px; color:#374151; line-height:1.4; }
+
+.tipo-badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; background:#EDE7F6; color:#512DA8; }
+
+.fecha-chip, .hora-chip { display:inline-flex; align-items:center; gap:4px; font-size:13px; color:#374151; }
+.fecha-chip mat-icon, .hora-chip mat-icon { font-size:14px; width:14px; height:14px; color:#5C6680; }
+
+.estado-badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; }
+.estado-badge.activo   { background:#E8F5E9; color:#2E7D32; }
+.estado-badge.inactivo { background:#FFEBEE; color:#C62828; }
+
+.acciones-row { display:flex; gap:2px; }
+.icon-edit  { color:#1565C0; }
+.icon-baja  { color:#C62828; }
+.icon-alta  { color:#2E7D32; }
+
+.loading-center { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px; gap:16px; color:#5C6680; }
+.empty-state    { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px; color:#9AA0B9; gap:12px; }
+.empty-state mat-icon { font-size:48px; width:48px; height:48px; }
+
+::ng-deep .dialog-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #E0E4EC; }
+::ng-deep .dialog-title  { font-family:'Poppins',sans-serif; font-size:18px; font-weight:700; color:#1A1A2E; margin:0; }
+::ng-deep .dialog-actions{ display:flex; justify-content:flex-end; gap:8px; padding:16px 20px; border-top:1px solid #E0E4EC; }
+
+.icon-detalles { color:#512DA8; }

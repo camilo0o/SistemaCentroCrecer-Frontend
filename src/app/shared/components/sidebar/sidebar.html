@@ -1,0 +1,116 @@
+<aside class="sidebar" (click)="cerrarPanel()">
+
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-icon">
+      <mat-icon>spa</mat-icon>
+    </div>
+    <div class="sidebar-logo-text">
+      <div class="name">Centro Crecer</div>
+      <div class="sub">Sistema de Gestión</div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+
+    <div class="sidebar-section-label">NAVEGACIÓN</div>
+
+    @for (item of navItems; track item.route) {
+      <a
+        class="sidebar-item"
+        [class.active]="isActive(item.route)"
+        [routerLink]="item.route"
+      >
+        <mat-icon>{{ item.icon }}</mat-icon>
+        <span>{{ item.label }}</span>
+      </a>
+    }
+
+  </nav>
+
+  <!-- Campana de notificaciones (solo funcionarios) -->
+  @if (esFuncionario) {
+    <div class="notif-wrapper" (click)="$event.stopPropagation()">
+
+      <button class="notif-bell-btn" (click)="togglePanel()" matTooltip="Notificaciones">
+        <mat-icon [matBadge]="noLeidas > 0 ? noLeidas : null"
+                  matBadgeColor="warn"
+                  matBadgeSize="small">
+          notifications
+        </mat-icon>
+        <span>Notificaciones</span>
+        @if (noLeidas > 0) {
+          <span class="bell-badge">{{ noLeidas }}</span>
+        }
+      </button>
+
+      @if (panelAbierto) {
+        <div class="notif-panel">
+
+          <!-- Header -->
+          <div class="notif-panel-header">
+            <span>Notificaciones</span>
+            @if (seleccionadas.size > 0) {
+              <button class="mark-selected-btn" (click)="marcarSeleccionadas()">
+                Marcar leídas ({{ seleccionadas.size }})
+              </button>
+            } @else if (noLeidas > 0) {
+              <button class="mark-all-btn" (click)="marcarTodas()">Marcar todas como leídas</button>
+            }
+          </div>
+
+          <!-- Lista solo con no leídas -->
+          @if (noLeidas === 0) {
+            <div class="notif-empty">No tenés notificaciones sin leer</div>
+          }
+
+          @for (n of notificaciones; track n.id) {
+            @if (!n.leida) {
+              <div class="notif-item no-leida" [class.seleccionada]="seleccionadas.has(n.id)">
+                <mat-icon class="notif-icon">visibility</mat-icon>
+                <div class="notif-content">
+                  <div class="notif-msg">{{ n.mensaje }}</div>
+                  <div class="notif-fecha">{{ formatFecha(n.fechaCreacion) }}</div>
+                </div>
+                <input
+                  type="checkbox"
+                  class="notif-check"
+                  [checked]="seleccionadas.has(n.id)"
+                  title="Marcar como leída"
+                  (change)="toggleSeleccion(n.id)"
+                  (click)="$event.stopPropagation()"
+                />
+              </div>
+            }
+          }
+
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Footer -->
+  <div class="sidebar-footer">
+
+    <a class="user-info-sidebar" routerLink="/perfil" matTooltip="Ver mi perfil">
+      <div class="user-avatar">
+        @if (fotoPerfil) {
+          <img [src]="fotoPerfil" alt="Avatar" class="user-avatar-img" />
+        } @else {
+          {{ initials }}
+        }
+      </div>
+      <div class="user-details">
+        <div class="user-name">{{ nombre }}</div>
+        <div class="user-role">{{ rolDisplay }}</div>
+      </div>
+      <mat-icon class="user-chevron">chevron_right</mat-icon>
+    </a>
+
+    <button class="sidebar-item logout-button" (click)="logout()">
+      <mat-icon>logout</mat-icon>
+      <span>Cerrar sesión</span>
+    </button>
+
+  </div>
+
+</aside>

@@ -1,147 +1,200 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import {
+  ReactiveFormsModule, FormBuilder, FormGroup, FormArray,
+  Validators, AbstractControl
+} from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../environments/environment';
+import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatSelectModule } from '@angular/material/select';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatStepperModule } from '@angular/material/stepper';
+import { ToastService } from '../../services/toast.service';
+import {
+  InscripcionService,
+  NinioSolicitudRequest
+} from '../../services/inscripcion.service';
 
 @Component({
   selector: 'app-registro',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [
+    CommonModule, ReactiveFormsModule, RouterModule,
+    MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule,
+    MatIconModule, MatSelectModule, MatProgressSpinnerModule,
+    MatDatepickerModule, MatNativeDateModule, MatDividerModule,
+    MatCheckboxModule, MatTooltipModule, MatStepperModule
+  ],
   templateUrl: './registro.component.html',
   styleUrl: './registro.component.css',
 })
 export class RegistroComponent {
-  readonly Math = Math;
-
-  tipoUsuario: 'funcionario' | 'responsable' = 'funcionario';
-  paso = 1; // 1: tipo, 2: datos, 3: éxito
-
-  // Campos comunes
-  cedula = '';
-  nombre = '';
-  apellido = '';
-  email = '';
-  telefono = '';
-  contrasenia = '';
-  confirmarContrasenia = '';
-  fechaNacimiento = '';
-
-  // Solo funcionario
-  rolId: number | null = null;
-
-  mostrarPassword = false;
-  mostrarConfirmar = false;
+  paso = 1; // 1 = datos responsable, 2 = datos niños
   cargando = false;
-  error = '';
+  exito = false;
+  mostrarPass = false;
 
-  // Roles disponibles (id real según BD)
-  roles = [
-    { id: 1, nombre: 'Coordinador' },
-    { id: 2, nombre: 'Educador' },
-    { id: 3, nombre: 'Auxiliar' },
-  ];
+  responsableForm: FormGroup;
+  niniosForm: FormGroup;
 
-  private apiUrl = environment.apiUrl;
+  constructor(
+    private fb: FormBuilder,
+    private router: Router,
+    private toast: ToastService,
+    private inscripcionService: InscripcionService,
+    private cdr: ChangeDetectorRef
+  ) {
+    this.responsableForm = this.fb.group({
+      nombre:          ['', [Validators.required, Validators.minLength(2)]],
+      apellido:        ['', [Validators.required, Validators.minLength(2)]],
+      cedula:          ['', [Validators.required, Validators.pattern('^[0-9]+$')]],
+      email:           ['', [Validators.required, Validators.email]],
+      telefono:        [''],
+      fechaNacimiento: [''],
+      contrasenia:     ['', [Validators.required, Validators.minLength(10)]],
+    });
 
-  constructor(private http: HttpClient, private router: Router) {}
-
-  seleccionarTipo(tipo: 'funcionario' | 'responsable') {
-    this.tipoUsuario = tipo;
-    this.error = '';
-  }
-
-  irAlFormulario() {
-    this.paso = 2;
-    this.error = '';
-  }
-
-  togglePassword() { this.mostrarPassword = !this.mostrarPassword; }
-  toggleConfirmar() { this.mostrarConfirmar = !this.mostrarConfirmar; }
-
-  validar(): boolean {
-    if (!this.cedula || !this.nombre || !this.apellido || !this.email || !this.contrasenia) {
-      this.error = 'Completá todos los campos obligatorios.';
-      return false;
-    }
-    if (!/^[0-9]+$/.test(this.cedula)) {
-      this.error = 'La cédula solo debe contener números.';
-      return false;
-    }
-    if (this.cedula.length > 8) {
-      this.error = 'La cédula no puede superar 8 dígitos.';
-      return false;
-    }
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(this.email)) {
-      this.error = 'El correo electrónico no tiene un formato válido.';
-      return false;
-    }
-    if (this.contrasenia.length < 10) {
-      this.error = 'La contraseña debe tener al menos 10 caracteres.';
-      return false;
-    }
-    if (this.contrasenia !== this.confirmarContrasenia) {
-      this.error = 'Las contraseñas no coinciden.';
-      return false;
-    }
-    if (this.tipoUsuario === 'funcionario' && !this.rolId) {
-      this.error = 'Seleccioná un rol para el funcionario.';
-      return false;
-    }
-    return true;
-  }
-
-  registrar() {
-    this.error = '';
-    if (!this.validar()) return;
-
-    this.cargando = true;
-
-    const endpointMap = {
-      funcionario: `${this.apiUrl}/funcionarios`,
-      responsable: `${this.apiUrl}/responsables`,
-    };
-
-    const bodyFuncionario = {
-      cedula: this.cedula,
-      nombre: this.nombre,
-      apellido: this.apellido,
-      email: this.email,
-      telefono: this.telefono || undefined,
-      contrasenia: this.contrasenia,
-      fechaNacimiento: this.fechaNacimiento || undefined,
-      rolId: this.rolId,
-    };
-
-    const bodyResponsable = {
-      cedula: this.cedula,
-      nombre: this.nombre,
-      apellido: this.apellido,
-      email: this.email,
-      telefono: this.telefono || undefined,
-      contrasenia: this.contrasenia,
-      fecha_nacimiento: this.fechaNacimiento || undefined,
-    };
-
-    const body = this.tipoUsuario === 'funcionario' ? bodyFuncionario : bodyResponsable;
-
-    this.http.post(endpointMap[this.tipoUsuario], body).subscribe({
-      next: () => {
-        this.cargando = false;
-        this.paso = 3;
-      },
-      error: (err) => {
-        this.cargando = false;
-        this.error =
-          err.error?.message ||
-          err.error?.error ||
-          'No se pudo completar el registro. Intentá de nuevo.';
-      },
+    this.niniosForm = this.fb.group({
+      ninos: this.fb.array([this.crearNinioGroup()])
     });
   }
 
-  irALogin() {
-    this.router.navigate(['/Iniciar-Sesion']);
+  // ─── Paso 1 ───────────────────────────────────────────────────────────────
+
+  avanzarPaso1() {
+    if (this.responsableForm.invalid) {
+      this.responsableForm.markAllAsTouched();
+      return;
+    }
+    this.paso = 2;
   }
+
+  // ─── Paso 2: FormArray de niños ───────────────────────────────────────────
+
+  get ninosArray(): FormArray {
+    return this.niniosForm.get('ninos') as FormArray;
+  }
+
+  crearNinioGroup(): FormGroup {
+    return this.fb.group({
+      nombre:          ['', [Validators.required, Validators.minLength(2)]],
+      apellido:        ['', [Validators.required, Validators.minLength(2)]],
+      cedula:          ['', [Validators.required, Validators.pattern('^[0-9]+$')]],
+      sexo:            ['', Validators.required],
+      fechaNacimiento: ['', Validators.required],
+      direccion:       [''],
+      observaciones:   [''],
+      condiciones:     this.fb.array([])
+    });
+  }
+
+  agregarNino() {
+    this.ninosArray.push(this.crearNinioGroup());
+  }
+
+  eliminarNino(i: number) {
+    if (this.ninosArray.length > 1) this.ninosArray.removeAt(i);
+  }
+
+  // ─── Condiciones médicas por niño ─────────────────────────────────────────
+
+  condicionesArray(ninioIndex: number): FormArray {
+    return this.ninosArray.at(ninioIndex).get('condiciones') as FormArray;
+  }
+
+  crearCondicionGroup(): FormGroup {
+    return this.fb.group({
+      condicion:   ['', Validators.required],
+      observacion: [''],
+      esCronica:   [false]
+    });
+  }
+
+  agregarCondicion(ninioIndex: number) {
+    this.condicionesArray(ninioIndex).push(this.crearCondicionGroup());
+  }
+
+  eliminarCondicion(ninioIndex: number, condIndex: number) {
+    this.condicionesArray(ninioIndex).removeAt(condIndex);
+  }
+
+  // ─── Envío final ──────────────────────────────────────────────────────────
+
+  registrar() {
+    if (this.niniosForm.invalid) {
+      this.niniosForm.markAllAsTouched();
+      return;
+    }
+    this.cargando = true;
+
+    const resp = { ...this.responsableForm.value };
+    if (resp.fechaNacimiento) {
+      resp.fechaNacimiento = this.formatDate(resp.fechaNacimiento);
+    }
+
+    const ninos: NinioSolicitudRequest[] = this.ninosArray.controls.map(ctrl => {
+      const v = ctrl.value;
+      return {
+        cedula:           v.cedula,
+        nombre:           v.nombre,
+        apellido:         v.apellido,
+        sexo:             v.sexo,
+        fechaNacimiento:  this.formatDate(v.fechaNacimiento),
+        direccion:        v.direccion || undefined,
+        observaciones:    v.observaciones || undefined,
+        condicionesMedicas: v.condiciones.length
+          ? v.condiciones.map((c: any) => ({
+              condicion:   c.condicion,
+              observacion: c.observacion || undefined,
+              esCronica:   c.esCronica
+            }))
+          : undefined
+      };
+    });
+
+    this.inscripcionService.registrarResponsableConNinos({ ...resp, ninos }).subscribe({
+      next: () => {
+        this.cargando = false;
+        this.exito = true;
+        this.cdr.detectChanges();
+        this.toast.success('¡Solicitud enviada! Un funcionario revisará la inscripción.');
+      },
+      error: (err) => {
+        this.cargando = false;
+        this.toast.error(err.error?.error || 'Error al enviar la solicitud. Intentá de nuevo.');
+      }
+    });
+  }
+
+  irLogin() { this.router.navigate(['/iniciarSesion']); }
+
+  private formatDate(val: any): string {
+    if (!val) return '';
+    const d = new Date(val);
+    return d.toISOString().split('T')[0];
+  }
+
+  // ─── Helpers de errores ───────────────────────────────────────────────────
+
+  getError(ctrl: AbstractControl | null, field: string): string {
+    if (!ctrl) return '';
+    const c = ctrl.get(field);
+    if (!c?.touched || !c.invalid) return '';
+    if (c.hasError('required'))  return 'Campo requerido';
+    if (c.hasError('minlength')) return `Mínimo ${c.errors?.['minlength']?.requiredLength} caracteres`;
+    if (c.hasError('email'))     return 'Email inválido';
+    if (c.hasError('pattern'))   return 'Solo números';
+    return 'Campo inválido';
+  }
+
+  respError(field: string) { return this.getError(this.responsableForm, field); }
 }

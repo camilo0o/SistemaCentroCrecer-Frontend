@@ -1,0 +1,171 @@
+<mat-toolbar color="primary" class="toolbar">
+  <span>Gestión de Usuarios</span>
+  <button mat-flat-button (click)="abrirCrear()" class="btn-nuevo">
+    <mat-icon>person_add</mat-icon> Nuevo Funcionario
+  </button>
+</mat-toolbar>
+
+<div class="page-content">
+
+  <mat-chip-set class="chips-resumen">
+    <mat-chip>
+      <mat-icon matChipAvatar>people</mat-icon>
+      Total: {{ funcionarios.length }}
+    </mat-chip>
+    <mat-chip class="chip-activos">
+      <mat-icon matChipAvatar>check_circle</mat-icon>
+      Activos: {{ totalActivos }}
+    </mat-chip>
+    <mat-chip class="chip-inactivos">
+      <mat-icon matChipAvatar>cancel</mat-icon>
+      Inactivos: {{ totalInactivos }}
+    </mat-chip>
+  </mat-chip-set>
+
+  <mat-card appearance="outlined" class="card-filtros">
+    <mat-card-content class="filtros-content">
+      <mat-form-field appearance="outline" class="field-buscar">
+        <mat-label>Buscar</mat-label>
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput [(ngModel)]="busqueda" (ngModelChange)="aplicarFiltros()" placeholder="Nombre, apellido, cédula, email...">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="field-rol">
+        <mat-label>Rol</mat-label>
+        <mat-select [(ngModel)]="filtroRol" (ngModelChange)="aplicarFiltros()">
+          <mat-option value="">Todos los roles</mat-option>
+          @for(rol of roles; track rol.id){
+            <mat-option [value]="rol.nombre">{{ getRolDisplay(rol.nombre) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="field-estado">
+        <mat-label>Estado</mat-label>
+        <mat-select [(ngModel)]="filtroEstado" (ngModelChange)="aplicarFiltros()">
+          <mat-option value="todos">Todos</mat-option>
+          <mat-option value="activos">Activos</mat-option>
+          <mat-option value="inactivos">Inactivos</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      @if(busqueda || filtroRol || filtroEstado !== 'todos'){
+        <button mat-stroked-button (click)="limpiarFiltros()" class="btn-limpiar">
+          <mat-icon>clear</mat-icon> Limpiar
+        </button>
+      }
+    </mat-card-content>
+    <mat-card-footer>
+      <p class="resultados-label">{{ filtrados.length }} resultado(s)</p>
+    </mat-card-footer>
+  </mat-card>
+
+  <mat-card appearance="outlined" class="card-tabla">
+
+    @if(cargando){
+      <div class="loading-wrap">
+        <mat-spinner diameter="40"></mat-spinner>
+        <span>Cargando funcionarios...</span>
+      </div>
+    } @else {
+
+      <table mat-table [dataSource]="pagina">
+
+        <ng-container matColumnDef="nombre">
+          <th mat-header-cell *matHeaderCellDef>Funcionario</th>
+          <td mat-cell *matCellDef="let f">
+            <div class="funcionario-cell">
+              <div class="avatar" [class.avatar-off]="!f.activo" [class.has-photo]="f.fotoPerfil">
+                @if(f.fotoPerfil){
+                  <img [src]="f.fotoPerfil" alt="Foto de perfil">
+                } @else {
+                  {{ iniciales(f) }}
+                }
+              </div>
+              <div>
+                <div class="funcionario-nombre">{{ f.nombre }} {{ f.apellido }}</div>
+                <div class="funcionario-email">{{ f.email }}</div>
+                @if(f.mustChangePassword){
+                  <mat-chip style="font-size:10px;height:18px;padding:0 8px;background:#FFF3CD;color:#92400E;">
+                    <mat-icon style="font-size:12px;height:12px;width:12px;margin-right:2px">lock_reset</mat-icon>
+                    Debe cambiar contraseña
+                  </mat-chip>
+                }
+              </div>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="cedula">
+          <th mat-header-cell *matHeaderCellDef>Cédula</th>
+          <td mat-cell *matCellDef="let f">
+            <mat-chip class="chip-cedula">{{ f.cedula }}</mat-chip>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="telefono">
+          <th mat-header-cell *matHeaderCellDef>Teléfono</th>
+          <td mat-cell *matCellDef="let f" class="cell-telefono">{{ f.telefono || '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="rol">
+          <th mat-header-cell *matHeaderCellDef>Rol</th>
+          <td mat-cell *matCellDef="let f">
+            <mat-chip class="chip-rol">{{ getRolDisplay(f.rol?.nombre) }}</mat-chip>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let f">
+            <mat-chip [class.chip-activo]="f.activo" [class.chip-inactivo]="!f.activo">
+              {{ f.activo ? 'Activo' : 'Inactivo' }}
+            </mat-chip>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef>Acciones</th>
+          <td mat-cell *matCellDef="let f">
+            <button mat-icon-button matTooltip="Editar" (click)="abrirEditar(f)" color="primary">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button
+              [matTooltip]="esAdminSistema(f) ? 'Blanquear contraseña (obligará a cambiarla)' : 'Blanquear contraseña'"
+              (click)="abrirBlanqueo(f)"
+              class="btn-password"
+              [disabled]="!f.activo">
+              <mat-icon>lock_reset</mat-icon>
+            </button>
+            <button mat-icon-button
+              [matTooltip]="esAdminSistema(f) ? 'Los administradores/as de sistema no pueden darse de baja' : (f.activo ? 'Dar de baja' : 'Dar de alta')"
+              (click)="toggleEstado(f)"
+              [disabled]="esAdminSistema(f)">
+              <mat-icon [color]="esAdminSistema(f) ? '' : (f.activo ? 'warn' : 'primary')">
+                {{ esAdminSistema(f) ? 'shield' : (f.activo ? 'person_off' : 'person') }}
+              </mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+        <tr mat-row *matRowDef="let row; columns: columnas" [class.row-off]="!row.activo"></tr>
+
+      </table>
+
+      @if(filtrados.length === 0){
+        <div class="empty-wrap">
+          <mat-icon class="empty-icon">people_outline</mat-icon>
+          <p>No se encontraron funcionarios</p>
+        </div>
+      }
+
+      <mat-paginator
+        [length]="filtrados.length"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="[5,10,25]"
+        (page)="onPage($event)">
+      </mat-paginator>
+    }
+  </mat-card>
+</div>

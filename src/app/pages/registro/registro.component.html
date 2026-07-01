@@ -1,203 +1,279 @@
-<div class="registro-wrapper">
+<div class="registro-root">
+  <mat-card appearance="outlined" class="registro-card">
 
-  <!-- Panel izquierdo decorativo -->
-  <aside class="registro-brand">
-    <div class="brand-content">
-      <div class="brand-logo">
-        <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
-          <circle cx="28" cy="28" r="28" fill="white" fill-opacity="0.15"/>
-          <path d="M14 28C14 20.268 20.268 14 28 14s14 6.268 14 14-6.268 14-14 14S14 35.732 14 28z" fill="white" fill-opacity="0.3"/>
-          <path d="M20 28a8 8 0 1 1 16 0 8 8 0 0 1-16 0z" fill="white"/>
-        </svg>
-      </div>
-      <h1 class="brand-title">Centro Crecer</h1>
-      <p class="brand-subtitle">Creá tu cuenta para comenzar</p>
-      <div class="pasos-indicator" *ngIf="paso < 3">
-        <div class="paso-dot" [class.activo]="paso >= 1">1</div>
-        <div class="paso-linea"></div>
-        <div class="paso-dot" [class.activo]="paso >= 2">2</div>
-      </div>
-      <div class="brand-decoration">
-        <div class="deco-circle deco-1"></div>
-        <div class="deco-circle deco-2"></div>
-      </div>
-    </div>
-  </aside>
+    <mat-card-header class="registro-header">
+      <mat-icon class="header-icon">spa</mat-icon>
+      <mat-card-title>Centro Crecer</mat-card-title>
+      <mat-card-subtitle>Solicitud de inscripción</mat-card-subtitle>
+    </mat-card-header>
 
-  <!-- Panel derecho -->
-  <main class="registro-form-panel">
+    <mat-card-content>
 
-    <!-- PASO 1: Seleccionar tipo -->
-    <div class="registro-card" *ngIf="paso === 1">
-      <div class="card-header">
-        <h2>Crear cuenta</h2>
-        <p>¿Cómo vas a registrarte?</p>
-      </div>
+      <!-- ── ÉXITO ─────────────────────────────────────────────────────────── -->
+      @if(exito) {
+        <div class="exito-block">
+          <mat-icon class="exito-icon" color="primary">check_circle</mat-icon>
+          <h2>¡Solicitud enviada!</h2>
+          <p>Tu cuenta fue creada y la inscripción de tus niños quedó registrada como <strong>Pendiente</strong>. Un funcionario del centro revisará los datos y los asignará a un grupo.</p>
+          <button mat-flat-button color="primary" class="btn-full" (click)="irLogin()">
+            <mat-icon>login</mat-icon> Ir al inicio de sesión
+          </button>
+        </div>
+      }
 
-      <div class="tipo-cards">
-        <button
-          class="tipo-card"
-          [class.activo]="tipoUsuario === 'funcionario'"
-          (click)="seleccionarTipo('funcionario')"
-          type="button"
-        >
-          <span class="tipo-big-icon">🏛️</span>
-          <strong>Funcionario</strong>
-          <span class="tipo-desc">Coordinadores, educadores y auxiliares del centro</span>
-        </button>
+      @if(!exito) {
 
-        <button
-          class="tipo-card"
-          [class.activo]="tipoUsuario === 'responsable'"
-          (click)="seleccionarTipo('responsable')"
-          type="button"
-        >
-          <span class="tipo-big-icon">👨‍👩‍👧</span>
-          <strong>Responsable</strong>
-          <span class="tipo-desc">Padres o tutores de niños del centro</span>
-        </button>
-      </div>
+        <!-- ── INDICADOR DE PASOS ─────────────────────────────────────────── -->
+        <div class="pasos-indicador">
+          <div class="paso-item" [class.activo]="paso === 1" [class.completo]="paso > 1">
+            <div class="paso-circulo">
+              @if(paso > 1){ <mat-icon>check</mat-icon> } @else { 1 }
+            </div>
+            <span>Tus datos</span>
+          </div>
+          <div class="paso-linea" [class.completo]="paso > 1"></div>
+          <div class="paso-item" [class.activo]="paso === 2">
+            <div class="paso-circulo">2</div>
+            <span>Datos de los niños</span>
+          </div>
+        </div>
 
-      <button class="btn-continuar" (click)="irAlFormulario()" type="button">
-        Continuar como {{ tipoUsuario === 'funcionario' ? 'Funcionario' : 'Responsable' }}
-      </button>
+        <!-- ════════════════════════════════════════════════════════════════ -->
+        <!-- PASO 1: Datos del responsable                                   -->
+        <!-- ════════════════════════════════════════════════════════════════ -->
+        @if(paso === 1) {
+          <form [formGroup]="responsableForm" (ngSubmit)="avanzarPaso1()" class="form-col">
 
-      <p class="login-link">
-        ¿Ya tenés cuenta? <a routerLink="/Iniciar-Sesion">Iniciar sesión</a>
-      </p>
-    </div>
+            <p class="seccion-label"><mat-icon>person</mat-icon> Datos personales</p>
 
-    <!-- PASO 2: Formulario -->
-    <div class="registro-card scroll-card" *ngIf="paso === 2">
-      <div class="card-header">
-        <button class="btn-volver" (click)="paso = 1" type="button">← Volver</button>
-        <h2>Datos personales</h2>
-        <p>
-          Registrarse como
-          <span class="badge" [class.badge-func]="tipoUsuario === 'funcionario'" [class.badge-resp]="tipoUsuario === 'responsable'">
-            {{ tipoUsuario === 'funcionario' ? '🏛️ Funcionario' : '👨‍👩‍👧 Responsable' }}
-          </span>
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Nombre</mat-label>
+                <mat-icon matPrefix>person</mat-icon>
+                <input matInput formControlName="nombre">
+                @if(respError('nombre')){ <mat-error>{{ respError('nombre') }}</mat-error> }
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Apellido</mat-label>
+                <mat-icon matPrefix>person</mat-icon>
+                <input matInput formControlName="apellido">
+                @if(respError('apellido')){ <mat-error>{{ respError('apellido') }}</mat-error> }
+              </mat-form-field>
+            </div>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Cédula de identidad</mat-label>
+              <mat-icon matPrefix>badge</mat-icon>
+              <input matInput formControlName="cedula" placeholder="12345678">
+              @if(respError('cedula')){ <mat-error>{{ respError('cedula') }}</mat-error> }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Correo electrónico</mat-label>
+              <mat-icon matPrefix>email</mat-icon>
+              <input matInput type="email" formControlName="email">
+              @if(respError('email')){ <mat-error>{{ respError('email') }}</mat-error> }
+            </mat-form-field>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Teléfono (opcional)</mat-label>
+                <mat-icon matPrefix>phone</mat-icon>
+                <input matInput formControlName="telefono" placeholder="+598 99 000 000">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Fecha de nacimiento (opcional)</mat-label>
+                <mat-icon matPrefix>cake</mat-icon>
+                <input matInput [matDatepicker]="pickerResp" formControlName="fechaNacimiento">
+                <mat-datepicker-toggle matSuffix [for]="pickerResp"></mat-datepicker-toggle>
+                <mat-datepicker #pickerResp></mat-datepicker>
+              </mat-form-field>
+            </div>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Contraseña</mat-label>
+              <mat-icon matPrefix>lock</mat-icon>
+              <input matInput [type]="mostrarPass ? 'text' : 'password'" formControlName="contrasenia">
+              <button mat-icon-button matSuffix type="button" (click)="mostrarPass=!mostrarPass">
+                <mat-icon>{{ mostrarPass ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+              @if(respError('contrasenia')){ <mat-error>{{ respError('contrasenia') }}</mat-error> }
+            </mat-form-field>
+
+            <button mat-flat-button color="primary" type="submit" class="btn-full">
+              Continuar <mat-icon>arrow_forward</mat-icon>
+            </button>
+
+          </form>
+        }
+
+        <!-- ════════════════════════════════════════════════════════════════ -->
+        <!-- PASO 2: Datos de los niños                                      -->
+        <!-- ════════════════════════════════════════════════════════════════ -->
+        @if(paso === 2) {
+          <form [formGroup]="niniosForm" (ngSubmit)="registrar()" class="form-col">
+
+            <div formArrayName="ninos">
+              @for(nino of ninosArray.controls; track $index; let i = $index) {
+                <div [formGroupName]="i" class="nino-card">
+
+                  <div class="nino-card-header">
+                    <div class="nino-card-titulo">
+                      <mat-icon>child_care</mat-icon>
+                      <span>Niño {{ i + 1 }}</span>
+                    </div>
+                    @if(ninosArray.length > 1){
+                      <button mat-icon-button type="button" color="warn"
+                              (click)="eliminarNino(i)"
+                              matTooltip="Eliminar este niño">
+                        <mat-icon>delete_outline</mat-icon>
+                      </button>
+                    }
+                  </div>
+
+                  <div class="form-row">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Nombre</mat-label>
+                      <mat-icon matPrefix>person</mat-icon>
+                      <input matInput formControlName="nombre">
+                      @if(getError(nino, 'nombre')){ <mat-error>{{ getError(nino, 'nombre') }}</mat-error> }
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline">
+                      <mat-label>Apellido</mat-label>
+                      <mat-icon matPrefix>person</mat-icon>
+                      <input matInput formControlName="apellido">
+                      @if(getError(nino, 'apellido')){ <mat-error>{{ getError(nino, 'apellido') }}</mat-error> }
+                    </mat-form-field>
+                  </div>
+
+                  <div class="form-row">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Cédula</mat-label>
+                      <mat-icon matPrefix>badge</mat-icon>
+                      <input matInput formControlName="cedula" placeholder="12345678">
+                      @if(getError(nino, 'cedula')){ <mat-error>{{ getError(nino, 'cedula') }}</mat-error> }
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline">
+                      <mat-label>Sexo</mat-label>
+                      <mat-icon matPrefix>wc</mat-icon>
+                      <mat-select formControlName="sexo">
+                        <mat-option value="Masculino">Masculino</mat-option>
+                        <mat-option value="Femenino">Femenino</mat-option>
+                      </mat-select>
+                      @if(getError(nino, 'sexo')){ <mat-error>{{ getError(nino, 'sexo') }}</mat-error> }
+                    </mat-form-field>
+                  </div>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Fecha de nacimiento</mat-label>
+                    <mat-icon matPrefix>cake</mat-icon>
+                    <input matInput [matDatepicker]="pickerNino" formControlName="fechaNacimiento">
+                    <mat-datepicker-toggle matSuffix [for]="pickerNino"></mat-datepicker-toggle>
+                    <mat-datepicker #pickerNino></mat-datepicker>
+                    @if(getError(nino, 'fechaNacimiento')){ <mat-error>{{ getError(nino, 'fechaNacimiento') }}</mat-error> }
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Dirección (opcional)</mat-label>
+                    <mat-icon matPrefix>home</mat-icon>
+                    <input matInput formControlName="direccion"
+                           placeholder="Ej: Av. 18 de Julio 1234, Apto 5">
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Observaciones generales (opcional)</mat-label>
+                    <mat-icon matPrefix>notes</mat-icon>
+                    <textarea matInput formControlName="observaciones" rows="2"
+                              placeholder="Ej: duerme siesta, come con asistencia..."></textarea>
+                  </mat-form-field>
+
+                  <!-- ── Condiciones médicas ── -->
+                  <div class="condiciones-section">
+                    <div class="condiciones-header">
+                      <span class="condiciones-titulo">
+                        <mat-icon>medical_services</mat-icon> Condiciones médicas
+                      </span>
+                      <button mat-stroked-button type="button" color="primary"
+                              (click)="agregarCondicion(i)" class="btn-agregar-cond">
+                        <mat-icon>add</mat-icon> Agregar
+                      </button>
+                    </div>
+
+                    <div formArrayName="condiciones">
+                      @for(cond of condicionesArray(i).controls; track $index; let ci = $index) {
+                        <div [formGroupName]="ci" class="condicion-row">
+
+                          <mat-form-field appearance="outline" class="cond-field-main">
+                            <mat-label>Condición</mat-label>
+                            <input matInput formControlName="condicion"
+                                   placeholder="Ej: Asma, alergia al maní...">
+                            @if(cond.get('condicion')?.invalid && cond.get('condicion')?.touched){
+                              <mat-error>Requerido</mat-error>
+                            }
+                          </mat-form-field>
+
+                          <mat-form-field appearance="outline" class="cond-field-obs">
+                            <mat-label>Observación (opcional)</mat-label>
+                            <input matInput formControlName="observacion"
+                                   placeholder="Medicación, dosis, etc.">
+                          </mat-form-field>
+
+                          <div class="cond-cronica">
+                            <mat-checkbox formControlName="esCronica">Crónica</mat-checkbox>
+                          </div>
+
+                          <button mat-icon-button type="button" color="warn"
+                                  (click)="eliminarCondicion(i, ci)" matTooltip="Eliminar">
+                            <mat-icon>remove_circle_outline</mat-icon>
+                          </button>
+
+                        </div>
+                      }
+
+                      @if(condicionesArray(i).length === 0){
+                        <p class="sin-condiciones">Sin condiciones médicas registradas</p>
+                      }
+                    </div>
+                  </div>
+
+                </div>
+              }
+            </div>
+
+            <button mat-stroked-button type="button" color="primary"
+                    (click)="agregarNino()" class="btn-agregar-nino">
+              <mat-icon>add</mat-icon> Agregar otro niño
+            </button>
+
+            <mat-divider></mat-divider>
+
+            <div class="form-row-btns">
+              <button mat-stroked-button type="button" (click)="paso = 1">
+                <mat-icon>arrow_back</mat-icon> Volver
+              </button>
+              <button mat-flat-button color="primary" type="submit"
+                      [disabled]="cargando" class="btn-enviar">
+                @if(cargando){
+                  <mat-spinner diameter="20"></mat-spinner>
+                } @else {
+                  <mat-icon>send</mat-icon> Enviar solicitud
+                }
+              </button>
+            </div>
+
+          </form>
+        }
+
+        <p class="login-link">
+          ¿Ya tenés cuenta? <a routerLink="/iniciarSesion">Iniciar Sesión</a>
         </p>
-      </div>
 
-      <div class="error-msg" *ngIf="error">
-        <span>⚠️</span> {{ error }}
-      </div>
+      }
 
-      <div class="form-row">
-        <div class="form-group">
-          <label>Nombre <span class="req">*</span></label>
-          <input type="text" [(ngModel)]="nombre" placeholder="Ej: Juan" />
-        </div>
-        <div class="form-group">
-          <label>Apellido <span class="req">*</span></label>
-          <input type="text" [(ngModel)]="apellido" placeholder="Ej: García" />
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>Cédula de identidad <span class="req">*</span></label>
-        <input type="text" [(ngModel)]="cedula" placeholder="Solo números (máx. 8 dígitos)" maxlength="8" />
-      </div>
-
-      <div class="form-group">
-        <label>Correo electrónico <span class="req">*</span></label>
-        <div class="input-wrapper">
-          <span class="input-icon">✉️</span>
-          <input type="email" [(ngModel)]="email" placeholder="tucorreo@ejemplo.com" />
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>Teléfono</label>
-          <input type="tel" [(ngModel)]="telefono" placeholder="+598 99 123 456" />
-        </div>
-        <div class="form-group">
-          <label>Fecha de nacimiento</label>
-          <input type="date" [(ngModel)]="fechaNacimiento" />
-        </div>
-      </div>
-
-      <!-- Rol: solo funcionario -->
-      <div class="form-group" *ngIf="tipoUsuario === 'funcionario'">
-        <label>Rol <span class="req">*</span></label>
-        <select [(ngModel)]="rolId">
-          <option [ngValue]="null" disabled selected>Seleccioná un rol</option>
-          <option *ngFor="let r of roles" [ngValue]="r.id">{{ r.nombre }}</option>
-        </select>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>Contraseña <span class="req">*</span></label>
-          <div class="input-wrapper">
-            <span class="input-icon">🔒</span>
-            <input
-              [type]="mostrarPassword ? 'text' : 'password'"
-              [(ngModel)]="contrasenia"
-              placeholder="Mín. 10 caracteres"
-            />
-            <button class="toggle-pass" (click)="togglePassword()" type="button">
-              {{ mostrarPassword ? '🙈' : '👁️' }}
-            </button>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Confirmar contraseña <span class="req">*</span></label>
-          <div class="input-wrapper">
-            <span class="input-icon">🔐</span>
-            <input
-              [type]="mostrarConfirmar ? 'text' : 'password'"
-              [(ngModel)]="confirmarContrasenia"
-              placeholder="Repetí la contraseña"
-            />
-            <button class="toggle-pass" (click)="toggleConfirmar()" type="button">
-              {{ mostrarConfirmar ? '🙈' : '👁️' }}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="pass-hint" *ngIf="contrasenia">
-        <div class="hint-bar">
-          <div
-            class="hint-fill"
-            [class.debil]="contrasenia.length < 10"
-            [class.media]="contrasenia.length >= 10 && contrasenia.length < 14"
-            [class.fuerte]="contrasenia.length >= 14"
-            [style.width.%]="Math.min(contrasenia.length * 6, 100)"
-          ></div>
-        </div>
-        <span *ngIf="contrasenia.length < 10" class="hint-label debil-txt">Muy corta</span>
-        <span *ngIf="contrasenia.length >= 10 && contrasenia.length < 14" class="hint-label media-txt">Aceptable</span>
-        <span *ngIf="contrasenia.length >= 14" class="hint-label fuerte-txt">Fuerte ✓</span>
-      </div>
-
-      <button
-        class="btn-registrar"
-        (click)="registrar()"
-        [disabled]="cargando"
-        type="button"
-      >
-        <span *ngIf="!cargando">Crear cuenta</span>
-        <span *ngIf="cargando">⏳ Registrando...</span>
-      </button>
-    </div>
-
-    <!-- PASO 3: Éxito -->
-    <div class="registro-card exito-card" *ngIf="paso === 3">
-      <div class="exito-icon">✅</div>
-      <h2>¡Cuenta creada!</h2>
-      <p>
-        Tu cuenta como
-        <strong>{{ tipoUsuario === 'funcionario' ? 'funcionario' : 'responsable' }}</strong>
-        fue registrada correctamente.
-      </p>
-      <button class="btn-continuar" (click)="irALogin()" type="button">
-        Ir a Iniciar Sesión
-      </button>
-    </div>
-
-  </main>
+    </mat-card-content>
+  </mat-card>
 </div>

@@ -1,0 +1,172 @@
+<div class="app-shell">
+  <div class="main-content">
+
+    <header class="topbar">
+      <div>
+        <h2 class="page-title">Agenda de Limpieza</h2>
+        <p class="page-subtitle">Gestión de tareas de limpieza asignadas</p>
+      </div>
+      <button mat-flat-button class="btn-create" (click)="abrirCrear()">
+        <mat-icon>add_circle</mat-icon> Nueva tarea
+      </button>
+    </header>
+
+    <div class="page-content">
+
+      <div class="summary-row">
+        <div class="chip-stat">
+          <span class="chip-num">{{ items.length }}</span>
+          <span class="chip-lbl">Total</span>
+        </div>
+        <div class="chip-stat pendiente">
+          <span class="chip-num">{{ totalPendientes }}</span>
+          <span class="chip-lbl">Pendientes</span>
+        </div>
+        <div class="chip-stat en-proceso">
+          <span class="chip-num">{{ totalEnProceso }}</span>
+          <span class="chip-lbl">En proceso</span>
+        </div>
+        <div class="chip-stat completado">
+          <span class="chip-num">{{ totalCompletados }}</span>
+          <span class="chip-lbl">Completadas</span>
+        </div>
+      </div>
+
+      <div class="card filters-card">
+        <div class="filters-row">
+          <mat-form-field appearance="outline" class="search-field">
+            <mat-label>Buscar</mat-label>
+            <input matInput [(ngModel)]="busqueda" (ngModelChange)="aplicarFiltros()"
+              placeholder="Descripción, zona, subtipo...">
+            <mat-icon matPrefix>search</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Estado</mat-label>
+            <mat-select [(ngModel)]="filtroEstado" (ngModelChange)="aplicarFiltros()">
+              <mat-option value="todos">Todos</mat-option>
+              @for(e of estadoOpciones; track e){
+                <mat-option [value]="e">{{ estadoDisplay[e] }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="card table-card">
+        @if(cargando){
+          <div class="loading-center">
+            <mat-spinner diameter="40"></mat-spinner>
+            <p>Cargando tareas...</p>
+          </div>
+        } @else {
+          <table mat-table [dataSource]="pagina" class="mat-elevation-z0">
+
+            <ng-container matColumnDef="descripcion">
+              <th mat-header-cell *matHeaderCellDef>Descripción</th>
+              <td mat-cell *matCellDef="let i">
+                <div class="desc-cell">
+                  <div class="desc-icon"><mat-icon>cleaning_services</mat-icon></div>
+                  <span class="desc-text">
+                    {{ i.descripcion | slice:0:80 }}{{ i.descripcion?.length > 80 ? '...' : '' }}
+                  </span>
+                </div>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="zona">
+              <th mat-header-cell *matHeaderCellDef>Zona</th>
+              <td mat-cell *matCellDef="let i">
+                <span class="zona-badge">{{ i.zona }}</span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="subtipo">
+              <th mat-header-cell *matHeaderCellDef>Subtipo</th>
+              <td mat-cell *matCellDef="let i">
+                <span class="tipo-badge">{{ i.subtipoAgendaNombre ?? '—' }}</span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="fecha">
+              <th mat-header-cell *matHeaderCellDef>Fecha</th>
+              <td mat-cell *matCellDef="let i">
+                <span class="fecha-chip">
+                  <mat-icon>calendar_today</mat-icon>
+                  {{ formatFecha(i.fecha) }}
+                </span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="hora">
+              <th mat-header-cell *matHeaderCellDef>Horario</th>
+              <td mat-cell *matCellDef="let i">
+                @if(i.horaInicio){
+                  <span class="hora-chip">
+                    <mat-icon>access_time</mat-icon>
+                    {{ i.horaInicio }}{{ i.horaFin ? ' — ' + i.horaFin : '' }}
+                  </span>
+                } @else {
+                  <span style="color:#9AA0B9">—</span>
+                }
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <td mat-cell *matCellDef="let i">
+                <mat-select
+                  [value]="i.estado"
+                  (selectionChange)="cambiarEstado(i, $event.value)"
+                  class="estado-select"
+                  [ngClass]="estadoClass(i.estado)">
+                  @for(e of estadoOpciones; track e){
+                    <mat-option [value]="e">{{ estadoDisplay[e] }}</mat-option>
+                  }
+                </mat-select>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef>Acciones</th>
+              <td mat-cell *matCellDef="let i">
+                <div class="acciones-row">
+                  <button mat-icon-button matTooltip="Editar" (click)="abrirEditar(i)">
+                    <mat-icon class="icon-edit">edit</mat-icon>
+                  </button>
+                  <button mat-icon-button matTooltip="Eliminar" (click)="eliminar(i)">
+                    <mat-icon class="icon-baja">delete</mat-icon>
+                  </button>
+                </div>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnas;"
+              [class.row-completado]="row.estado === 'FINALIZADA'"
+              [class.row-cancelado]="row.estado === 'CANCELADA'">
+            </tr>
+          </table>
+
+          @if(filtradas.length === 0){
+            <div class="empty-state">
+              <mat-icon>cleaning_services</mat-icon>
+              <p>No hay tareas registradas</p>
+              <button mat-flat-button class="btn-create" (click)="abrirCrear()">
+                Crear primera tarea
+              </button>
+            </div>
+          }
+
+          <mat-paginator
+            [length]="filtradas.length"
+            [pageSize]="pageSize"
+            [pageSizeOptions]="[5, 10, 25]"
+            (page)="onPage($event)">
+          </mat-paginator>
+        }
+      </div>
+
+    </div>
+  </div>
+</div>

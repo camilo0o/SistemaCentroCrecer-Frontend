@@ -1,0 +1,155 @@
+<div class="app-shell">
+  <div class="main-content">
+
+    <mat-toolbar color="primary" style="justify-content:space-between;flex-shrink:0">
+      <span>Responsables</span>
+      <mat-chip-set>
+        <mat-chip>
+          <mat-icon matChipAvatar>family_restroom</mat-icon>
+          {{ responsablesFiltrados.length }} / {{ responsables.length }} registrados
+        </mat-chip>
+      </mat-chip-set>
+    </mat-toolbar>
+
+    <div class="page-content">
+
+      <!-- Buscador + filtro de inactivos -->
+      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:4px">
+        <div class="search-bar" style="flex:1; min-width:220px">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            class="search-input"
+            placeholder="Buscar por nombre, cédula o email..."
+            [(ngModel)]="busqueda"
+          />
+          @if (busqueda) {
+            <button class="clear-btn" (click)="busqueda = ''">
+              <mat-icon>close</mat-icon>
+            </button>
+          }
+        </div>
+
+        @if (esAdminSistema) {
+          <mat-slide-toggle
+            [(ngModel)]="mostrarInactivos"
+            color="warn"
+            style="font-size:13px; white-space:nowrap">
+            Mostrar inactivos
+          </mat-slide-toggle>
+        }
+      </div>
+
+      @if (cargando) {
+        <div class="loading-center">
+          <mat-spinner diameter="48"></mat-spinner>
+          <p>Cargando responsables...</p>
+        </div>
+      }
+
+      @if (!cargando) {
+
+        @if (responsablesFiltrados.length === 0) {
+          <div class="empty-state">
+            <mat-icon class="empty-icon">family_restroom</mat-icon>
+            <p>No se encontraron responsables.</p>
+          </div>
+        }
+
+        <div class="responsables-grid">
+          @for (r of responsablesFiltrados; track r.id) {
+
+            <mat-card appearance="outlined" class="responsable-card" [class.card-inactivo]="!r.activo">
+              <mat-card-content>
+
+                <!-- Header del responsable -->
+                <div class="resp-header">
+                  <div class="resp-avatar" [class.avatar-inactivo]="!r.activo" [class.has-photo]="r.fotoPerfil">
+                    @if(r.fotoPerfil){
+                      <img [src]="r.fotoPerfil" alt="Foto de perfil">
+                    } @else {
+                      {{ iniciales(r) }}
+                    }
+                  </div>
+                  <div class="resp-info">
+                    <div class="resp-nombre">{{ r.nombre }} {{ r.apellido }}</div>
+                    <div class="resp-cedula">CI {{ r.cedula }}</div>
+                    @if (r.email) {
+                      <div class="resp-email">
+                        <mat-icon style="font-size:13px;vertical-align:middle">email</mat-icon>
+                        {{ r.email }}
+                      </div>
+                    }
+                  </div>
+                  <!-- Badge de estado + botón toggle (solo admin) -->
+                  <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px">
+                    <span class="retiro-badge" [class.autorizado]="r.activo" [class.no-autorizado]="!r.activo">
+                      <mat-icon>{{ r.activo ? 'check_circle' : 'cancel' }}</mat-icon>
+                      {{ r.activo ? 'Activo' : 'Inactivo' }}
+                    </span>
+                    @if (esAdmin) {
+                      <button mat-stroked-button
+                              [color]="r.activo ? 'warn' : 'primary'"
+                              style="font-size:12px; height:28px; line-height:28px; padding:0 10px"
+                              [matTooltip]="r.activo ? 'Desactivar responsable' : 'Activar responsable'"
+                              (click)="toggleEstado(r)">
+                        <mat-icon style="font-size:16px; margin-right:4px">{{ r.activo ? 'person_off' : 'person' }}</mat-icon>
+                        {{ r.activo ? 'Desactivar' : 'Activar' }}
+                      </button>
+                    }
+                  </div>
+                </div>
+
+                <mat-divider style="margin: 12px 0"></mat-divider>
+
+                <!-- Niños vinculados -->
+                <div class="ninios-section">
+                  <div class="section-label">
+                    <mat-icon style="font-size:15px">child_care</mat-icon>
+                    Niños vinculados
+                  </div>
+
+                  @if (relacionesDe(r.id).length === 0) {
+                    <div class="no-ninios">Sin niños vinculados</div>
+                  }
+
+                  @for (rel of relacionesDe(r.id); track rel.id) {
+                    <div class="ninio-row">
+                      <div class="ninio-left">
+                        <div class="ninio-avatar-sm" [class.has-photo]="rel.ninio.fotoUrl">
+                          @if(rel.ninio.fotoUrl){
+                            <img [src]="rel.ninio.fotoUrl" alt="Foto">
+                          } @else {
+                            {{ rel.ninio.nombre[0] }}{{ rel.ninio.apellido[0] }}
+                          }
+                        </div>
+                        <div>
+                          <div class="ninio-nombre">{{ rel.ninio.nombre }} {{ rel.ninio.apellido }}</div>
+                          <div class="ninio-rel">{{ rel.tipoRelacion }}</div>
+                        </div>
+                      </div>
+                      <div class="ninio-right">
+                        <span class="retiro-badge" [class.autorizado]="rel.autorizadoRetiro" [class.no-autorizado]="!rel.autorizadoRetiro"
+                              [matTooltip]="rel.autorizadoRetiro ? 'Autorizado para retirar' : 'No autorizado para retirar'">
+                          <mat-icon>{{ rel.autorizadoRetiro ? 'check_circle' : 'cancel' }}</mat-icon>
+                          {{ rel.autorizadoRetiro ? 'Retiro autorizado' : 'Sin autorización' }}
+                        </span>
+                        <button mat-icon-button
+                                matTooltip="Editar autorización"
+                                (click)="abrirEdicion(r, rel)">
+                          <mat-icon>edit</mat-icon>
+                        </button>
+                      </div>
+                    </div>
+                  }
+                </div>
+
+              </mat-card-content>
+            </mat-card>
+
+          }
+        </div>
+
+      }
+    </div>
+  </div>
+</div>

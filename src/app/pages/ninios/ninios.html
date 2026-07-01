@@ -1,0 +1,230 @@
+<mat-toolbar color="primary" class="toolbar">
+  <span>Niños registrados</span>
+  <button mat-flat-button class="btn-nuevo" (click)="abrirCrear()">
+    <mat-icon>add</mat-icon> Nuevo Niño
+  </button>
+</mat-toolbar>
+
+<div class="page-content">
+
+  <!-- Strip de resumen + buscador -->
+  <div class="top-panel">
+    <mat-card class="summary-card">
+      <div class="summary-row">
+        <div class="summary-item">
+          <span class="summary-label">Total de niños</span>
+          <span class="summary-value">{{ ninios.length }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Activos</span>
+          <span class="summary-value success">{{ totalActivos }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Inactivos</span>
+          <span class="summary-value danger">{{ totalInactivos }}</span>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
+      <mat-label>Buscar</mat-label>
+      <input matInput [(ngModel)]="busqueda" (ngModelChange)="aplicarFiltros()"
+             placeholder="Nombre, cédula, grupo...">
+      <mat-icon matPrefix>search</mat-icon>
+      @if(busqueda){
+        <button mat-icon-button matSuffix type="button" (click)="busqueda=''; aplicarFiltros()">
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </mat-form-field>
+
+    <button mat-stroked-button (click)="toggleOrden()"
+            [matTooltip]="ordenAsc === null ? 'Ordenar A→Z' : ordenAsc ? 'Ordenar Z→A' : 'Quitar orden'"
+            style="height:56px;min-width:44px;padding:0 12px;flex-shrink:0">
+      <mat-icon style="margin-right:4px">sort_by_alpha</mat-icon>
+      @if(ordenAsc === true)  { <span style="font-size:12px;font-weight:600">A→Z</span> }
+      @if(ordenAsc === false) { <span style="font-size:12px;font-weight:600">Z→A</span> }
+    </button>
+  </div>
+
+  <!-- Loading -->
+  @if(cargando){
+    <div class="loading-wrap">
+      <mat-spinner diameter="40"></mat-spinner>
+      <span>Cargando niños...</span>
+    </div>
+  }
+
+  <!-- Sin resultados -->
+  @if(!cargando && filtrados.length === 0){
+    <div class="empty-wrap">
+      <mat-icon class="empty-icon">child_care</mat-icon>
+      <p>No se encontraron niños</p>
+      @if(!busqueda){
+        <button mat-flat-button style="background:#1565C0;color:white" (click)="abrirCrear()">
+          <mat-icon>add</mat-icon> Registrar primer niño
+        </button>
+      }
+    </div>
+  }
+
+  <!-- Grid de tarjetas -->
+  @if(!cargando && filtrados.length > 0){
+    <div class="cards-grid">
+      @for(ninio of paginados; track ninio.id){
+        <mat-card class="ninio-card" [class.inactivo]="!ninio.activo">
+
+          <!-- Cabecera de la tarjeta -->
+          <div class="card-header">
+            <div class="card-title">
+              <div class="card-avatar-wrap">
+                <div class="card-avatar" [class.avatar-inactivo]="!ninio.activo">
+                  @if(ninio.fotoUrl){
+                    <img [src]="ninio.fotoUrl" alt="Foto" class="avatar-img">
+                  } @else {
+                    <mat-icon>child_care</mat-icon>
+                  }
+                </div>
+                <button mat-icon-button class="btn-foto" matTooltip="Cambiar foto"
+                        (click)="$event.stopPropagation(); abrirSelectorFoto(ninio)">
+                  <mat-icon>photo_camera</mat-icon>
+                </button>
+              </div>
+              <div>
+                <div class="title">{{ getNombreCompleto(ninio) }}</div>
+                <div class="subtitle">
+                  <mat-icon style="font-size:13px;width:13px;height:13px;vertical-align:middle">group</mat-icon>
+                  {{ ninio.grupo?.nombre || 'Sin grupo asignado' }}
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+              <mat-chip class="status-chip" [class.status-inactivo]="!ninio.activo">
+                {{ ninio.activo ? 'Activo' : 'Inactivo' }}
+              </mat-chip>
+            </div>
+          </div>
+
+          <!-- Datos resumidos -->
+          <mat-card-content class="card-body">
+
+            <div class="field-row">
+              <span class="field-label">
+                <mat-icon class="field-icon">cake</mat-icon>
+                Edad
+              </span>
+              <span class="field-val">
+                {{ calcularEdad(ninio.fechaNacimiento) }}
+                @if(ninio.grupo?.rangoEdad){
+                  <span class="rango-tag">{{ ninio.grupo!.rangoEdad }} años</span>
+                }
+              </span>
+            </div>
+
+            <div class="field-row">
+              <span class="field-label">
+                <mat-icon class="field-icon">badge</mat-icon>
+                Cédula
+              </span>
+              <span class="field-val">{{ ninio.cedula }}</span>
+            </div>
+
+            <div class="field-row">
+              <span class="field-label">
+                <mat-icon class="field-icon">wc</mat-icon>
+                Sexo
+              </span>
+              <span class="field-val">{{ displaySexo(ninio.sexo) }}</span>
+            </div>
+
+            <!-- Condiciones médicas: resumen compacto -->
+            <div class="field-row condiciones-row">
+              <span class="field-label">
+                <mat-icon class="field-icon">medical_services</mat-icon>
+                Condiciones
+              </span>
+              <span class="field-val">
+                @if(cantidadCondiciones(ninio) === 0){
+                  <span class="muted-text">Ninguna</span>
+                } @else {
+                  <span class="condiciones-badge-inline">
+                    <mat-icon style="font-size:13px;width:13px;height:13px">warning_amber</mat-icon>
+                    {{ cantidadCondiciones(ninio) }} registrada{{ cantidadCondiciones(ninio) !== 1 ? 's' : '' }}
+                  </span>
+                }
+              </span>
+            </div>
+
+            <!-- Responsables -->
+            <div class="field-row responsables-row">
+              <span class="field-label">
+                <mat-icon class="field-icon">family_restroom</mat-icon>
+                Responsables
+              </span>
+              <span class="field-val">
+                @if(!ninio.responsables || ninio.responsables.length === 0){
+                  <span class="muted-text">Sin responsables</span>
+                } @else {
+                  <div class="responsables-inline">
+                    @for(r of ninio.responsables; track r.id){
+                      <span class="resp-pill" [matTooltip]="getResponsableTooltip(r)">
+                        <span class="resp-pill-avatar" [class.has-photo]="r.fotoPerfil">
+                          @if(r.fotoPerfil){
+                            <img [src]="r.fotoPerfil" alt="Foto de perfil">
+                          } @else {
+                            {{ r.nombre[0] }}{{ r.apellido?.[0] ?? '' }}
+                          }
+                        </span>
+                        <span class="resp-pill-name">{{ r.nombre }} {{ r.apellido }}</span>
+                        @if(r.tipoRelacion){
+                          <span class="resp-pill-tipo">{{ r.tipoRelacion }}</span>
+                        }
+                      </span>
+                    }
+                  </div>
+                }
+              </span>
+            </div>
+
+          </mat-card-content>
+
+          <!-- Acciones -->
+          <div class="card-actions">
+            <button mat-stroked-button class="btn-mas-info" (click)="abrirDetalle(ninio)">
+              <mat-icon>info_outline</mat-icon>
+              Más información
+            </button>
+            <button mat-stroked-button class="btn-frecuencia" (click)="abrirFrecuencia(ninio)">
+              <mat-icon>bar_chart</mat-icon>
+              Ver frecuencia
+            </button>
+            @if(ninio.activo){
+              <div style="display:flex;gap:4px">
+                <button mat-icon-button matTooltip="Editar" (click)="abrirEditar(ninio)">
+                  <mat-icon style="font-size:18px;color:#1565C0">edit</mat-icon>
+                </button>
+                <button mat-icon-button matTooltip="Dar de baja" (click)="darDeBaja(ninio)">
+                  <mat-icon style="font-size:18px;color:#C62828">delete_outline</mat-icon>
+                </button>
+              </div>
+            }
+          </div>
+
+        </mat-card>
+      }
+    </div>
+
+    <mat-paginator
+      [length]="filtrados.length"
+      [pageSize]="pageSize"
+      [pageSizeOptions]="pageSizeOptions"
+      (page)="onPageChange($event)"
+      showFirstLastButtons
+      aria-label="Paginación de niños">
+    </mat-paginator>
+  }
+
+</div>
+
+<input #fotoInput type="file" accept="image/*" style="display:none"
+       (change)="onFotoSeleccionada($event)">
